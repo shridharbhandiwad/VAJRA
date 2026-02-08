@@ -320,3 +320,164 @@ QPushButton#togglePassword {
 QPushButton#togglePassword:hover {
     color: #3498db;
 }
+
+/* ============================================
+   Main Window Application Styling
+   ============================================ */
+
+/* Main Window Background */
+QMainWindow {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #1a1a2e, stop:0.5 #16213e, stop:1 #0f3460);
+}
+
+/* Central Widget */
+QWidget#centralWidget {
+    background: transparent;
+}
+
+/* Toolbar Styling */
+QToolBar#mainToolbar {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #2c3e50, stop:1 #34495e);
+    border: none;
+    padding: 8px;
+    spacing: 10px;
+}
+
+QToolBar::separator {
+    background: rgba(255, 255, 255, 0.2);
+    width: 2px;
+    margin: 5px 10px;
+}
+
+/* Panels */
+QWidget#leftPanel, QWidget#rightPanel, QWidget#centerPanel {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 15px;
+}
+
+/* Component List Styling */
+QListWidget#componentList {
+    background: rgba(0, 0, 0, 0.3);
+    color: #ecf0f1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 13px;
+    outline: none;
+}
+
+QListWidget#componentList::item {
+    background: rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 6px;
+    padding: 12px;
+    margin: 5px 0px;
+    color: #ecf0f1;
+}
+
+QListWidget#componentList::item:hover {
+    background: rgba(102, 126, 234, 0.2);
+    border: 1px solid rgba(102, 126, 234, 0.5);
+}
+
+QListWidget#componentList::item:selected {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #667eea, stop:1 #764ba2);
+    border: 1px solid #667eea;
+    color: white;
+}
+
+/* Canvas Frame */
+QGraphicsView#mainCanvas {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                stop:0 #0a0e27, stop:0.5 #141b2d, stop:1 #1a2332);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    border-radius: 10px;
+}
+
+QGraphicsView#mainCanvas:focus {
+    border: 2px solid #667eea;
+}
+
+/* Analytics Panel Styling */
+QTextEdit#analyticsPanel {
+    background: rgba(0, 0, 0, 0.3);
+    color: #ecf0f1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: "Consolas", "Monaco", "Courier New", monospace;
+    font-size: 13px;
+    selection-background-color: #3498db;
+    selection-color: white;
+}
+
+/* Status Label in Toolbar */
+QLabel#statusLabel {
+    color: #2ecc71;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 5px 15px;
+    background: rgba(46, 204, 113, 0.15);
+    border-radius: 4px;
+    border-left: 3px solid #2ecc71;
+}
+
+/* Component Label Header */
+QLabel#componentsLabel {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: bold;
+    padding: 10px 5px;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 rgba(102, 126, 234, 0.2), stop:1 rgba(118, 75, 162, 0.2));
+    border-radius: 6px;
+    border-left: 4px solid #667eea;
+}
+
+/* Heading Labels */
+QLabel[heading="true"] {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 10px;
+    background: transparent;
+}
+
+/* Hint Label Styling */
+QLabel[hint="true"] {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+    font-style: italic;
+    padding: 8px;
+    background: transparent;
+}
+
+/* General Buttons (for toolbar) */
+QPushButton#saveButton, QPushButton#loadButton, QPushButton#clearButton {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #667eea, stop:1 #764ba2);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    min-height: 32px;
+}
+
+QPushButton#saveButton:hover, QPushButton#loadButton:hover, QPushButton#clearButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #764ba2, stop:1 #667eea);
+}
+
+QPushButton#saveButton:pressed, QPushButton#loadButton:pressed, QPushButton#clearButton:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #5a3d82, stop:1 #556bc5);
+    padding: 9px 20px 7px 20px;
+}
