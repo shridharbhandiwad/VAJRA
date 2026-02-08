@@ -1,0 +1,322 @@
+/* ============================================
+   Enterprise Login Dialog - Modern QSS Stylesheet
+   Premium Design with Gradients, Shadows & Animations
+   ============================================ */
+
+/* Main Dialog Background */
+QDialog#LoginDialog {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                stop:0 #0f2027, stop:0.5 #203a43, stop:1 #2c5364);
+    border-radius: 12px;
+}
+
+/* Title Label - Hero Text */
+QLabel#titleLabel {
+    color: #ffffff;
+    font-size: 32px;
+    font-weight: bold;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    padding: 20px;
+    background: transparent;
+    letter-spacing: 1px;
+}
+
+/* Subtitle Label */
+QLabel#subtitleLabel {
+    color: #b8c6db;
+    font-size: 16px;
+    font-weight: 400;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    padding: 5px;
+    background: transparent;
+}
+
+/* Welcome Message */
+QLabel#welcomeLabel {
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 600;
+    padding: 15px;
+    background: transparent;
+}
+
+/* Input Fields Container */
+QFrame#inputFrame {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 25px;
+}
+
+/* Line Edit - Input Fields */
+QLineEdit {
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(100, 200, 255, 0.3);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 15px;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color: #2c3e50;
+    selection-background-color: #3498db;
+    selection-color: white;
+}
+
+QLineEdit:focus {
+    background-color: #ffffff;
+    border: 2px solid #3498db;
+    outline: none;
+}
+
+QLineEdit:hover {
+    background-color: #ffffff;
+    border: 2px solid rgba(52, 152, 219, 0.5);
+}
+
+QLineEdit::placeholder {
+    color: #95a5a6;
+    font-style: italic;
+}
+
+/* Field Labels */
+QLabel#fieldLabel {
+    color: #ecf0f1;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 5px 2px;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Primary Button - Login */
+QPushButton#loginButton {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #667eea, stop:1 #764ba2);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 15px 40px;
+    font-size: 16px;
+    font-weight: bold;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    min-width: 140px;
+    letter-spacing: 1px;
+}
+
+QPushButton#loginButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #764ba2, stop:1 #667eea);
+}
+
+QPushButton#loginButton:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #5a3d82, stop:1 #556bc5);
+    padding: 16px 40px 14px 40px;
+}
+
+QPushButton#loginButton:disabled {
+    background: #7f8c8d;
+    color: #bdc3c7;
+}
+
+/* Secondary Button - Cancel */
+QPushButton#cancelButton {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ecf0f1;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 15px 40px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    min-width: 140px;
+}
+
+QPushButton#cancelButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+QPushButton#cancelButton:pressed {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 16px 40px 14px 40px;
+}
+
+/* Error Label */
+QLabel#errorLabel {
+    color: #ff6b6b;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px;
+    background: rgba(255, 107, 107, 0.15);
+    border-radius: 6px;
+    border-left: 4px solid #ff6b6b;
+}
+
+/* Success Label */
+QLabel#successLabel {
+    color: #51cf66;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px;
+    background: rgba(81, 207, 102, 0.15);
+    border-radius: 6px;
+    border-left: 4px solid #51cf66;
+}
+
+/* Hint Label */
+QLabel#hintLabel {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    font-style: italic;
+    padding: 10px;
+    background: transparent;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Info Panel */
+QFrame#infoPanel {
+    background: rgba(52, 152, 219, 0.15);
+    border-left: 4px solid #3498db;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+QLabel#infoPanelText {
+    color: #b8d4f1;
+    font-size: 13px;
+    line-height: 1.5;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Divider */
+QFrame#divider {
+    background: rgba(255, 255, 255, 0.2);
+    max-height: 1px;
+    margin: 20px 0px;
+}
+
+/* Role Selection Buttons */
+QPushButton#roleButton {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ecf0f1;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 20px;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+    min-height: 80px;
+}
+
+QPushButton#roleButton:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(102, 126, 234, 0.8);
+}
+
+QPushButton#roleButton:pressed {
+    background: rgba(102, 126, 234, 0.3);
+    border: 2px solid #667eea;
+}
+
+QPushButton#roleButton:checked {
+    background: rgba(102, 126, 234, 0.25);
+    border: 2px solid #667eea;
+    color: #ffffff;
+}
+
+/* Footer Text */
+QLabel#footerLabel {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 11px;
+    padding: 10px;
+    background: transparent;
+}
+
+/* Scrollbar Styling */
+QScrollBar:vertical {
+    background: rgba(255, 255, 255, 0.05);
+    width: 12px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+/* Checkbox Styling */
+QCheckBox {
+    color: #ecf0f1;
+    font-size: 13px;
+    spacing: 8px;
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+QCheckBox::indicator:hover {
+    border: 2px solid #667eea;
+}
+
+QCheckBox::indicator:checked {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                stop:0 #667eea, stop:1 #764ba2);
+    border: 2px solid #667eea;
+    image: url(:/icons/check.png);
+}
+
+/* Tooltip Styling */
+QToolTip {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    border: 1px solid #3498db;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 12px;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Link Buttons */
+QPushButton#linkButton {
+    background: transparent;
+    color: #74b9ff;
+    border: none;
+    font-size: 13px;
+    text-decoration: underline;
+    padding: 5px;
+}
+
+QPushButton#linkButton:hover {
+    color: #a29bfe;
+}
+
+QPushButton#linkButton:pressed {
+    color: #6c5ce7;
+}
+
+/* Password Toggle Button */
+QPushButton#togglePassword {
+    background: transparent;
+    border: none;
+    padding: 8px;
+    color: #7f8c8d;
+}
+
+QPushButton#togglePassword:hover {
+    color: #3498db;
+}
