@@ -14,8 +14,23 @@ if ! command -v qmake &> /dev/null; then
     exit 1
 fi
 
+# Build Unified Application (Recommended)
+echo "Building Unified Application (Recommended)..."
+cd UnifiedApp || exit 1
+qmake UnifiedApp.pro
+make
+if [ $? -eq 0 ]; then
+    echo "✓ Unified Application built successfully"
+else
+    echo "✗ Unified Application build failed"
+    exit 1
+fi
+cd ..
+
+echo
+
 # Build Designer Application
-echo "Building Designer Application..."
+echo "Building Designer Application (Legacy)..."
 cd DesignerApp || exit 1
 qmake DesignerApp.pro
 make
@@ -30,7 +45,7 @@ cd ..
 echo
 
 # Build Runtime Application
-echo "Building Runtime Application..."
+echo "Building Runtime Application (Legacy)..."
 cd RuntimeApp || exit 1
 qmake RuntimeApp.pro
 make
@@ -48,10 +63,15 @@ echo "Build completed successfully!"
 echo "======================================"
 echo
 echo "Executables:"
-echo "  - DesignerApp/DesignerApp"
-echo "  - RuntimeApp/RuntimeApp"
+echo "  - UnifiedApp/UnifiedApp          (RECOMMENDED - Single app with role-based access)"
+echo "  - DesignerApp/DesignerApp         (Legacy - Separate designer)"
+echo "  - RuntimeApp/RuntimeApp           (Legacy - Separate runtime monitor)"
 echo
-echo "To run:"
+echo "To run Unified Application (Recommended):"
+echo "  ./UnifiedApp/UnifiedApp"
+echo "  Login with: Designer/designer (design mode) or User/user (runtime mode)"
+echo
+echo "To run separate applications:"
 echo "  ./DesignerApp/DesignerApp"
 echo "  ./RuntimeApp/RuntimeApp"
 echo

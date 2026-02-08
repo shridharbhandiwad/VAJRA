@@ -1,0 +1,36 @@
+# Qt build artifacts
+*.o
+*.obj
+moc_*.cpp
+moc_*.h
+moc_predefs.h
+ui_*.h
+qrc_*.cpp
+Makefile
+.qmake.stash
+
+# Executables
+DesignerApp/DesignerApp
+RuntimeApp/RuntimeApp
+UnifiedApp/UnifiedApp
+*.exe
+
+# Qt Creator files
+*.pro.user
+*.pro.user.*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# OS files
+.DS_Store
+Thumbs.db

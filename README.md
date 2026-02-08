@@ -1,10 +1,24 @@
 # Radar System Monitoring Application
 
-A comprehensive Qt-based application system for designing, deploying, and monitoring radar subsystems in real-time. This system consists of three main parts:
+A comprehensive Qt-based application system for designing, deploying, and monitoring radar subsystems in real-time. This system provides both separate and unified application options:
 
-1. **Designer Application** - Visual editor for creating radar system layouts
-2. **Runtime Application** - Real-time health monitoring display for radar subsystems
-3. **External Subsystem Simulators** - Python scripts that simulate radar subsystems sending health status updates
+## Available Applications
+
+### **UnifiedApp** (Recommended)
+A single, unified application combining both Designer and Runtime capabilities with role-based access control:
+- Login as **Designer** (`Designer`/`designer`) for full design capabilities
+- Login as **User** (`User`/`user`) for runtime monitoring
+- One application to install and maintain
+- Consistent user experience across modes
+- See `UnifiedApp/README.md` for details
+
+### **Separate Applications** (Legacy)
+Original standalone applications:
+1. **DesignerApp** - Visual editor for creating radar system layouts
+2. **RuntimeApp** - Real-time health monitoring display for radar subsystems
+
+### **External Subsystem Simulators**
+Python scripts that simulate radar subsystems sending health status updates (works with both UnifiedApp and separate apps)
 
 ## System Overview
 
@@ -112,13 +126,24 @@ Python simulators that:
 
 ## Building
 
-### Linux/macOS
+### Quick Start (Unified Application)
+
+```bash
+cd UnifiedApp
+qmake UnifiedApp.pro
+make
+./UnifiedApp
+```
+
+Login with `Designer`/`designer` for design mode or `User`/`user` for runtime mode.
+
+### Build All Applications (Including Legacy Apps)
 
 ```bash
 # Make scripts executable
 chmod +x build_all.sh clean_all.sh
 
-# Build all applications
+# Build all applications (DesignerApp, RuntimeApp, and UnifiedApp)
 ./build_all.sh
 ```
 
@@ -149,7 +174,37 @@ cd ..
 
 ### Complete Workflow
 
-#### Step 1: Design Your Radar System Layout
+#### Using UnifiedApp (Recommended)
+
+**Step 1: Design Your Radar System Layout**
+
+```bash
+# Run Unified Application
+./UnifiedApp/UnifiedApp
+```
+
+1. Login with `Designer`/`designer`
+2. Drag subsystems (Antenna, Power System, etc.) from the left panel to the canvas
+3. Position subsystems as desired to represent your radar system layout
+4. Note the subsystem IDs (e.g., component_1, component_2, etc.)
+5. Click "Save Design" and save as `radar_system.design`
+
+**Step 2: Run Runtime Monitoring**
+
+```bash
+# Run Unified Application (or keep it open from Step 1)
+./UnifiedApp/UnifiedApp
+```
+
+1. Login with `User`/`user`
+2. Click "Load Design"
+3. Select your saved `radar_system.design` file
+4. The canvas will display your radar subsystems
+5. The server automatically starts listening on port 12345 for health updates
+
+#### Using Separate Applications (Legacy)
+
+**Step 1: Design Your Radar System Layout**
 
 ```bash
 # Run Designer Application
@@ -161,7 +216,7 @@ cd ..
 3. Note the subsystem IDs (e.g., antenna_1, power_1, cooling_1, comm_1, computer_1)
 4. Click "Save Design" and save as `radar_system.design`
 
-#### Step 2: Run Runtime Monitoring Application
+**Step 2: Run Runtime Monitoring Application**
 
 ```bash
 # Run Runtime Application
@@ -309,7 +364,20 @@ while True:
 
 ```
 .
-├── DesignerApp/              # Designer Application
+├── UnifiedApp/               # Unified Application (RECOMMENDED)
+│   ├── UnifiedApp.pro        # Qt project file
+│   ├── main.cpp
+│   ├── logindialog.cpp/h     # Login dialog with role-based auth
+│   ├── mainwindow.cpp/h      # Main window (Designer + Runtime modes)
+│   ├── component.cpp/h       # Subsystem graphics item
+│   ├── canvas.cpp/h          # Unified canvas widget
+│   ├── componentlist.cpp/h   # Subsystem list with drag/drop
+│   ├── analytics.cpp/h       # Analytics widget
+│   ├── messageserver.cpp/h   # TCP server for health updates
+│   ├── README.md             # Detailed documentation
+│   └── QUICKSTART.md         # Quick start guide
+│
+├── DesignerApp/              # Designer Application (Legacy)
 │   ├── DesignerApp.pro       # Qt project file
 │   ├── main.cpp
 │   ├── mainwindow.cpp/h      # Main window with UI
@@ -318,7 +386,7 @@ while True:
 │   ├── componentlist.cpp/h   # Subsystem list with drag/drop
 │   └── analytics.cpp/h       # Analytics widget
 │
-├── RuntimeApp/               # Runtime Monitoring Application
+├── RuntimeApp/               # Runtime Monitoring Application (Legacy)
 │   ├── RuntimeApp.pro        # Qt project file
 │   ├── main.cpp
 │   ├── mainwindow.cpp/h      # Main window with UI
