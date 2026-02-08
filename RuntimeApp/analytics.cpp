@@ -39,8 +39,10 @@ void Analytics::removeComponent(const QString& id)
 
 void Analytics::recordMessage(const QString& id, const QString& color, qreal size)
 {
+    // Auto-add component if it doesn't exist yet
     if (!m_stats.contains(id)) {
-        return;
+        m_stats[id] = ComponentStats();
+        m_componentTypes[id] = "Unknown"; // Type will be updated if component is loaded later
     }
     
     ComponentStats& stats = m_stats[id];
