@@ -1,0 +1,2 @@
+# This file ensures the assets/subsystems directory structure is tracked by git
+# even when image files are not yet placed.
