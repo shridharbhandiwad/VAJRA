@@ -4,6 +4,15 @@
 #include <QFormLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QFile>
+#include <QFrame>
+#include <QPainter>
+#include <QLinearGradient>
+#include <QSequentialAnimationGroup>
+#include <QEasingCurve>
+#include <QShowEvent>
+#include <QTimer>
+#include <QDebug>
 
 LoginDialog::LoginDialog(QWidget* parent)
     : QDialog(parent)
@@ -11,81 +20,187 @@ LoginDialog::LoginDialog(QWidget* parent)
     , m_passwordEdit(nullptr)
     , m_loginButton(nullptr)
     , m_cancelButton(nullptr)
+    , m_togglePasswordBtn(nullptr)
     , m_errorLabel(nullptr)
+    , m_successLabel(nullptr)
+    , m_titleLabel(nullptr)
+    , m_subtitleLabel(nullptr)
+    , m_welcomeLabel(nullptr)
+    , m_rememberMeCheck(nullptr)
+    , m_opacityEffect(nullptr)
+    , m_fadeAnimation(nullptr)
+    , m_slideAnimation(nullptr)
+    , m_entranceAnimation(nullptr)
     , m_userRole(UserRole::User)
+    , m_passwordVisible(false)
+    , m_loginAttempts(0)
 {
     setupUI();
-    setWindowTitle("Radar System - Login");
+    loadStyleSheet();
+    setupAnimations();
+    
+    setWindowTitle("Radar System - Enterprise Login");
     setModal(true);
-    resize(350, 200);
+    setFixedSize(520, 680);
+    setObjectName("LoginDialog");
+    
+    // Remove window frame for modern look
+    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+    setAttribute(Qt::WA_TranslucentBackground);
 }
 
 void LoginDialog::setupUI()
 {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(35, 35, 35, 35);
+    mainLayout->setSpacing(25);
     
-    // Title label
-    QLabel* titleLabel = new QLabel("Radar System Application", this);
-    QFont titleFont = titleLabel->font();
-    titleFont.setPointSize(14);
-    titleFont.setBold(true);
-    titleLabel->setFont(titleFont);
-    titleLabel->setAlignment(Qt::AlignCenter);
-    titleLabel->setStyleSheet("color: #2c3e50; margin: 10px;");
+    // ========== HEADER SECTION ==========
+    QVBoxLayout* headerLayout = new QVBoxLayout();
+    headerLayout->setSpacing(8);
     
-    // Info label
-    QLabel* infoLabel = new QLabel("Please enter your credentials", this);
-    infoLabel->setAlignment(Qt::AlignCenter);
-    infoLabel->setStyleSheet("color: #7f8c8d; margin-bottom: 10px;");
+    // Title - Main heading
+    m_titleLabel = new QLabel("RADAR SYSTEM", this);
+    m_titleLabel->setObjectName("titleLabel");
+    m_titleLabel->setAlignment(Qt::AlignCenter);
     
-    // Form layout
-    QFormLayout* formLayout = new QFormLayout();
+    // Subtitle
+    m_subtitleLabel = new QLabel("Enterprise Control Platform", this);
+    m_subtitleLabel->setObjectName("subtitleLabel");
+    m_subtitleLabel->setAlignment(Qt::AlignCenter);
+    
+    // Welcome message
+    m_welcomeLabel = new QLabel("Welcome Back", this);
+    m_welcomeLabel->setObjectName("welcomeLabel");
+    m_welcomeLabel->setAlignment(Qt::AlignCenter);
+    
+    headerLayout->addWidget(m_titleLabel);
+    headerLayout->addWidget(m_subtitleLabel);
+    headerLayout->addSpacing(15);
+    headerLayout->addWidget(m_welcomeLabel);
+    
+    // ========== INPUT FRAME ==========
+    QFrame* inputFrame = new QFrame(this);
+    inputFrame->setObjectName("inputFrame");
+    
+    QVBoxLayout* inputLayout = new QVBoxLayout(inputFrame);
+    inputLayout->setSpacing(20);
+    
+    // Username field
+    QVBoxLayout* usernameLayout = new QVBoxLayout();
+    usernameLayout->setSpacing(8);
+    
+    QLabel* usernameLabel = new QLabel("USERNAME", this);
+    usernameLabel->setObjectName("fieldLabel");
     
     m_usernameEdit = new QLineEdit(this);
-    m_usernameEdit->setPlaceholderText("Enter username");
+    m_usernameEdit->setPlaceholderText("Enter your username");
+    m_usernameEdit->setMinimumHeight(48);
+    
+    usernameLayout->addWidget(usernameLabel);
+    usernameLayout->addWidget(m_usernameEdit);
+    
+    // Password field with toggle
+    QVBoxLayout* passwordLayout = new QVBoxLayout();
+    passwordLayout->setSpacing(8);
+    
+    QLabel* passwordLabel = new QLabel("PASSWORD", this);
+    passwordLabel->setObjectName("fieldLabel");
+    
+    QHBoxLayout* passwordInputLayout = new QHBoxLayout();
+    passwordInputLayout->setSpacing(0);
     
     m_passwordEdit = new QLineEdit(this);
-    m_passwordEdit->setPlaceholderText("Enter password");
+    m_passwordEdit->setPlaceholderText("Enter your password");
     m_passwordEdit->setEchoMode(QLineEdit::Password);
+    m_passwordEdit->setMinimumHeight(48);
     
-    formLayout->addRow("Username:", m_usernameEdit);
-    formLayout->addRow("Password:", m_passwordEdit);
+    m_togglePasswordBtn = new QPushButton("👁", this);
+    m_togglePasswordBtn->setObjectName("togglePassword");
+    m_togglePasswordBtn->setFixedSize(48, 48);
+    m_togglePasswordBtn->setCursor(Qt::PointingHandCursor);
+    m_togglePasswordBtn->setToolTip("Toggle password visibility");
     
-    // Error label
+    passwordInputLayout->addWidget(m_passwordEdit);
+    passwordInputLayout->addWidget(m_togglePasswordBtn);
+    
+    passwordLayout->addWidget(passwordLabel);
+    passwordLayout->addLayout(passwordInputLayout);
+    
+    // Remember me checkbox
+    m_rememberMeCheck = new QCheckBox("Remember me on this device", this);
+    m_rememberMeCheck->setChecked(false);
+    
+    inputLayout->addLayout(usernameLayout);
+    inputLayout->addLayout(passwordLayout);
+    inputLayout->addWidget(m_rememberMeCheck);
+    
+    // ========== STATUS MESSAGES ==========
     m_errorLabel = new QLabel(this);
-    m_errorLabel->setStyleSheet("color: red; font-weight: bold;");
+    m_errorLabel->setObjectName("errorLabel");
     m_errorLabel->setAlignment(Qt::AlignCenter);
+    m_errorLabel->setWordWrap(true);
     m_errorLabel->setVisible(false);
     
-    // Buttons layout
+    m_successLabel = new QLabel(this);
+    m_successLabel->setObjectName("successLabel");
+    m_successLabel->setAlignment(Qt::AlignCenter);
+    m_successLabel->setWordWrap(true);
+    m_successLabel->setVisible(false);
+    
+    // ========== BUTTONS ==========
     QHBoxLayout* buttonLayout = new QHBoxLayout();
+    buttonLayout->setSpacing(15);
     
-    m_loginButton = new QPushButton("Login", this);
+    m_loginButton = new QPushButton("SIGN IN", this);
+    m_loginButton->setObjectName("loginButton");
     m_loginButton->setDefault(true);
-    m_loginButton->setStyleSheet("QPushButton { background-color: #3498db; color: white; padding: 8px 20px; border-radius: 4px; font-weight: bold; }"
-                                  "QPushButton:hover { background-color: #2980b9; }");
+    m_loginButton->setCursor(Qt::PointingHandCursor);
+    m_loginButton->setMinimumHeight(52);
     
-    m_cancelButton = new QPushButton("Cancel", this);
-    m_cancelButton->setStyleSheet("QPushButton { padding: 8px 20px; }");
+    m_cancelButton = new QPushButton("CANCEL", this);
+    m_cancelButton->setObjectName("cancelButton");
+    m_cancelButton->setCursor(Qt::PointingHandCursor);
+    m_cancelButton->setMinimumHeight(52);
     
-    buttonLayout->addStretch();
     buttonLayout->addWidget(m_loginButton);
     buttonLayout->addWidget(m_cancelButton);
     
-    // Credentials hint
-    QLabel* hintLabel = new QLabel("Valid credentials:\nDesigner/designer (Designer Mode)\nUser/user (Runtime Mode)", this);
-    hintLabel->setStyleSheet("color: #95a5a6; font-size: 10px; font-style: italic;");
-    hintLabel->setAlignment(Qt::AlignCenter);
+    // ========== INFO PANEL ==========
+    QFrame* infoPanel = new QFrame(this);
+    infoPanel->setObjectName("infoPanel");
     
-    // Add all to main layout
-    mainLayout->addWidget(titleLabel);
-    mainLayout->addWidget(infoLabel);
-    mainLayout->addLayout(formLayout);
-    mainLayout->addWidget(m_errorLabel);
-    mainLayout->addLayout(buttonLayout);
+    QVBoxLayout* infoPanelLayout = new QVBoxLayout(infoPanel);
+    
+    QLabel* infoPanelText = new QLabel(
+        "🔐 <b>Default Credentials</b><br><br>"
+        "Designer Mode: <b>Designer</b> / <b>designer</b><br>"
+        "Runtime Mode: <b>User</b> / <b>user</b>",
+        this
+    );
+    infoPanelText->setObjectName("infoPanelText");
+    infoPanelText->setWordWrap(true);
+    infoPanelText->setTextFormat(Qt::RichText);
+    
+    infoPanelLayout->addWidget(infoPanelText);
+    
+    // ========== FOOTER ==========
+    QLabel* footerLabel = new QLabel("© 2026 Radar System · Secure Access Portal", this);
+    footerLabel->setObjectName("footerLabel");
+    footerLabel->setAlignment(Qt::AlignCenter);
+    
+    // ========== ASSEMBLE MAIN LAYOUT ==========
+    mainLayout->addLayout(headerLayout);
     mainLayout->addSpacing(10);
-    mainLayout->addWidget(hintLabel);
+    mainLayout->addWidget(inputFrame);
+    mainLayout->addWidget(m_errorLabel);
+    mainLayout->addWidget(m_successLabel);
+    mainLayout->addSpacing(5);
+    mainLayout->addLayout(buttonLayout);
+    mainLayout->addSpacing(15);
+    mainLayout->addWidget(infoPanel);
     mainLayout->addStretch();
+    mainLayout->addWidget(footerLabel);
     
     setLayout(mainLayout);
     
@@ -93,6 +208,81 @@ void LoginDialog::setupUI()
     connect(m_loginButton, &QPushButton::clicked, this, &LoginDialog::onLoginClicked);
     connect(m_cancelButton, &QPushButton::clicked, this, &QDialog::reject);
     connect(m_passwordEdit, &QLineEdit::returnPressed, this, &LoginDialog::onLoginClicked);
+    connect(m_usernameEdit, &QLineEdit::textChanged, this, &LoginDialog::onUsernameChanged);
+    connect(m_passwordEdit, &QLineEdit::textChanged, this, &LoginDialog::onPasswordChanged);
+    connect(m_togglePasswordBtn, &QPushButton::clicked, this, &LoginDialog::togglePasswordVisibility);
+    
+    // Set initial focus
+    m_usernameEdit->setFocus();
+}
+
+void LoginDialog::loadStyleSheet()
+{
+    QFile styleFile(":/styles/styles.qss");
+    if (!styleFile.open(QFile::ReadOnly)) {
+        // Try relative path
+        styleFile.setFileName("styles.qss");
+        if (!styleFile.open(QFile::ReadOnly)) {
+            qWarning("Could not load stylesheet");
+            return;
+        }
+    }
+    
+    QString styleSheet = QLatin1String(styleFile.readAll());
+    setStyleSheet(styleSheet);
+}
+
+void LoginDialog::setupAnimations()
+{
+    // Opacity effect for entrance animation
+    m_opacityEffect = new QGraphicsOpacityEffect(this);
+    m_opacityEffect->setOpacity(0.0);
+    setGraphicsEffect(m_opacityEffect);
+    
+    // Fade animation
+    m_fadeAnimation = new QPropertyAnimation(m_opacityEffect, "opacity", this);
+    m_fadeAnimation->setDuration(800);
+    m_fadeAnimation->setStartValue(0.0);
+    m_fadeAnimation->setEndValue(1.0);
+    m_fadeAnimation->setEasingCurve(QEasingCurve::OutCubic);
+}
+
+void LoginDialog::applyEntranceAnimation()
+{
+    if (m_fadeAnimation) {
+        m_fadeAnimation->start();
+    }
+}
+
+void LoginDialog::showEvent(QShowEvent* event)
+{
+    QDialog::showEvent(event);
+    applyEntranceAnimation();
+}
+
+void LoginDialog::paintEvent(QPaintEvent* event)
+{
+    Q_UNUSED(event);
+    
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    
+    // Draw gradient background
+    QLinearGradient gradient(0, 0, width(), height());
+    gradient.setColorAt(0.0, QColor(15, 32, 39));     // #0f2027
+    gradient.setColorAt(0.5, QColor(32, 58, 67));     // #203a43
+    gradient.setColorAt(1.0, QColor(44, 83, 100));    // #2c5364
+    
+    // Draw rounded rectangle with gradient
+    painter.setBrush(gradient);
+    painter.setPen(Qt::NoPen);
+    painter.drawRoundedRect(rect(), 12, 12);
+    
+    // Draw subtle border
+    QPen borderPen(QColor(255, 255, 255, 30), 1);
+    painter.setPen(borderPen);
+    painter.setBrush(Qt::NoBrush);
+    painter.drawRoundedRect(rect().adjusted(0, 0, -1, -1), 12, 12);
 }
 
 void LoginDialog::onLoginClicked()
@@ -101,20 +291,141 @@ void LoginDialog::onLoginClicked()
     QString password = m_passwordEdit->text();
     
     m_errorLabel->setVisible(false);
+    m_successLabel->setVisible(false);
     
-    // Validate credentials
-    if (username == "Designer" && password == "designer") {
-        m_userRole = UserRole::Designer;
-        m_username = username;
-        accept();
-    } else if (username == "User" && password == "user") {
-        m_userRole = UserRole::User;
-        m_username = username;
-        accept();
-    } else {
-        m_errorLabel->setText("Invalid username or password!");
+    // Input validation
+    if (username.isEmpty() || password.isEmpty()) {
+        m_errorLabel->setText("⚠️ Please enter both username and password");
         m_errorLabel->setVisible(true);
-        m_passwordEdit->clear();
-        m_passwordEdit->setFocus();
+        animateError();
+        return;
     }
+    
+    // Disable button during validation
+    m_loginButton->setEnabled(false);
+    m_loginButton->setText("VALIDATING...");
+    
+    // Simulate authentication delay for UX
+    QTimer::singleShot(500, this, [this, username, password]() {
+        // Validate credentials
+        if (username == "Designer" && password == "designer") {
+            m_userRole = UserRole::Designer;
+            m_username = username;
+            m_successLabel->setText("✅ Authentication successful! Welcome, Designer.");
+            m_successLabel->setVisible(true);
+            animateSuccess();
+            
+            // Close dialog after success animation
+            QTimer::singleShot(1000, this, &QDialog::accept);
+            
+        } else if (username == "User" && password == "user") {
+            m_userRole = UserRole::User;
+            m_username = username;
+            m_successLabel->setText("✅ Authentication successful! Welcome, User.");
+            m_successLabel->setVisible(true);
+            animateSuccess();
+            
+            // Close dialog after success animation
+            QTimer::singleShot(1000, this, &QDialog::accept);
+            
+        } else {
+            m_loginAttempts++;
+            QString errorMsg = QString("❌ Invalid credentials! Attempt %1 of 3").arg(m_loginAttempts);
+            
+            if (m_loginAttempts >= 3) {
+                errorMsg = "🚫 Maximum login attempts reached. Please try again later.";
+                m_loginButton->setEnabled(false);
+                m_usernameEdit->setEnabled(false);
+                m_passwordEdit->setEnabled(false);
+            } else {
+                m_loginButton->setEnabled(true);
+                m_loginButton->setText("SIGN IN");
+            }
+            
+            m_errorLabel->setText(errorMsg);
+            m_errorLabel->setVisible(true);
+            animateError();
+            
+            m_passwordEdit->clear();
+            m_passwordEdit->setFocus();
+        }
+    });
+}
+
+void LoginDialog::onUsernameChanged(const QString& text)
+{
+    Q_UNUSED(text);
+    validateInputs();
+}
+
+void LoginDialog::onPasswordChanged(const QString& text)
+{
+    Q_UNUSED(text);
+    validateInputs();
+}
+
+void LoginDialog::validateInputs()
+{
+    bool hasUsername = !m_usernameEdit->text().trimmed().isEmpty();
+    bool hasPassword = !m_passwordEdit->text().isEmpty();
+    
+    // Enable login button only if both fields have text
+    if (m_loginAttempts < 3) {
+        m_loginButton->setEnabled(hasUsername && hasPassword);
+    }
+    
+    // Hide error when user starts typing
+    if (m_errorLabel->isVisible() && (hasUsername || hasPassword)) {
+        m_errorLabel->setVisible(false);
+    }
+}
+
+void LoginDialog::togglePasswordVisibility()
+{
+    m_passwordVisible = !m_passwordVisible;
+    
+    if (m_passwordVisible) {
+        m_passwordEdit->setEchoMode(QLineEdit::Normal);
+        m_togglePasswordBtn->setText("🔒");
+    } else {
+        m_passwordEdit->setEchoMode(QLineEdit::Password);
+        m_togglePasswordBtn->setText("👁");
+    }
+}
+
+void LoginDialog::animateError()
+{
+    // Shake animation for error
+    QPropertyAnimation* shakeAnim = new QPropertyAnimation(m_errorLabel, "pos", this);
+    shakeAnim->setDuration(500);
+    shakeAnim->setLoopCount(1);
+    
+    QPoint originalPos = m_errorLabel->pos();
+    shakeAnim->setKeyValueAt(0.0, originalPos);
+    shakeAnim->setKeyValueAt(0.1, originalPos + QPoint(-5, 0));
+    shakeAnim->setKeyValueAt(0.2, originalPos + QPoint(5, 0));
+    shakeAnim->setKeyValueAt(0.3, originalPos + QPoint(-5, 0));
+    shakeAnim->setKeyValueAt(0.4, originalPos + QPoint(5, 0));
+    shakeAnim->setKeyValueAt(0.5, originalPos + QPoint(-5, 0));
+    shakeAnim->setKeyValueAt(0.6, originalPos + QPoint(5, 0));
+    shakeAnim->setKeyValueAt(0.7, originalPos + QPoint(-3, 0));
+    shakeAnim->setKeyValueAt(0.8, originalPos + QPoint(3, 0));
+    shakeAnim->setKeyValueAt(0.9, originalPos + QPoint(-2, 0));
+    shakeAnim->setKeyValueAt(1.0, originalPos);
+    
+    shakeAnim->start(QAbstractAnimation::DeleteWhenStopped);
+}
+
+void LoginDialog::animateSuccess()
+{
+    // Pulse animation for success
+    QGraphicsOpacityEffect* successEffect = new QGraphicsOpacityEffect(m_successLabel);
+    m_successLabel->setGraphicsEffect(successEffect);
+    
+    QPropertyAnimation* pulseAnim = new QPropertyAnimation(successEffect, "opacity", this);
+    pulseAnim->setDuration(600);
+    pulseAnim->setStartValue(0.3);
+    pulseAnim->setEndValue(1.0);
+    pulseAnim->setEasingCurve(QEasingCurve::OutCubic);
+    pulseAnim->start(QAbstractAnimation::DeleteWhenStopped);
 }

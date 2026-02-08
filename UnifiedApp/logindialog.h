@@ -5,6 +5,10 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QLabel>
+#include <QPropertyAnimation>
+#include <QGraphicsOpacityEffect>
+#include <QParallelAnimationGroup>
+#include <QCheckBox>
 
 enum class UserRole {
     Designer,
@@ -20,20 +24,49 @@ public:
     UserRole getUserRole() const { return m_userRole; }
     QString getUsername() const { return m_username; }
     
+protected:
+    void showEvent(QShowEvent* event) override;
+    void paintEvent(QPaintEvent* event) override;
+    
 private slots:
     void onLoginClicked();
+    void onUsernameChanged(const QString& text);
+    void onPasswordChanged(const QString& text);
+    void togglePasswordVisibility();
+    void animateError();
+    void animateSuccess();
     
 private:
     void setupUI();
+    void loadStyleSheet();
+    void setupAnimations();
+    void applyEntranceAnimation();
+    void validateInputs();
     
+    // UI Elements
     QLineEdit* m_usernameEdit;
     QLineEdit* m_passwordEdit;
     QPushButton* m_loginButton;
     QPushButton* m_cancelButton;
+    QPushButton* m_togglePasswordBtn;
     QLabel* m_errorLabel;
+    QLabel* m_successLabel;
+    QLabel* m_titleLabel;
+    QLabel* m_subtitleLabel;
+    QLabel* m_welcomeLabel;
+    QCheckBox* m_rememberMeCheck;
     
+    // Animation Effects
+    QGraphicsOpacityEffect* m_opacityEffect;
+    QPropertyAnimation* m_fadeAnimation;
+    QPropertyAnimation* m_slideAnimation;
+    QParallelAnimationGroup* m_entranceAnimation;
+    
+    // State
     UserRole m_userRole;
     QString m_username;
+    bool m_passwordVisible;
+    int m_loginAttempts;
 };
 
 #endif // LOGINDIALOG_H
