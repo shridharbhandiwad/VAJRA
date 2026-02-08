@@ -1,6 +1,7 @@
 #include "component.h"
 #include <QPainter>
 #include <QCursor>
+#include <QDebug>
 
 Component::Component(ComponentType type, const QString& id, QGraphicsItem* parent)
     : QGraphicsItem(parent)
@@ -17,13 +18,35 @@ Component::Component(ComponentType type, const QString& id, QGraphicsItem* paren
 QRectF Component::boundingRect() const
 {
     qreal halfSize = m_size / 2.0;
-    return QRectF(-halfSize, -halfSize, m_size, m_size);
+    
+    // Calculate bounds that encompass all drawing operations for all component types
+    // Different component types draw shapes that extend beyond the basic square
+    
+    // Maximum extents across all component types:
+    // - Antenna: ellipse + lines + text
+    // - PowerSystem: large rect (1.4x height) + top rect + text
+    // - LiquidCoolingUnit: ellipse + top rects at -1.2x + text
+    // - CommunicationSystem: rect (1.2x width/height) + arcs + text
+    // - RadarComputer: large rect (1.6x height) + text
+    
+    // Text labels add ~14 pixels below (halfSize + 2 + 12)
+    qreal top = -halfSize * 1.3;      // Covers top rects/decorations
+    qreal bottom = halfSize * 2.5;     // Covers large rects + text
+    qreal left = -halfSize * 1.2;      // Covers extended shapes
+    qreal right = halfSize * 1.2;      // Covers extended shapes
+    
+    qreal width = right - left;
+    qreal height = bottom - top;
+    
+    return QRectF(left, top, width, height);
 }
 
 void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {
     Q_UNUSED(option);
     Q_UNUSED(widget);
+    
+    qDebug() << "[Component]" << m_id << "- Painting with color" << m_color.name() << "and size" << m_size;
     
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(QPen(Qt::black, 2));
@@ -107,15 +130,19 @@ void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
 
 void Component::setColor(const QColor& color)
 {
+    qDebug() << "[Component]" << m_id << "- Color changing from" << m_color.name() << "to" << color.name();
     m_color = color;
     update();
+    qDebug() << "[Component]" << m_id << "- Color updated, repaint triggered";
 }
 
 void Component::setSize(qreal size)
 {
+    qDebug() << "[Component]" << m_id << "- Size changing from" << m_size << "to" << size;
     prepareGeometryChange();
     m_size = size;
     update();
+    qDebug() << "[Component]" << m_id << "- Size updated, repaint triggered";
 }
 
 QString Component::toJson() const
