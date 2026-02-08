@@ -18,7 +18,7 @@ QLabel#titleLabel {
     font-family: "Roboto", "Arial", sans-serif;
     padding: 20px;
     background: transparent;
-    letter-spacing: 3px;
+    letter-spacing: 1px;
 }
 
 /* Subtitle Label */
