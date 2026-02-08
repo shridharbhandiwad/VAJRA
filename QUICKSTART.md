@@ -1,161 +1,215 @@
-# Quick Start Guide
+# Quick Start Guide - Radar System Monitoring
 
-Get up and running with the Component Editor and Analytics System in 5 minutes!
+Get up and running with the Radar System Monitoring application in 5 minutes!
 
 ## Prerequisites
 
-```bash
-# Ubuntu/Debian
-sudo apt-get install qt5-qmake qtbase5-dev qtbase5-dev-tools libqt5network5 python3
+- Qt 5.x or Qt 6.x installed
+- Python 3.x installed
+- Linux/macOS (Windows also supported)
 
-# Fedora
-sudo dnf install qt5-qtbase-devel python3
-
-# macOS
-brew install qt@5 python3
-```
-
-## Step 1: Build (2 minutes)
+## Step 1: Build the Applications (1 minute)
 
 ```bash
-# Build both applications
+cd /workspace
 ./build_all.sh
 ```
 
-## Step 2: Create a Design (1 minute)
+This builds:
+- Designer Application for creating radar system layouts
+- Runtime Application for real-time health monitoring
+
+## Step 2: Design Your Radar System (1 minute)
 
 ```bash
-# Start Designer Application
 ./DesignerApp/DesignerApp
 ```
 
-1. Drag a **Circle** to the canvas (left side)
-2. Drag a **Square** to the canvas (middle)
-3. Drag a **Triangle** to the canvas (right side)
-4. Click **"Save Design"**
-5. Save as `test.design`
-6. Close the Designer Application
+1. **Drag subsystems** from the left panel to the canvas:
+   - Antenna
+   - Power System
+   - Liquid Cooling Unit
+   - Communication System
+   - Radar Computer
 
-## Step 3: Run Runtime Application (30 seconds)
+2. **Position them** to represent your radar system layout
+
+3. **Save the design**:
+   - Click "Save Design"
+   - Save as `radar_system.design`
+   - Note the subsystem IDs shown (e.g., antenna_1, power_1)
+
+## Step 3: Start the Monitoring Application (30 seconds)
 
 ```bash
-# Start Runtime Application
 ./RuntimeApp/RuntimeApp
 ```
 
-1. Click **"Load Design"**
-2. Select `test.design`
-3. You should see your three components
-4. Keep this window open
+1. Click "Load Design"
+2. Select `radar_system.design`
+3. The server starts automatically on port 12345
 
-## Step 4: Start External Systems (30 seconds)
+## Step 4: Start Health Monitors (30 seconds)
 
 ```bash
-# In a new terminal
 cd ExternalSystems
-python3 run_multiple_systems.py
+python3 run_multiple_systems.py --components antenna_1 power_1 cooling_1 comm_1 computer_1
 ```
 
-## Step 5: Watch the Magic! (1 minute)
+Or start individual monitors:
+```bash
+python3 external_system.py antenna_1 &
+python3 external_system.py power_1 &
+python3 external_system.py cooling_1 &
+```
 
-- **Canvas**: Watch components change colors and sizes in real-time
-- **Analytics**: See statistics update as messages arrive
-- **Status Bar**: Shows connected clients (should be 3)
+## Step 5: Watch the Magic! (ongoing)
 
-Press `Ctrl+C` in the terminal to stop external systems.
+You should now see:
+- **Subsystems changing colors** based on health status:
+  - Green = Operational (90-100%)
+  - Yellow = Warning (70-89%)
+  - Orange = Degraded (40-69%)
+  - Red = Critical (10-39%)
+  - Gray = Offline (0-9%)
 
-## What's Happening?
+- **Analytics updating** in real-time:
+  - Health update counts
+  - Current status and health levels
+  - Change statistics
 
-1. **Designer App** created a layout with 3 components (IDs: component_1, component_2, component_3)
-2. **Runtime App** loaded the layout and started a TCP server on port 12345
-3. **External Systems** connected to the server and send periodic messages
-4. Each message contains a random color and size
-5. Runtime App updates components and tracks analytics
+## Understanding the Health Simulation
 
-## Next Steps
+The external health monitors simulate realistic radar subsystem behavior:
 
-### Customize Update Speed
+- **Gradual health changes**: Health slowly increases or decreases
+- **Random events** (10% chance per update):
+  - Health spike (recovery)
+  - Health drop (failure)
+  - System restoration (full recovery)
+
+## Customization
+
+### Change Update Interval
 
 ```bash
-# Slower updates (5 seconds)
+# Update every 5 seconds instead of 2
 python3 run_multiple_systems.py --interval 5.0
-
-# Faster updates (0.5 seconds)  
-python3 run_multiple_systems.py --interval 0.5
 ```
 
-### Run Individual Systems
+### Monitor Specific Subsystems
 
 ```bash
-# Control just one component
-python3 external_system.py component_1 --interval 1.0
+# Only monitor antenna and power system
+python3 run_multiple_systems.py --components antenna_1 power_1
 ```
 
-### Create Custom Designs
+### Use Different Subsystem IDs
 
-1. Open Designer App
-2. Create any layout you want
-3. Note the component IDs in the Analytics panel
-4. Save your design
-5. Load it in Runtime App
-6. Start external systems with matching component IDs:
+In Designer App, each subsystem gets an ID like `component_1`, `component_2`, etc.
+Match these IDs when starting health monitors:
 
 ```bash
-python3 run_multiple_systems.py --components component_1 component_2 component_3 component_4
+python3 external_system.py component_1  # For first subsystem
+python3 external_system.py component_2  # For second subsystem
 ```
+
+## System Architecture at a Glance
+
+```
+Designer App                Runtime Monitor            External Monitors
+    │                            │                           │
+    │ 1. Create layout           │                           │
+    │ ──────────────────>        │                           │
+    │                            │                           │
+    │ 2. Save design             │                           │
+    │ ──────────>                │                           │
+    │           design.file      │                           │
+    │                            │ 3. Load design            │
+    │                            │ <───────────              │
+    │                            │                           │
+    │                            │ 4. Start TCP:12345        │
+    │                            │ <═══════════════════════> │
+    │                            │                           │
+    │                            │ 5. Health updates         │
+    │                            │ <─────────────────────── │
+    │                            │                           │
+    │                            │ 6. Update display         │
+    │                            │ ─────────                │
+```
+
+## Message Protocol
+
+Health updates are sent as JSON via TCP:
+
+```json
+{
+  "component_id": "antenna_1",
+  "color": "#00FF00",
+  "size": 95.5
+}
+```
+
+- **component_id**: Subsystem identifier
+- **color**: Health status color (green/yellow/orange/red/gray)
+- **size**: Health percentage (0-100)
 
 ## Troubleshooting
 
-### Build fails with "qmake not found"
+### Applications won't build
 ```bash
-# Install Qt development tools (see Prerequisites above)
+# Install Qt
+sudo apt-get install qt5-qmake qtbase5-dev qtbase5-dev-tools libqt5network5
 ```
 
-### External systems can't connect
-```bash
-# Make sure Runtime App is running and has loaded a design
-# Check the status bar shows "Server Status: Running on port 12345"
-```
+### Health monitors can't connect
+- Make sure Runtime App is running
+- Make sure you've loaded a design
+- Check that subsystem IDs match
 
-### Components don't update
-```bash
-# Verify component IDs match:
-# - Designer App shows IDs in Analytics panel
-# - External systems must use the same IDs
-```
+### No updates showing
+- Verify subsystem IDs match between design and monitors
+- Check External Systems console for error messages
+- Ensure Runtime App shows "Clients: N" where N > 0
 
-## Tips
+## Next Steps
 
-- **Component IDs** start from component_1 and increment automatically
-- **Default colors** are blue, but will change immediately when external systems connect
-- **Size range** is typically 30-100, but can be customized with `--size-min` and `--size-max`
-- **Multiple clients** are supported - run as many external systems as you want!
+- **Custom layouts**: Design complex radar system architectures
+- **Custom health data**: Write your own health monitoring scripts
+- **Real integration**: Connect to actual radar subsystems
+- **Extended analytics**: Track historical health trends
 
-## System Architecture
-
-```
-Designer App → Save Design → Runtime App ← External Systems
-                 (.design)      (TCP :12345)    (JSON messages)
-```
-
-## Example Workflow
+## Quick Commands Reference
 
 ```bash
-# Terminal 1: Build
+# Build everything
 ./build_all.sh
 
-# Terminal 2: Design (GUI)
+# Clean build artifacts
+./clean_all.sh
+
+# Run Designer
 ./DesignerApp/DesignerApp
-# Create layout, save as test.design, close
 
-# Terminal 2: Runtime (GUI)
-./RuntimeApp/RuntimeApp  
-# Load test.design, wait for connections
+# Run Runtime Monitor
+./RuntimeApp/RuntimeApp
 
-# Terminal 3: Simulators
-cd ExternalSystems
-python3 run_multiple_systems.py
-# Watch the components animate!
+# Run all health monitors
+cd ExternalSystems && python3 run_multiple_systems.py
+
+# Run single health monitor
+python3 external_system.py antenna_1
+
+# Custom interval
+python3 external_system.py antenna_1 --interval 5.0
 ```
 
-Enjoy! 🎨
+## Have Fun Monitoring!
+
+You now have a fully functional Radar System Monitoring application. Experiment with:
+- Different subsystem layouts
+- Multiple subsystems
+- Custom health patterns
+- Integration with real data sources
+
+For more details, see the full [README.md](README.md).

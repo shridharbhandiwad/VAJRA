@@ -1,37 +1,43 @@
-# Component Editor and Analytics System
+# Radar System Monitoring Application
 
-A comprehensive Qt-based application system for designing, deploying, and monitoring dynamic component-based applications. This system consists of three main parts:
+A comprehensive Qt-based application system for designing, deploying, and monitoring radar subsystems in real-time. This system consists of three main parts:
 
-1. **Designer Application** - Visual editor for creating component layouts
-2. **Runtime Application** - Displays components and receives real-time updates from external systems
-3. **External System Simulators** - Python scripts that simulate external systems sending update messages
+1. **Designer Application** - Visual editor for creating radar system layouts
+2. **Runtime Application** - Real-time health monitoring display for radar subsystems
+3. **External Subsystem Simulators** - Python scripts that simulate radar subsystems sending health status updates
 
 ## System Overview
 
 ### Designer Application
 
-The Designer Application provides a visual interface for creating component layouts with:
-- **All Components Panel** - Draggable component list (Circle, Square, Triangle)
-- **Designer View** - Canvas for placing and arranging components
-- **Analytics Panel** - Statistics about components on the canvas
+The Designer Application provides a visual interface for creating radar system layouts with:
+- **Radar Subsystems Panel** - Draggable subsystem list (Antenna, Power System, Liquid Cooling Unit, Communication System, Radar Computer)
+- **Designer View** - Canvas for placing and arranging subsystems
+- **Analytics Panel** - Statistics about subsystems on the canvas
 - **Save/Load** - Export designs to `.design` files
 
 ### Runtime Application
 
-The Runtime Application is the production application that:
-- Loads designs created by the Designer Application
-- Receives messages from external systems via TCP socket (port 12345)
-- Updates component colors and sizes based on received messages
-- Tracks analytics: message counts, color changes, size changes
-- Does NOT include the component list panel (canvas and analytics only)
+The Runtime Application is the monitoring application that:
+- Loads layouts created by the Designer Application
+- Receives health status messages from external subsystems via TCP socket (port 12345)
+- Updates subsystem visual indicators based on health status
+- Tracks analytics: health updates, status changes, health level changes
+- Displays real-time health status with color coding:
+  - **Green** - Operational (90-100% health)
+  - **Yellow** - Warning (70-89% health)
+  - **Orange** - Degraded (40-69% health)
+  - **Red** - Critical (10-39% health)
+  - **Gray** - Offline (0-9% health)
 
-### External Systems
+### External Subsystem Simulators
 
 Python simulators that:
 - Connect to the Runtime Application via TCP
-- Send periodic JSON messages to update specific components
-- Each external system controls one component (by ID)
-- Messages include: component_id, color, size
+- Send periodic health status messages
+- Simulate realistic health degradation and recovery
+- Generate random events (health spikes, drops, system restoration)
+- Each external system monitors one subsystem (by ID)
 
 ## Architecture
 
@@ -40,10 +46,12 @@ Python simulators that:
 │ Designer App        │
 │                     │
 │  ┌──────────────┐   │
-│  │ Components   │   │
-│  │ - Circle     │   │
-│  │ - Square     │   │
-│  │ - Triangle   │   │
+│  │ Subsystems   │   │
+│  │ - Antenna    │   │
+│  │ - Power      │   │
+│  │ - Cooling    │   │
+│  │ - Comm       │   │
+│  │ - Computer   │   │
 │  └──────────────┘   │
 │                     │
 │  ┌──────────────┐   │
@@ -63,21 +71,31 @@ Python simulators that:
          │
          ▼
 ┌─────────────────────┐       ┌─────────────────────┐
-│ Runtime App         │◄──────│ External Systems    │
+│ Runtime Monitor     │◄──────│ External Subsystems │
 │                     │ TCP   │                     │
 │  ┌──────────────┐   │:12345 │  ┌──────────────┐   │
-│  │ Canvas       │◄──┼───────┤  │ System 1     │   │
-│  │ (display)    │   │       │  │ (component_1)│   │
+│  │ Radar View   │◄──┼───────┤  │ Antenna      │   │
+│  │ (real-time)  │   │       │  │ Health Mon.  │   │
 │  └──────────────┘   │       │  └──────────────┘   │
 │                     │       │                     │
 │  ┌──────────────┐   │       │  ┌──────────────┐   │
-│  │ Analytics    │   │       │  │ System 2     │   │
-│  │ (real-time)  │   │       │  │ (component_2)│   │
+│  │ Health       │   │       │  │ Power System │   │
+│  │ Analytics    │   │       │  │ Health Mon.  │   │
 │  └──────────────┘   │       │  └──────────────┘   │
 │                     │       │                     │
 │  [Load Design]      │       │  ┌──────────────┐   │
-└─────────────────────┘       │  │ System 3     │   │
-                              │  │ (component_3)│   │
+└─────────────────────┘       │  │ Cooling Unit │   │
+                              │  │ Health Mon.  │   │
+                              │  └──────────────┘   │
+                              │                     │
+                              │  ┌──────────────┐   │
+                              │  │ Comm System  │   │
+                              │  │ Health Mon.  │   │
+                              │  └──────────────┘   │
+                              │                     │
+                              │  ┌──────────────┐   │
+                              │  │ Radar Comp.  │   │
+                              │  │ Health Mon.  │   │
                               │  └──────────────┘   │
                               └─────────────────────┘
 ```
@@ -89,7 +107,7 @@ Python simulators that:
 - C++ compiler (g++, clang, or MSVC)
 - Qt development tools (qmake, Qt Creator optional)
 
-### For External Systems
+### For External Subsystem Simulators
 - Python 3.x (standard library only, no external packages needed)
 
 ## Building
@@ -131,19 +149,19 @@ cd ..
 
 ### Complete Workflow
 
-#### Step 1: Design Your Layout
+#### Step 1: Design Your Radar System Layout
 
 ```bash
 # Run Designer Application
 ./DesignerApp/DesignerApp
 ```
 
-1. Drag components (Circle, Square, Triangle) from the left panel to the canvas
-2. Position components as desired
-3. Note the component IDs (e.g., component_1, component_2)
-4. Click "Save Design" and save as `mydesign.design`
+1. Drag subsystems (Antenna, Power System, etc.) from the left panel to the canvas
+2. Position subsystems as desired to represent your radar system layout
+3. Note the subsystem IDs (e.g., antenna_1, power_1, cooling_1, comm_1, computer_1)
+4. Click "Save Design" and save as `radar_system.design`
 
-#### Step 2: Run Runtime Application
+#### Step 2: Run Runtime Monitoring Application
 
 ```bash
 # Run Runtime Application
@@ -151,84 +169,122 @@ cd ..
 ```
 
 1. Click "Load Design"
-2. Select your saved `.design` file
-3. The canvas will display your components
-4. The server will start listening on port 12345
+2. Select your saved `radar_system.design` file
+3. The canvas will display your radar subsystems
+4. The server will start listening on port 12345 for health updates
 
-#### Step 3: Start External Systems
+#### Step 3: Start Subsystem Health Monitors
 
 ```bash
 cd ExternalSystems
 
-# Option 1: Run individual systems
-python3 external_system.py component_1 &
-python3 external_system.py component_2 &
-python3 external_system.py component_3 &
+# Option 1: Run individual health monitors
+python3 external_system.py antenna_1 &
+python3 external_system.py power_1 &
+python3 external_system.py cooling_1 &
+python3 external_system.py comm_1 &
+python3 external_system.py computer_1 &
 
-# Option 2: Run multiple systems at once
-python3 run_multiple_systems.py --components component_1 component_2 component_3
+# Option 2: Run all monitors at once (recommended)
+python3 run_multiple_systems.py --components antenna_1 power_1 cooling_1 comm_1 computer_1
 ```
 
-#### Step 4: Watch Real-Time Updates
+#### Step 4: Watch Real-Time Health Monitoring
 
-- Components will change color and size based on messages from external systems
-- The Analytics panel shows statistics:
-  - Number of messages received per component
-  - Current color and size
-  - Number of color changes
-  - Number of size changes
-  - Total messages across all components
+- Subsystems will change color based on health status
+- The Analytics panel shows:
+  - Health update counts per subsystem
+  - Current status color and health level
+  - Number of status and level changes
+  - Total health updates across all subsystems
 
-## Message Protocol
+## Health Status Protocol
 
-External systems communicate with the Runtime Application via TCP socket using JSON messages:
+External subsystems communicate with the Runtime Application via TCP socket using JSON messages:
 
 ### Message Format
 
 ```json
 {
-  "component_id": "component_1",
-  "color": "#FF0000",
-  "size": 75.5
+  "component_id": "antenna_1",
+  "color": "#00FF00",
+  "size": 95.5
 }
 ```
 
+### Health Status Mapping
+
+| Health Level | Status | Color | Description |
+|-------------|--------|-------|-------------|
+| 90-100% | Operational | Green (#00FF00) | Normal operation |
+| 70-89% | Warning | Yellow (#FFFF00) | Minor issues detected |
+| 40-69% | Degraded | Orange (#FFA500) | Performance degraded |
+| 10-39% | Critical | Red (#FF0000) | Critical issues |
+| 0-9% | Offline | Gray (#808080) | System offline |
+
 ### Fields
-- `component_id` (string): ID of the component to update
-- `color` (string): Hex color code (e.g., "#FF0000" for red)
-- `size` (number): Component size (recommended: 30-100)
+- `component_id` (string): ID of the subsystem to update
+- `color` (string): Hex color code representing health status
+- `size` (number): Health percentage (0-100)
 
 ### Connection
 - **Protocol**: TCP
 - **Port**: 12345
 - **Format**: JSON, one message per line (newline-delimited)
 
+## Radar Subsystems
+
+### Antenna
+- Primary radar signal transmission and reception
+- Health indicators: signal strength, alignment, mechanical status
+- Visual: Dish antenna with support structure
+
+### Power System
+- Provides power to all radar components
+- Health indicators: voltage levels, current draw, battery status
+- Visual: Battery/power unit with lightning bolt
+
+### Liquid Cooling Unit
+- Maintains optimal temperature for radar components
+- Health indicators: coolant temperature, flow rate, pump status
+- Visual: Cooling system with pipes and radiators
+
+### Communication System
+- Handles data transmission and network connectivity
+- Health indicators: signal quality, bandwidth, link status
+- Visual: Radio tower with signal waves
+
+### Radar Computer
+- Processes radar data and controls system operations
+- Health indicators: CPU usage, memory, processing capacity
+- Visual: Computer unit with circuit patterns
+
 ## Examples
 
-### Create a Simple Design
+### Create a Radar System Layout
 
 1. Start Designer Application
-2. Drag one Circle, one Square, and one Triangle to canvas
-3. Arrange them in a row
-4. Save as `simple.design`
+2. Drag one of each subsystem type to canvas
+3. Arrange them to represent your radar system architecture
+4. Save as `my_radar.design`
 
-### Test with External Systems
+### Monitor with Simulated Health Data
 
 ```bash
-# Terminal 1: Start Runtime App
+# Terminal 1: Start Runtime Monitor
 ./RuntimeApp/RuntimeApp
-# Load simple.design
+# Load my_radar.design
 
-# Terminal 2: Start simulators
+# Terminal 2: Start health simulators
 cd ExternalSystems
-python3 run_multiple_systems.py
+python3 run_multiple_systems.py --components antenna_1 power_1 cooling_1 comm_1 computer_1
 ```
 
-Watch the components animate with changing colors and sizes!
+Watch the subsystems change colors and sizes based on simulated health data!
 
-### Custom External System
+### Custom Health Monitor
 
-Create your own external system by connecting to port 12345 and sending JSON messages:
+Create your own health monitor by connecting to port 12345 and sending JSON messages:
 
 ```python
 import socket
@@ -239,10 +295,11 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect(('localhost', 12345))
 
 while True:
+    # Simulate operational status
     message = {
-        "component_id": "component_1",
-        "color": "#00FF00",
-        "size": 60.0
+        "component_id": "antenna_1",
+        "color": "#00FF00",  # Green - operational
+        "size": 95.0         # 95% health
     }
     sock.sendall((json.dumps(message) + '\n').encode('utf-8'))
     time.sleep(2)
@@ -256,23 +313,23 @@ while True:
 │   ├── DesignerApp.pro       # Qt project file
 │   ├── main.cpp
 │   ├── mainwindow.cpp/h      # Main window with UI
-│   ├── component.cpp/h       # Component graphics item
+│   ├── component.cpp/h       # Subsystem graphics item
 │   ├── canvas.cpp/h          # Canvas widget
-│   ├── componentlist.cpp/h   # Component list with drag/drop
+│   ├── componentlist.cpp/h   # Subsystem list with drag/drop
 │   └── analytics.cpp/h       # Analytics widget
 │
-├── RuntimeApp/               # Runtime Application
+├── RuntimeApp/               # Runtime Monitoring Application
 │   ├── RuntimeApp.pro        # Qt project file
 │   ├── main.cpp
 │   ├── mainwindow.cpp/h      # Main window with UI
-│   ├── component.cpp/h       # Component graphics item
+│   ├── component.cpp/h       # Subsystem graphics item
 │   ├── canvas.cpp/h          # Canvas widget
-│   ├── analytics.cpp/h       # Analytics widget
-│   └── messageserver.cpp/h   # TCP server for messages
+│   ├── analytics.cpp/h       # Health analytics widget
+│   └── messageserver.cpp/h   # TCP server for health updates
 │
-├── ExternalSystems/          # External system simulators
-│   ├── external_system.py    # Single system simulator
-│   ├── run_multiple_systems.py  # Multi-system launcher
+├── ExternalSystems/          # Subsystem health simulators
+│   ├── external_system.py    # Single subsystem health monitor
+│   ├── run_multiple_systems.py  # Multi-monitor launcher
 │   └── README.md
 │
 ├── build_all.sh              # Build script (Linux/macOS)
@@ -283,26 +340,27 @@ while True:
 ## Features
 
 ### Designer Application Features
-- ✓ Drag-and-drop component placement
-- ✓ Three component types: Circle, Square, Triangle
-- ✓ Save/Load designs
-- ✓ Component analytics
-- ✓ Visual component selection
+- ✓ Drag-and-drop subsystem placement
+- ✓ Five subsystem types: Antenna, Power System, Liquid Cooling Unit, Communication System, Radar Computer
+- ✓ Save/Load system layouts
+- ✓ Subsystem analytics
+- ✓ Visual subsystem icons
 
 ### Runtime Application Features
-- ✓ Load designs from Designer App
-- ✓ TCP server for external communication
-- ✓ Real-time component updates
-- ✓ Multi-client support
-- ✓ Comprehensive analytics tracking
+- ✓ Load layouts from Designer App
+- ✓ TCP server for external health monitoring
+- ✓ Real-time subsystem health updates
+- ✓ Multi-client support (multiple subsystems simultaneously)
+- ✓ Color-coded health status
+- ✓ Comprehensive health analytics
 - ✓ Connection status monitoring
 
-### External System Features
-- ✓ Random color generation from palette
-- ✓ Random size generation within range
+### External Subsystem Features
+- ✓ Realistic health simulation with degradation
+- ✓ Random event generation (spikes, drops, restoration)
 - ✓ Configurable update intervals
 - ✓ Command-line configuration
-- ✓ Multi-system manager
+- ✓ Multi-subsystem manager
 - ✓ Automatic reconnection
 
 ## Troubleshooting
@@ -333,23 +391,23 @@ sudo apt-get install qtbase5-dev libqt5network5
 - Check if port 12345 is already in use: `lsof -i :12345`
 - Try a different port (requires code modification)
 
-**Problem**: External systems can't connect
+**Problem**: Health monitors can't connect
 - Ensure Runtime Application is running and loaded a design
 - Check firewall settings
 - Verify correct host and port
 
-**Problem**: Components not updating
-- Verify component IDs match between design and external systems
+**Problem**: Subsystems not updating
+- Verify subsystem IDs match between design and health monitors
 - Check external system console for connection status
 - Ensure messages are properly formatted JSON
 
 ## Extending the System
 
-### Add New Component Types
+### Add New Subsystem Types
 
 1. Update `ComponentType` enum in `component.h`
 2. Add rendering code in `Component::paint()`
-3. Add to component list in `componentlist.cpp`
+3. Add to subsystem list in `componentlist.cpp`
 4. Update type name conversions
 
 ### Change Communication Protocol
@@ -360,13 +418,23 @@ Modify `messageserver.cpp` to support different protocols:
 - MQTT for IoT scenarios
 - gRPC for microservices
 
-### Add More Analytics
+### Add More Health Metrics
 
-Enhance `analytics.cpp` to track:
-- Average size over time
-- Color histogram
-- Update frequency per component
+Enhance the health monitoring system:
+- Temperature sensors
+- Vibration analysis
+- Power consumption tracking
+- Network latency
+- Error rates
+
+### Enhanced Analytics
+
+Upgrade `analytics.cpp` to include:
 - Time-series graphs
+- Health history tracking
+- Predictive maintenance alerts
+- Export to CSV/JSON
+- Historical trends
 
 ## License
 
@@ -374,4 +442,4 @@ This project is provided as-is for educational and demonstration purposes.
 
 ## Author
 
-Created as a Qt application demonstration system.
+Created as a Qt-based Radar System Monitoring demonstration.

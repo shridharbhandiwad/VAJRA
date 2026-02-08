@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Run Multiple External Systems
-Launches multiple external system simulators, each controlling a different component
+Run Multiple Radar Subsystem Health Monitors
+Launches multiple external system simulators, each monitoring a different radar subsystem
 """
 
 import subprocess
@@ -20,10 +20,10 @@ class MultiSystemManager:
     
     def start(self):
         """Start all external systems"""
-        print("Starting External Systems Manager")
-        print(f"Components: {', '.join(self.component_ids)}")
+        print("Starting Radar Subsystem Health Monitor Manager")
+        print(f"Monitoring Subsystems: {', '.join(self.component_ids)}")
         print(f"Server: {self.host}:{self.port}")
-        print(f"Update interval: {self.interval} seconds")
+        print(f"Base update interval: {self.interval} seconds")
         print()
         
         # Give slightly different intervals to each system to avoid synchronization
@@ -40,7 +40,7 @@ class MultiSystemManager:
                 '--interval', str(comp_interval)
             ]
             
-            print(f"Launching external system for {comp_id} (interval: {comp_interval:.1f}s)")
+            print(f"Launching health monitor for {comp_id} (interval: {comp_interval:.1f}s)")
             proc = subprocess.Popen(cmd)
             self.processes.append(proc)
             
@@ -48,8 +48,8 @@ class MultiSystemManager:
             time.sleep(0.5)
         
         print()
-        print("All external systems started!")
-        print("Press Ctrl+C to stop all systems")
+        print("All health monitors started!")
+        print("Press Ctrl+C to stop all monitors")
         print()
     
     def wait(self):
@@ -68,7 +68,7 @@ class MultiSystemManager:
                 
                 time.sleep(1)
         except KeyboardInterrupt:
-            print("\nShutting down all external systems...")
+            print("\nShutting down all health monitors...")
             self.stop()
     
     def stop(self):
@@ -81,17 +81,17 @@ class MultiSystemManager:
                 proc.kill()
         
         self.processes = []
-        print("All external systems stopped")
+        print("All health monitors stopped")
 
 def main():
-    parser = argparse.ArgumentParser(description='Run Multiple External Systems')
+    parser = argparse.ArgumentParser(description='Run Multiple Radar Subsystem Health Monitors')
     parser.add_argument('--components', nargs='+', 
-                       default=['component_1', 'component_2', 'component_3'],
-                       help='Component IDs to simulate (default: component_1 component_2 component_3)')
+                       default=['antenna_1', 'power_1', 'cooling_1', 'comm_1', 'computer_1'],
+                       help='Subsystem IDs to monitor (default: antenna_1 power_1 cooling_1 comm_1 computer_1)')
     parser.add_argument('--host', default='localhost', help='Server host (default: localhost)')
     parser.add_argument('--port', type=int, default=12345, help='Server port (default: 12345)')
     parser.add_argument('--interval', type=float, default=2.0, 
-                       help='Base update interval in seconds (default: 2.0)')
+                       help='Base health update interval in seconds (default: 2.0)')
     
     args = parser.parse_args()
     

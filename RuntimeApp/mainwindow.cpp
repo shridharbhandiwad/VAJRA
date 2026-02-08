@@ -33,7 +33,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(m_messageServer, &MessageServer::clientDisconnected,
             this, &MainWindow::onClientDisconnected);
     
-    setWindowTitle("Runtime Application - Component Viewer");
+    setWindowTitle("Radar System Monitor - Real-time Health Monitoring");
     resize(1000, 700);
 }
 
@@ -66,7 +66,7 @@ void MainWindow::setupUI()
     QWidget* centerPanel = new QWidget(this);
     QVBoxLayout* centerLayout = new QVBoxLayout(centerPanel);
     
-    QLabel* canvasLabel = new QLabel("Canvas", centerPanel);
+    QLabel* canvasLabel = new QLabel("Radar System View", centerPanel);
     QFont font = canvasLabel->font();
     font.setPointSize(12);
     font.setBold(true);
@@ -74,7 +74,7 @@ void MainWindow::setupUI()
     
     m_canvas = new Canvas(centerPanel);
     
-    QLabel* hintLabel = new QLabel("Load a design to display components", centerPanel);
+    QLabel* hintLabel = new QLabel("Load a system layout to monitor subsystems", centerPanel);
     hintLabel->setAlignment(Qt::AlignCenter);
     hintLabel->setStyleSheet("color: gray; font-style: italic;");
     
@@ -126,7 +126,7 @@ void MainWindow::loadDesign()
     m_canvas->loadFromJson(json);
     
     QMessageBox::information(this, "Success", 
-        QString("Design loaded successfully!\n\nWaiting for messages from external systems..."));
+        QString("Radar system layout loaded successfully!\n\nWaiting for health updates from subsystems..."));
 }
 
 void MainWindow::onMessageReceived(const QString& componentId, const QString& color, qreal size)

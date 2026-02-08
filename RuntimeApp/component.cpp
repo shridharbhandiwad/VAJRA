@@ -32,21 +32,74 @@ void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
     qreal halfSize = m_size / 2.0;
     
     switch (m_type) {
-        case ComponentType::Circle:
+        case ComponentType::Antenna: {
+            // Draw antenna with dish and support structure
+            painter->drawEllipse(-halfSize, -halfSize * 0.6, m_size, m_size * 0.6);
+            painter->drawLine(0, halfSize * 0.3, 0, halfSize);
+            painter->drawLine(-halfSize * 0.4, halfSize, halfSize * 0.4, halfSize);
+            // Draw label
+            painter->setFont(QFont("Arial", 8));
+            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12), Qt::AlignCenter, "ANT");
+            break;
+        }
+            
+        case ComponentType::PowerSystem: {
+            // Draw power system as battery/power unit
+            painter->drawRect(-halfSize, -halfSize * 0.7, m_size, m_size * 1.4);
+            painter->drawRect(-halfSize * 0.3, -halfSize * 0.9, m_size * 0.6, m_size * 0.2);
+            // Draw power symbol
+            QPen yellowPen(Qt::yellow, 3);
+            painter->setPen(yellowPen);
+            painter->drawLine(-halfSize * 0.3, -halfSize * 0.3, 0, 0);
+            painter->drawLine(0, 0, halfSize * 0.3, halfSize * 0.3);
+            painter->setPen(QPen(Qt::black, 2));
+            painter->setFont(QFont("Arial", 8));
+            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12), Qt::AlignCenter, "PWR");
+            break;
+        }
+            
+        case ComponentType::LiquidCoolingUnit: {
+            // Draw cooling unit with pipes
             painter->drawEllipse(-halfSize, -halfSize, m_size, m_size);
+            painter->drawRect(-halfSize * 0.6, -halfSize * 1.2, m_size * 0.25, m_size * 0.25);
+            painter->drawRect(halfSize * 0.35, -halfSize * 1.2, m_size * 0.25, m_size * 0.25);
+            painter->drawLine(-halfSize * 0.5, -halfSize * 0.95, -halfSize * 0.5, -halfSize * 0.7);
+            painter->drawLine(halfSize * 0.5, -halfSize * 0.95, halfSize * 0.5, -halfSize * 0.7);
+            // Draw snowflake symbol
+            QPen bluePen(Qt::cyan, 2);
+            painter->setPen(bluePen);
+            painter->drawLine(-halfSize * 0.3, 0, halfSize * 0.3, 0);
+            painter->drawLine(0, -halfSize * 0.3, 0, halfSize * 0.3);
+            painter->setPen(QPen(Qt::black, 2));
+            painter->setFont(QFont("Arial", 8));
+            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12), Qt::AlignCenter, "COOL");
             break;
+        }
             
-        case ComponentType::Square:
-            painter->drawRect(-halfSize, -halfSize, m_size, m_size);
+        case ComponentType::CommunicationSystem: {
+            // Draw communication system with signal waves
+            painter->drawRect(-halfSize * 0.6, -halfSize * 0.6, m_size * 1.2, m_size * 1.2);
+            // Draw signal waves
+            for (int i = 1; i <= 3; i++) {
+                qreal radius = halfSize * 0.3 * i;
+                painter->drawArc(-radius, -radius, radius * 2, radius * 2, 45 * 16, 90 * 16);
+            }
+            painter->setFont(QFont("Arial", 8));
+            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12), Qt::AlignCenter, "COMM");
             break;
+        }
             
-        case ComponentType::Triangle: {
-            QPointF points[3] = {
-                QPointF(0, -halfSize),
-                QPointF(-halfSize, halfSize),
-                QPointF(halfSize, halfSize)
-            };
-            painter->drawPolygon(points, 3);
+        case ComponentType::RadarComputer: {
+            // Draw computer/processor unit
+            painter->drawRect(-halfSize, -halfSize * 0.8, m_size, m_size * 1.6);
+            // Draw circuit pattern
+            painter->drawLine(-halfSize * 0.5, -halfSize * 0.4, halfSize * 0.5, -halfSize * 0.4);
+            painter->drawLine(-halfSize * 0.5, 0, halfSize * 0.5, 0);
+            painter->drawLine(-halfSize * 0.5, halfSize * 0.4, halfSize * 0.5, halfSize * 0.4);
+            painter->drawEllipse(-halfSize * 0.3, -halfSize * 0.2, m_size * 0.2, m_size * 0.2);
+            painter->drawEllipse(halfSize * 0.1, -halfSize * 0.2, m_size * 0.2, m_size * 0.2);
+            painter->setFont(QFont("Arial", 8));
+            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12), Qt::AlignCenter, "CPU");
             break;
         }
     }
@@ -69,9 +122,11 @@ QString Component::toJson() const
 {
     QString typeStr;
     switch (m_type) {
-        case ComponentType::Circle: typeStr = "Circle"; break;
-        case ComponentType::Square: typeStr = "Square"; break;
-        case ComponentType::Triangle: typeStr = "Triangle"; break;
+        case ComponentType::Antenna: typeStr = "Antenna"; break;
+        case ComponentType::PowerSystem: typeStr = "PowerSystem"; break;
+        case ComponentType::LiquidCoolingUnit: typeStr = "LiquidCoolingUnit"; break;
+        case ComponentType::CommunicationSystem: typeStr = "CommunicationSystem"; break;
+        case ComponentType::RadarComputer: typeStr = "RadarComputer"; break;
     }
     
     return QString("{\"id\":\"%1\",\"type\":\"%2\",\"x\":%3,\"y\":%4,\"color\":\"%5\",\"size\":%6}")

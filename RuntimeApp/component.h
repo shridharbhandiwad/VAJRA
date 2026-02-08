@@ -7,9 +7,11 @@
 #include <QPainter>
 
 enum class ComponentType {
-    Circle,
-    Square,
-    Triangle
+    Antenna,
+    PowerSystem,
+    LiquidCoolingUnit,
+    CommunicationSystem,
+    RadarComputer
 };
 
 class Component : public QGraphicsItem

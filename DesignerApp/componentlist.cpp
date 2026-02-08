@@ -6,9 +6,11 @@
 ComponentList::ComponentList(QWidget* parent)
     : QListWidget(parent)
 {
-    addItem("Circle");
-    addItem("Square");
-    addItem("Triangle");
+    addItem("Antenna");
+    addItem("Power System");
+    addItem("Liquid Cooling Unit");
+    addItem("Communication System");
+    addItem("Radar Computer");
     
     setDragEnabled(true);
     setMaximumWidth(180);
