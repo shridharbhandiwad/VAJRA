@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QMessageBox>
 #include <QToolBar>
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)

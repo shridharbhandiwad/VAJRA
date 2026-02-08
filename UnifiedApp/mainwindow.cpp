@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QMessageBox>
 #include <QToolBar>
+#include <QDebug>
 
 MainWindow::MainWindow(UserRole userRole, const QString& username, QWidget* parent)
     : QMainWindow(parent)
