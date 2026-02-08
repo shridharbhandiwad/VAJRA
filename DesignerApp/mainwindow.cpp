@@ -29,15 +29,15 @@ void MainWindow::setupUI()
     toolbar->setObjectName("mainToolbar");
     toolbar->setMovable(false);
     
-    QPushButton* saveBtn = new QPushButton("💾 Save Design", this);
+    QPushButton* saveBtn = new QPushButton("SAVE DESIGN", this);
     saveBtn->setObjectName("saveButton");
     saveBtn->setToolTip("Save the current radar system design");
     
-    QPushButton* loadBtn = new QPushButton("📁 Load Design", this);
+    QPushButton* loadBtn = new QPushButton("LOAD DESIGN", this);
     loadBtn->setObjectName("loadButton");
     loadBtn->setToolTip("Load an existing radar system design");
     
-    QPushButton* clearBtn = new QPushButton("🗑 Clear Canvas", this);
+    QPushButton* clearBtn = new QPushButton("CLEAR CANVAS", this);
     clearBtn->setObjectName("clearButton");
     clearBtn->setToolTip("Clear all components from the canvas");
     
@@ -63,12 +63,8 @@ void MainWindow::setupUI()
     leftLayout->setSpacing(10);
     leftLayout->setContentsMargins(12, 12, 12, 12);
     
-    QLabel* componentsLabel = new QLabel("🔧 Radar Subsystems", leftPanel);
+    QLabel* componentsLabel = new QLabel("RADAR SUBSYSTEMS", leftPanel);
     componentsLabel->setObjectName("componentsLabel");
-    QFont font = componentsLabel->font();
-    font.setPointSize(13);
-    font.setBold(true);
-    componentsLabel->setFont(font);
     
     m_componentList = new ComponentList(leftPanel);
     m_componentList->setObjectName("componentList");
@@ -86,17 +82,13 @@ void MainWindow::setupUI()
     centerLayout->setSpacing(10);
     centerLayout->setContentsMargins(12, 12, 12, 12);
     
-    QLabel* canvasLabel = new QLabel("🎨 Designer View", centerPanel);
+    QLabel* canvasLabel = new QLabel("DESIGNER VIEW", centerPanel);
     canvasLabel->setProperty("heading", true);
-    QFont canvasFont = canvasLabel->font();
-    canvasFont.setPointSize(14);
-    canvasFont.setBold(true);
-    canvasLabel->setFont(canvasFont);
     
     m_canvas = new Canvas(centerPanel);
     m_canvas->setObjectName("mainCanvas");
     
-    QLabel* hintLabel = new QLabel("✨ Drag and drop radar components onto the canvas to create your system layout", centerPanel);
+    QLabel* hintLabel = new QLabel("Drag and drop radar components onto the canvas to create your system layout", centerPanel);
     hintLabel->setProperty("hint", true);
     hintLabel->setAlignment(Qt::AlignCenter);
     
@@ -112,12 +104,8 @@ void MainWindow::setupUI()
     rightLayout->setSpacing(10);
     rightLayout->setContentsMargins(12, 12, 12, 12);
     
-    QLabel* analyticsLabel = new QLabel("📊 Analytics", rightPanel);
+    QLabel* analyticsLabel = new QLabel("ANALYTICS", rightPanel);
     analyticsLabel->setProperty("heading", true);
-    QFont analyticsFont = analyticsLabel->font();
-    analyticsFont.setPointSize(14);
-    analyticsFont.setBold(true);
-    analyticsLabel->setFont(analyticsFont);
     
     m_analytics = new Analytics(rightPanel);
     m_analytics->setObjectName("analyticsPanel");

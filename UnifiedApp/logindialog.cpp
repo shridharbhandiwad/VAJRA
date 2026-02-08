@@ -39,14 +39,14 @@ LoginDialog::LoginDialog(QWidget* parent)
     loadStyleSheet();
     setupAnimations();
     
-    setWindowTitle("Radar System - Enterprise Login");
+    setWindowTitle("Radar System - Access Control");
     setModal(true);
-    setFixedSize(520, 680);
+    setFixedSize(480, 620);
     setObjectName("LoginDialog");
     
-    // Remove window frame for modern look
-    setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
-    setAttribute(Qt::WA_TranslucentBackground);
+    // Standard window frame for professional look
+    setWindowFlags(Qt::Dialog);
+    setAttribute(Qt::WA_DeleteOnClose, false);
 }
 
 void LoginDialog::setupUI()
@@ -57,26 +57,26 @@ void LoginDialog::setupUI()
     
     // ========== HEADER SECTION ==========
     QVBoxLayout* headerLayout = new QVBoxLayout();
-    headerLayout->setSpacing(8);
+    headerLayout->setSpacing(6);
     
     // Title - Main heading
-    m_titleLabel = new QLabel("RADAR SYSTEM", this);
+    m_titleLabel = new QLabel("RADAR MONITORING SYSTEM", this);
     m_titleLabel->setObjectName("titleLabel");
     m_titleLabel->setAlignment(Qt::AlignCenter);
     
     // Subtitle
-    m_subtitleLabel = new QLabel("Enterprise Control Platform", this);
+    m_subtitleLabel = new QLabel("ACCESS CONTROL", this);
     m_subtitleLabel->setObjectName("subtitleLabel");
     m_subtitleLabel->setAlignment(Qt::AlignCenter);
     
     // Welcome message
-    m_welcomeLabel = new QLabel("Welcome Back", this);
+    m_welcomeLabel = new QLabel("Authentication Required", this);
     m_welcomeLabel->setObjectName("welcomeLabel");
     m_welcomeLabel->setAlignment(Qt::AlignCenter);
     
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addWidget(m_subtitleLabel);
-    headerLayout->addSpacing(15);
+    headerLayout->addSpacing(12);
     headerLayout->addWidget(m_welcomeLabel);
     
     // ========== INPUT FRAME ==========
@@ -115,9 +115,9 @@ void LoginDialog::setupUI()
     m_passwordEdit->setEchoMode(QLineEdit::Password);
     m_passwordEdit->setMinimumHeight(48);
     
-    m_togglePasswordBtn = new QPushButton("👁", this);
+    m_togglePasswordBtn = new QPushButton("SHOW", this);
     m_togglePasswordBtn->setObjectName("togglePassword");
-    m_togglePasswordBtn->setFixedSize(48, 48);
+    m_togglePasswordBtn->setFixedSize(52, 48);
     m_togglePasswordBtn->setCursor(Qt::PointingHandCursor);
     m_togglePasswordBtn->setToolTip("Toggle password visibility");
     
@@ -173,7 +173,7 @@ void LoginDialog::setupUI()
     QVBoxLayout* infoPanelLayout = new QVBoxLayout(infoPanel);
     
     QLabel* infoPanelText = new QLabel(
-        "🔐 <b>Default Credentials</b><br><br>"
+        "<b>DEFAULT CREDENTIALS</b><br><br>"
         "Designer Mode: <b>Designer</b> / <b>designer</b><br>"
         "Runtime Mode: <b>User</b> / <b>user</b>",
         this
@@ -185,7 +185,7 @@ void LoginDialog::setupUI()
     infoPanelLayout->addWidget(infoPanelText);
     
     // ========== FOOTER ==========
-    QLabel* footerLabel = new QLabel("© 2026 Radar System · Secure Access Portal", this);
+    QLabel* footerLabel = new QLabel("RADAR MONITORING SYSTEM v2.1 | AUTHORIZED ACCESS ONLY", this);
     footerLabel->setObjectName("footerLabel");
     footerLabel->setAlignment(Qt::AlignCenter);
     
@@ -262,27 +262,7 @@ void LoginDialog::showEvent(QShowEvent* event)
 
 void LoginDialog::paintEvent(QPaintEvent* event)
 {
-    Q_UNUSED(event);
-    
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
-    
-    // Draw gradient background
-    QLinearGradient gradient(0, 0, width(), height());
-    gradient.setColorAt(0.0, QColor(15, 32, 39));     // #0f2027
-    gradient.setColorAt(0.5, QColor(32, 58, 67));     // #203a43
-    gradient.setColorAt(1.0, QColor(44, 83, 100));    // #2c5364
-    
-    // Draw rounded rectangle with gradient
-    painter.setBrush(gradient);
-    painter.setPen(Qt::NoPen);
-    painter.drawRoundedRect(rect(), 12, 12);
-    
-    // Draw subtle border
-    QPen borderPen(QColor(255, 255, 255, 30), 1);
-    painter.setPen(borderPen);
-    painter.setBrush(Qt::NoBrush);
-    painter.drawRoundedRect(rect().adjusted(0, 0, -1, -1), 12, 12);
+    QDialog::paintEvent(event);
 }
 
 void LoginDialog::onLoginClicked()
@@ -295,7 +275,7 @@ void LoginDialog::onLoginClicked()
     
     // Input validation
     if (username.isEmpty() || password.isEmpty()) {
-        m_errorLabel->setText("⚠️ Please enter both username and password");
+        m_errorLabel->setText("ERROR: Username and password required");
         m_errorLabel->setVisible(true);
         animateError();
         return;
@@ -311,29 +291,29 @@ void LoginDialog::onLoginClicked()
         if (username == "Designer" && password == "designer") {
             m_userRole = UserRole::Designer;
             m_username = username;
-            m_successLabel->setText("✅ Authentication successful! Welcome, Designer.");
+            m_successLabel->setText("AUTHENTICATION SUCCESS - DESIGNER ACCESS GRANTED");
             m_successLabel->setVisible(true);
             animateSuccess();
             
             // Close dialog after success animation
-            QTimer::singleShot(1000, this, &QDialog::accept);
+            QTimer::singleShot(800, this, &QDialog::accept);
             
         } else if (username == "User" && password == "user") {
             m_userRole = UserRole::User;
             m_username = username;
-            m_successLabel->setText("✅ Authentication successful! Welcome, User.");
+            m_successLabel->setText("AUTHENTICATION SUCCESS - RUNTIME ACCESS GRANTED");
             m_successLabel->setVisible(true);
             animateSuccess();
             
             // Close dialog after success animation
-            QTimer::singleShot(1000, this, &QDialog::accept);
+            QTimer::singleShot(800, this, &QDialog::accept);
             
         } else {
             m_loginAttempts++;
-            QString errorMsg = QString("❌ Invalid credentials! Attempt %1 of 3").arg(m_loginAttempts);
+            QString errorMsg = QString("AUTHENTICATION FAILED - ATTEMPT %1 OF 3").arg(m_loginAttempts);
             
             if (m_loginAttempts >= 3) {
-                errorMsg = "🚫 Maximum login attempts reached. Please try again later.";
+                errorMsg = "ACCESS DENIED - MAXIMUM ATTEMPTS EXCEEDED";
                 m_loginButton->setEnabled(false);
                 m_usernameEdit->setEnabled(false);
                 m_passwordEdit->setEnabled(false);
@@ -386,10 +366,10 @@ void LoginDialog::togglePasswordVisibility()
     
     if (m_passwordVisible) {
         m_passwordEdit->setEchoMode(QLineEdit::Normal);
-        m_togglePasswordBtn->setText("🔒");
+        m_togglePasswordBtn->setText("HIDE");
     } else {
         m_passwordEdit->setEchoMode(QLineEdit::Password);
-        m_togglePasswordBtn->setText("👁");
+        m_togglePasswordBtn->setText("SHOW");
     }
 }
 
