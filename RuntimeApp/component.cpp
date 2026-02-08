@@ -56,8 +56,6 @@ void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setRenderHint(QPainter::SmoothPixmapTransform);
     
-    qreal halfSize = m_size / 2.0;
-    
     // If we have an image, draw it; otherwise fallback to geometric representation
     if (m_hasImage && !m_image.isNull()) {
         // Calculate image drawing area - make it slightly larger for better visibility
