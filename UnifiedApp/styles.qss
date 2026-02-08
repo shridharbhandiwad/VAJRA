@@ -60,6 +60,7 @@ QLineEdit {
     color: #e8eaed;
     selection-background-color: #1565c0;
     selection-color: white;
+    min-height: 48px;
 }
 
 QLineEdit:focus {
@@ -309,16 +310,58 @@ QPushButton#linkButton:pressed {
     color: #1976d2;
 }
 
+/* Password Container Frame */
+QFrame#passwordContainer {
+    background-color: #24272e;
+    border: 1px solid #3a3f4b;
+    border-radius: 2px;
+}
+
+QFrame#passwordContainer:focus-within {
+    border: 1px solid #1976d2;
+}
+
+/* Password Input (special styling to integrate with toggle button) */
+QLineEdit#passwordInput {
+    background-color: transparent;
+    border: none;
+    border-right: 1px solid #3a3f4b;
+    border-radius: 0px;
+    padding: 12px 14px;
+}
+
+QLineEdit#passwordInput:focus {
+    background-color: transparent;
+    border: none;
+    border-right: 1px solid #4a4f5b;
+}
+
+QLineEdit#passwordInput:hover {
+    background-color: transparent;
+    border-right: 1px solid #4a4f5b;
+}
+
 /* Password Toggle Button */
 QPushButton#togglePassword {
     background: transparent;
     border: none;
-    padding: 8px;
-    color: #6c717a;
+    border-radius: 0px;
+    padding: 0px;
+    margin: 1px;
+    color: #9aa0a6;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
 QPushButton#togglePassword:hover {
-    color: #9aa0a6;
+    background: rgba(154, 160, 166, 0.1);
+    color: #c4c7cc;
+}
+
+QPushButton#togglePassword:pressed {
+    background: rgba(154, 160, 166, 0.2);
+    color: #e8eaed;
 }
 
 /* ============================================
