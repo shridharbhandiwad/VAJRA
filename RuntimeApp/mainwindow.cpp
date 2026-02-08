@@ -53,9 +53,15 @@ void MainWindow::setupUI()
 {
     // Create toolbar
     QToolBar* toolbar = addToolBar("Main Toolbar");
+    toolbar->setObjectName("mainToolbar");
+    toolbar->setMovable(false);
     
-    QPushButton* loadBtn = new QPushButton("Load Design", this);
+    QPushButton* loadBtn = new QPushButton("📁 Load Design", this);
+    loadBtn->setObjectName("loadButton");
+    loadBtn->setToolTip("Load a radar system design file");
+    
     m_statusLabel = new QLabel("Server Status: Initializing...", this);
+    m_statusLabel->setObjectName("statusLabel");
     
     toolbar->addWidget(loadBtn);
     toolbar->addSeparator();
@@ -65,23 +71,31 @@ void MainWindow::setupUI()
     
     // Create main widget and layout
     QWidget* centralWidget = new QWidget(this);
+    centralWidget->setObjectName("centralWidget");
     QHBoxLayout* mainLayout = new QHBoxLayout(centralWidget);
+    mainLayout->setSpacing(15);
+    mainLayout->setContentsMargins(15, 15, 15, 15);
     
     // Center panel - Canvas
     QWidget* centerPanel = new QWidget(this);
+    centerPanel->setObjectName("centerPanel");
     QVBoxLayout* centerLayout = new QVBoxLayout(centerPanel);
+    centerLayout->setSpacing(10);
+    centerLayout->setContentsMargins(12, 12, 12, 12);
     
-    QLabel* canvasLabel = new QLabel("Radar System View", centerPanel);
+    QLabel* canvasLabel = new QLabel("🎯 Radar System View", centerPanel);
+    canvasLabel->setProperty("heading", true);
     QFont font = canvasLabel->font();
-    font.setPointSize(12);
+    font.setPointSize(14);
     font.setBold(true);
     canvasLabel->setFont(font);
     
     m_canvas = new Canvas(centerPanel);
+    m_canvas->setObjectName("mainCanvas");
     
-    QLabel* hintLabel = new QLabel("Load a system layout to monitor subsystems", centerPanel);
+    QLabel* hintLabel = new QLabel("💡 Load a system layout to monitor subsystems in real-time", centerPanel);
+    hintLabel->setProperty("hint", true);
     hintLabel->setAlignment(Qt::AlignCenter);
-    hintLabel->setStyleSheet("color: gray; font-style: italic;");
     
     centerLayout->addWidget(canvasLabel);
     centerLayout->addWidget(hintLabel);
@@ -90,13 +104,26 @@ void MainWindow::setupUI()
     
     // Right panel - Analytics
     QWidget* rightPanel = new QWidget(this);
+    rightPanel->setObjectName("rightPanel");
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
+    rightLayout->setSpacing(10);
+    rightLayout->setContentsMargins(12, 12, 12, 12);
+    
+    QLabel* analyticsLabel = new QLabel("📊 Health Analytics", rightPanel);
+    analyticsLabel->setProperty("heading", true);
+    QFont analyticsFont = analyticsLabel->font();
+    analyticsFont.setPointSize(14);
+    analyticsFont.setBold(true);
+    analyticsLabel->setFont(analyticsFont);
     
     m_analytics = new Analytics(rightPanel);
+    m_analytics->setObjectName("analyticsPanel");
     
+    rightLayout->addWidget(analyticsLabel);
     rightLayout->addWidget(m_analytics);
     rightPanel->setLayout(rightLayout);
-    rightPanel->setMaximumWidth(300);
+    rightPanel->setMaximumWidth(320);
+    rightPanel->setMinimumWidth(280);
     
     // Add panels to main layout
     mainLayout->addWidget(centerPanel, 1);

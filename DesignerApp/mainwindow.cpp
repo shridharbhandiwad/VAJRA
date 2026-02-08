@@ -26,10 +26,20 @@ void MainWindow::setupUI()
 {
     // Create toolbar
     QToolBar* toolbar = addToolBar("Main Toolbar");
+    toolbar->setObjectName("mainToolbar");
+    toolbar->setMovable(false);
     
-    QPushButton* saveBtn = new QPushButton("Save Design", this);
-    QPushButton* loadBtn = new QPushButton("Load Design", this);
-    QPushButton* clearBtn = new QPushButton("Clear Canvas", this);
+    QPushButton* saveBtn = new QPushButton("💾 Save Design", this);
+    saveBtn->setObjectName("saveButton");
+    saveBtn->setToolTip("Save the current radar system design");
+    
+    QPushButton* loadBtn = new QPushButton("📁 Load Design", this);
+    loadBtn->setObjectName("loadButton");
+    loadBtn->setToolTip("Load an existing radar system design");
+    
+    QPushButton* clearBtn = new QPushButton("🗑 Clear Canvas", this);
+    clearBtn->setObjectName("clearButton");
+    clearBtn->setToolTip("Clear all components from the canvas");
     
     toolbar->addWidget(saveBtn);
     toolbar->addWidget(loadBtn);
@@ -41,37 +51,54 @@ void MainWindow::setupUI()
     
     // Create main widget and layout
     QWidget* centralWidget = new QWidget(this);
+    centralWidget->setObjectName("centralWidget");
     QHBoxLayout* mainLayout = new QHBoxLayout(centralWidget);
+    mainLayout->setSpacing(15);
+    mainLayout->setContentsMargins(15, 15, 15, 15);
     
     // Left panel - Components List
     QWidget* leftPanel = new QWidget(this);
+    leftPanel->setObjectName("leftPanel");
     QVBoxLayout* leftLayout = new QVBoxLayout(leftPanel);
+    leftLayout->setSpacing(10);
+    leftLayout->setContentsMargins(12, 12, 12, 12);
     
-    QLabel* componentsLabel = new QLabel("Radar Subsystems", leftPanel);
+    QLabel* componentsLabel = new QLabel("🔧 Radar Subsystems", leftPanel);
+    componentsLabel->setObjectName("componentsLabel");
     QFont font = componentsLabel->font();
-    font.setPointSize(12);
+    font.setPointSize(13);
     font.setBold(true);
     componentsLabel->setFont(font);
     
     m_componentList = new ComponentList(leftPanel);
+    m_componentList->setObjectName("componentList");
     
     leftLayout->addWidget(componentsLabel);
     leftLayout->addWidget(m_componentList);
     leftPanel->setLayout(leftLayout);
-    leftPanel->setMaximumWidth(200);
+    leftPanel->setMaximumWidth(230);
+    leftPanel->setMinimumWidth(200);
     
     // Center panel - Canvas
     QWidget* centerPanel = new QWidget(this);
+    centerPanel->setObjectName("centerPanel");
     QVBoxLayout* centerLayout = new QVBoxLayout(centerPanel);
+    centerLayout->setSpacing(10);
+    centerLayout->setContentsMargins(12, 12, 12, 12);
     
-    QLabel* canvasLabel = new QLabel("Designer View", centerPanel);
-    canvasLabel->setFont(font);
+    QLabel* canvasLabel = new QLabel("🎨 Designer View", centerPanel);
+    canvasLabel->setProperty("heading", true);
+    QFont canvasFont = canvasLabel->font();
+    canvasFont.setPointSize(14);
+    canvasFont.setBold(true);
+    canvasLabel->setFont(canvasFont);
     
     m_canvas = new Canvas(centerPanel);
+    m_canvas->setObjectName("mainCanvas");
     
-    QLabel* hintLabel = new QLabel("Drag and drop canvas", centerPanel);
+    QLabel* hintLabel = new QLabel("✨ Drag and drop radar components onto the canvas to create your system layout", centerPanel);
+    hintLabel->setProperty("hint", true);
     hintLabel->setAlignment(Qt::AlignCenter);
-    hintLabel->setStyleSheet("color: gray; font-style: italic;");
     
     centerLayout->addWidget(canvasLabel);
     centerLayout->addWidget(hintLabel);
@@ -80,13 +107,26 @@ void MainWindow::setupUI()
     
     // Right panel - Analytics
     QWidget* rightPanel = new QWidget(this);
+    rightPanel->setObjectName("rightPanel");
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
+    rightLayout->setSpacing(10);
+    rightLayout->setContentsMargins(12, 12, 12, 12);
+    
+    QLabel* analyticsLabel = new QLabel("📊 Analytics", rightPanel);
+    analyticsLabel->setProperty("heading", true);
+    QFont analyticsFont = analyticsLabel->font();
+    analyticsFont.setPointSize(14);
+    analyticsFont.setBold(true);
+    analyticsLabel->setFont(analyticsFont);
     
     m_analytics = new Analytics(rightPanel);
+    m_analytics->setObjectName("analyticsPanel");
     
+    rightLayout->addWidget(analyticsLabel);
     rightLayout->addWidget(m_analytics);
     rightPanel->setLayout(rightLayout);
-    rightPanel->setMaximumWidth(250);
+    rightPanel->setMaximumWidth(280);
+    rightPanel->setMinimumWidth(240);
     
     // Add panels to main layout
     mainLayout->addWidget(leftPanel);
