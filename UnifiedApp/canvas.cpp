@@ -4,6 +4,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QDebug>
 
 Canvas::Canvas(QWidget* parent)
     : QGraphicsView(parent)
