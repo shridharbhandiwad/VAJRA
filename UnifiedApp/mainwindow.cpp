@@ -46,10 +46,10 @@ void MainWindow::setupUI()
     QToolBar* toolbar = addToolBar("Main Toolbar");
     
     // User info label
-    m_userLabel = new QLabel(QString("Logged in as: %1 (%2)")
-        .arg(m_username)
-        .arg(m_userRole == UserRole::Designer ? "Designer" : "User"), this);
-    m_userLabel->setStyleSheet("color: #2c3e50; font-weight: bold; padding: 5px 10px;");
+    m_userLabel = new QLabel(QString("USER: %1 | MODE: %2")
+        .arg(m_username.toUpper())
+        .arg(m_userRole == UserRole::Designer ? "DESIGNER" : "RUNTIME"), this);
+    m_userLabel->setObjectName("userLabel");
     toolbar->addWidget(m_userLabel);
     toolbar->addSeparator();
     
@@ -68,15 +68,15 @@ void MainWindow::setupDesignerMode()
     toolbar->setMovable(false);
     
     // Add designer-specific buttons
-    QPushButton* saveBtn = new QPushButton("💾 Save Design", this);
+    QPushButton* saveBtn = new QPushButton("SAVE DESIGN", this);
     saveBtn->setObjectName("saveButton");
     saveBtn->setToolTip("Save the current radar system design");
     
-    QPushButton* loadBtn = new QPushButton("📁 Load Design", this);
+    QPushButton* loadBtn = new QPushButton("LOAD DESIGN", this);
     loadBtn->setObjectName("loadButton");
     loadBtn->setToolTip("Load an existing radar system design");
     
-    QPushButton* clearBtn = new QPushButton("🗑 Clear Canvas", this);
+    QPushButton* clearBtn = new QPushButton("CLEAR CANVAS", this);
     clearBtn->setObjectName("clearButton");
     clearBtn->setToolTip("Clear all components from the canvas");
     
@@ -102,12 +102,8 @@ void MainWindow::setupDesignerMode()
     leftLayout->setSpacing(10);
     leftLayout->setContentsMargins(12, 12, 12, 12);
     
-    QLabel* componentsLabel = new QLabel("🔧 Radar Subsystems", leftPanel);
+    QLabel* componentsLabel = new QLabel("RADAR SUBSYSTEMS", leftPanel);
     componentsLabel->setObjectName("componentsLabel");
-    QFont font = componentsLabel->font();
-    font.setPointSize(13);
-    font.setBold(true);
-    componentsLabel->setFont(font);
     
     m_componentList = new ComponentList(leftPanel);
     m_componentList->setObjectName("componentList");
@@ -125,17 +121,13 @@ void MainWindow::setupDesignerMode()
     centerLayout->setSpacing(10);
     centerLayout->setContentsMargins(12, 12, 12, 12);
     
-    QLabel* canvasLabel = new QLabel("🎨 Designer View", centerPanel);
+    QLabel* canvasLabel = new QLabel("DESIGNER VIEW", centerPanel);
     canvasLabel->setProperty("heading", true);
-    QFont canvasFont = canvasLabel->font();
-    canvasFont.setPointSize(14);
-    canvasFont.setBold(true);
-    canvasLabel->setFont(canvasFont);
     
     m_canvas = new Canvas(centerPanel);
     m_canvas->setObjectName("mainCanvas");
     
-    QLabel* hintLabel = new QLabel("✨ Drag and drop radar components onto the canvas to create your system layout", centerPanel);
+    QLabel* hintLabel = new QLabel("Drag and drop radar components onto the canvas to create your system layout", centerPanel);
     hintLabel->setProperty("hint", true);
     hintLabel->setAlignment(Qt::AlignCenter);
     
@@ -151,12 +143,8 @@ void MainWindow::setupDesignerMode()
     rightLayout->setSpacing(10);
     rightLayout->setContentsMargins(12, 12, 12, 12);
     
-    QLabel* analyticsLabel = new QLabel("📊 Analytics", rightPanel);
+    QLabel* analyticsLabel = new QLabel("ANALYTICS", rightPanel);
     analyticsLabel->setProperty("heading", true);
-    QFont analyticsFont = analyticsLabel->font();
-    analyticsFont.setPointSize(14);
-    analyticsFont.setBold(true);
-    analyticsLabel->setFont(analyticsFont);
     
     m_analytics = new Analytics(rightPanel);
     m_analytics->setObjectName("analyticsPanel");
@@ -187,11 +175,11 @@ void MainWindow::setupRuntimeMode()
     toolbar->setMovable(false);
     
     // Add runtime-specific buttons
-    QPushButton* loadBtn = new QPushButton("📁 Load Design", this);
+    QPushButton* loadBtn = new QPushButton("LOAD DESIGN", this);
     loadBtn->setObjectName("loadButton");
     loadBtn->setToolTip("Load a radar system design file");
     
-    m_statusLabel = new QLabel("Server Status: Initializing...", this);
+    m_statusLabel = new QLabel("STATUS: INITIALIZING", this);
     m_statusLabel->setObjectName("statusLabel");
     
     toolbar->addWidget(loadBtn);
@@ -203,10 +191,10 @@ void MainWindow::setupRuntimeMode()
     // Start message server
     m_messageServer = new MessageServer(this);
     if (m_messageServer->startServer(12345)) {
-        m_statusLabel->setText("Server Status: Running on port 12345 | Clients: 0");
+        m_statusLabel->setText("STATUS: ACTIVE | PORT: 12345 | CLIENTS: 0");
     } else {
-        m_statusLabel->setText("Server Status: Failed to start");
-        QMessageBox::warning(this, "Error", "Failed to start message server");
+        m_statusLabel->setText("STATUS: ERROR - SERVER FAILED");
+        QMessageBox::warning(this, "Server Error", "Failed to start message server on port 12345");
     }
     
     connect(m_messageServer, &MessageServer::messageReceived, 
@@ -230,17 +218,13 @@ void MainWindow::setupRuntimeMode()
     centerLayout->setSpacing(10);
     centerLayout->setContentsMargins(12, 12, 12, 12);
     
-    QLabel* canvasLabel = new QLabel("🎯 Radar System View", centerPanel);
+    QLabel* canvasLabel = new QLabel("RADAR SYSTEM VIEW", centerPanel);
     canvasLabel->setProperty("heading", true);
-    QFont font = canvasLabel->font();
-    font.setPointSize(14);
-    font.setBold(true);
-    canvasLabel->setFont(font);
     
     m_canvas = new Canvas(centerPanel);
     m_canvas->setObjectName("mainCanvas");
     
-    QLabel* hintLabel = new QLabel("💡 Load a system layout to monitor subsystems in real-time", centerPanel);
+    QLabel* hintLabel = new QLabel("Load a system layout to monitor subsystems in real-time", centerPanel);
     hintLabel->setProperty("hint", true);
     hintLabel->setAlignment(Qt::AlignCenter);
     
@@ -256,12 +240,8 @@ void MainWindow::setupRuntimeMode()
     rightLayout->setSpacing(10);
     rightLayout->setContentsMargins(12, 12, 12, 12);
     
-    QLabel* analyticsLabel = new QLabel("📊 Health Analytics", rightPanel);
+    QLabel* analyticsLabel = new QLabel("HEALTH ANALYTICS", rightPanel);
     analyticsLabel->setProperty("heading", true);
-    QFont analyticsFont = analyticsLabel->font();
-    analyticsFont.setPointSize(14);
-    analyticsFont.setBold(true);
-    analyticsLabel->setFont(analyticsFont);
     
     m_analytics = new Analytics(rightPanel);
     m_analytics->setObjectName("analyticsPanel");
@@ -409,7 +389,7 @@ void MainWindow::autoLoadDesign()
     
     qDebug() << "[MainWindow] Auto-loaded radar_system.design successfully from:" << foundPath;
     if (m_statusLabel) {
-        m_statusLabel->setText(QString("Server Status: Running on port 12345 | Clients: %1 | Design: radar_system.design")
+        m_statusLabel->setText(QString("STATUS: ACTIVE | PORT: 12345 | CLIENTS: %1 | DESIGN LOADED")
             .arg(m_connectedClients));
     }
 }
@@ -446,7 +426,7 @@ void MainWindow::onClientConnected()
 {
     m_connectedClients++;
     if (m_statusLabel) {
-        m_statusLabel->setText(QString("Server Status: Running on port 12345 | Clients: %1")
+        m_statusLabel->setText(QString("STATUS: ACTIVE | PORT: 12345 | CLIENTS: %1")
             .arg(m_connectedClients));
     }
 }
@@ -456,7 +436,7 @@ void MainWindow::onClientDisconnected()
     m_connectedClients--;
     if (m_connectedClients < 0) m_connectedClients = 0;
     if (m_statusLabel) {
-        m_statusLabel->setText(QString("Server Status: Running on port 12345 | Clients: %1")
+        m_statusLabel->setText(QString("STATUS: ACTIVE | PORT: 12345 | CLIENTS: %1")
             .arg(m_connectedClients));
     }
 }
