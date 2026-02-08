@@ -3,6 +3,7 @@
 
 #include <QListWidget>
 #include <QMouseEvent>
+#include "component.h"
 
 class ComponentList : public QListWidget
 {
@@ -16,6 +17,7 @@ protected:
     void mouseMoveEvent(QMouseEvent* event) override;
     
 private:
+    void addComponentItem(const QString& name, ComponentType type);
     QPoint m_dragStartPosition;
 };
 

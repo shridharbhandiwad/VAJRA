@@ -1,6 +1,7 @@
 #include "component.h"
 #include <QPainter>
 #include <QCursor>
+#include <QFileInfo>
 
 Component::Component(ComponentType type, const QString& id, QGraphicsItem* parent)
     : QGraphicsItem(parent)
@@ -8,11 +9,15 @@ Component::Component(ComponentType type, const QString& id, QGraphicsItem* paren
     , m_id(id)
     , m_color(Qt::blue)
     , m_size(50)
+    , m_hasImage(false)
 {
     setFlag(QGraphicsItem::ItemIsMovable);
     setFlag(QGraphicsItem::ItemIsSelectable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges);
     setCursor(Qt::OpenHandCursor);
+    
+    // Load subsystem image
+    loadSubsystemImage();
 }
 
 QRectF Component::boundingRect() const
@@ -47,6 +52,52 @@ void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
     Q_UNUSED(widget);
     
     painter->setRenderHint(QPainter::Antialiasing);
+    painter->setRenderHint(QPainter::SmoothPixmapTransform);
+    
+    qreal halfSize = m_size / 2.0;
+    
+    // If we have an image, draw it; otherwise fallback to geometric representation
+    if (m_hasImage && !m_image.isNull()) {
+        // Calculate image drawing area - make it slightly larger for better visibility
+        qreal imageSize = m_size * 1.8;
+        qreal imageHalfSize = imageSize / 2.0;
+        
+        // Draw a subtle background/border
+        painter->setPen(QPen(Qt::black, 1));
+        painter->setBrush(QColor(240, 240, 240));
+        painter->drawRoundedRect(-imageHalfSize, -imageHalfSize, imageSize, imageSize, 5, 5);
+        
+        // Draw the subsystem image
+        QRectF imageRect(-imageHalfSize + 2, -imageHalfSize + 2, imageSize - 4, imageSize - 4);
+        painter->drawPixmap(imageRect.toRect(), m_image);
+        
+        // Draw label below the image
+        painter->setFont(QFont("Arial", 8, QFont::Bold));
+        painter->setPen(Qt::black);
+        QString label;
+        switch (m_type) {
+            case ComponentType::Antenna: label = "ANT"; break;
+            case ComponentType::PowerSystem: label = "PWR"; break;
+            case ComponentType::LiquidCoolingUnit: label = "COOL"; break;
+            case ComponentType::CommunicationSystem: label = "COMM"; break;
+            case ComponentType::RadarComputer: label = "CPU"; break;
+        }
+        painter->drawText(QRectF(-imageHalfSize, imageHalfSize + 2, imageSize, 14), Qt::AlignCenter, label);
+    } else {
+        // Fallback to geometric representation
+        paintGeometric(painter);
+    }
+    
+    // Draw selection border if selected
+    if (isSelected()) {
+        painter->setPen(QPen(Qt::red, 2, Qt::DashLine));
+        painter->setBrush(Qt::NoBrush);
+        painter->drawRect(boundingRect());
+    }
+}
+
+void Component::paintGeometric(QPainter* painter)
+{
     painter->setPen(QPen(Qt::black, 2));
     painter->setBrush(m_color);
     
@@ -124,13 +175,6 @@ void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
             break;
         }
     }
-    
-    // Draw selection border if selected
-    if (isSelected()) {
-        painter->setPen(QPen(Qt::red, 2, Qt::DashLine));
-        painter->setBrush(Qt::NoBrush);
-        painter->drawRect(boundingRect());
-    }
 }
 
 void Component::setColor(const QColor& color)
@@ -182,4 +226,55 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant& value)
         // Component position changed
     }
     return QGraphicsItem::itemChange(change, value);
+}
+
+void Component::loadSubsystemImage()
+{
+    QString dirName = getSubsystemDirName(m_type);
+    QString imagePath = QString("assets/subsystems/%1/%2_main.jpg").arg(dirName).arg(dirName);
+    
+    // Check if file exists
+    QFileInfo checkFile(imagePath);
+    if (checkFile.exists() && checkFile.isFile()) {
+        m_image.load(imagePath);
+        if (!m_image.isNull()) {
+            m_hasImage = true;
+            // Scale image to a reasonable size for better performance
+            if (m_image.width() > 512 || m_image.height() > 512) {
+                m_image = m_image.scaled(512, 512, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            }
+        }
+    } else {
+        // Try PNG extension as fallback
+        imagePath = QString("assets/subsystems/%1/%2_main.png").arg(dirName).arg(dirName);
+        QFileInfo checkFilePng(imagePath);
+        if (checkFilePng.exists() && checkFilePng.isFile()) {
+            m_image.load(imagePath);
+            if (!m_image.isNull()) {
+                m_hasImage = true;
+                // Scale image to a reasonable size for better performance
+                if (m_image.width() > 512 || m_image.height() > 512) {
+                    m_image = m_image.scaled(512, 512, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                }
+            }
+        }
+    }
+}
+
+QString Component::getSubsystemDirName(ComponentType type)
+{
+    switch (type) {
+        case ComponentType::Antenna:
+            return "antenna";
+        case ComponentType::PowerSystem:
+            return "power_system";
+        case ComponentType::LiquidCoolingUnit:
+            return "liquid_cooling_unit";
+        case ComponentType::CommunicationSystem:
+            return "communication_system";
+        case ComponentType::RadarComputer:
+            return "radar_computer";
+        default:
+            return "antenna";
+    }
 }
