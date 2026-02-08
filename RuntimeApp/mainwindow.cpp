@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QMessageBox>
 #include <QToolBar>
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -35,6 +36,9 @@ MainWindow::MainWindow(QWidget* parent)
     
     setWindowTitle("Radar System Monitor - Real-time Health Monitoring");
     resize(1000, 700);
+    
+    // Auto-load radar_system.design if it exists
+    autoLoadDesign();
 }
 
 MainWindow::~MainWindow()
@@ -127,6 +131,33 @@ void MainWindow::loadDesign()
     
     QMessageBox::information(this, "Success", 
         QString("Radar system layout loaded successfully!\n\nWaiting for health updates from subsystems..."));
+}
+
+void MainWindow::autoLoadDesign()
+{
+    // Try to auto-load radar_system.design from the workspace root
+    QString fileName = "radar_system.design";
+    QFile file(fileName);
+    
+    if (!file.exists()) {
+        qDebug() << "No radar_system.design found in current directory, skipping auto-load";
+        return;
+    }
+    
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qDebug() << "Found radar_system.design but could not open it";
+        return;
+    }
+    
+    QString json = file.readAll();
+    file.close();
+    
+    m_analytics->clear();
+    m_canvas->loadFromJson(json);
+    
+    qDebug() << "Auto-loaded radar_system.design successfully";
+    m_statusLabel->setText(QString("Server Status: Running on port 12345 | Clients: %1 | Design: radar_system.design")
+        .arg(m_connectedClients));
 }
 
 void MainWindow::onMessageReceived(const QString& componentId, const QString& color, qreal size)

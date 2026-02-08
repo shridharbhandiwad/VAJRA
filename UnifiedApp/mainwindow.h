@@ -32,6 +32,7 @@ private:
     void setupUI();
     void setupDesignerMode();
     void setupRuntimeMode();
+    void autoLoadDesign();
     QString getComponentTypeName(ComponentType type);
     
     UserRole m_userRole;
