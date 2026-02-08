@@ -25,6 +25,7 @@ private slots:
     
 private:
     void setupUI();
+    void autoLoadDesign();
     
     Canvas* m_canvas;
     Analytics* m_analytics;
