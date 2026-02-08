@@ -132,15 +132,16 @@ void MainWindow::loadDesign()
 void MainWindow::onMessageReceived(const QString& componentId, const QString& color, qreal size)
 {
     Component* comp = m_canvas->getComponentById(componentId);
-    if (!comp) {
-        return;
+    
+    if (comp) {
+        // Update component appearance
+        comp->setColor(QColor(color));
+        comp->setSize(size);
+    } else {
+        qDebug() << "Warning: Component" << componentId << "not found in canvas. Message received but visual not updated.";
     }
     
-    // Update component appearance
-    comp->setColor(QColor(color));
-    comp->setSize(size);
-    
-    // Update analytics
+    // Always update analytics, even if component visual doesn't exist
     m_analytics->recordMessage(componentId, color, size);
 }
 
