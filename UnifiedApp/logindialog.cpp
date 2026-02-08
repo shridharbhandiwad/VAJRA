@@ -95,7 +95,6 @@ void LoginDialog::setupUI()
     
     m_usernameEdit = new QLineEdit(this);
     m_usernameEdit->setPlaceholderText("Enter your username");
-    m_usernameEdit->setMinimumHeight(48);
     
     usernameLayout->addWidget(usernameLabel);
     usernameLayout->addWidget(m_usernameEdit);
@@ -107,17 +106,23 @@ void LoginDialog::setupUI()
     QLabel* passwordLabel = new QLabel("PASSWORD", this);
     passwordLabel->setObjectName("fieldLabel");
     
-    QHBoxLayout* passwordInputLayout = new QHBoxLayout();
+    // Create a container frame for password input with integrated button
+    QFrame* passwordContainer = new QFrame(this);
+    passwordContainer->setObjectName("passwordContainer");
+    passwordContainer->setMinimumHeight(48);
+    
+    QHBoxLayout* passwordInputLayout = new QHBoxLayout(passwordContainer);
+    passwordInputLayout->setContentsMargins(0, 0, 0, 0);
     passwordInputLayout->setSpacing(0);
     
-    m_passwordEdit = new QLineEdit(this);
+    m_passwordEdit = new QLineEdit(passwordContainer);
     m_passwordEdit->setPlaceholderText("Enter your password");
     m_passwordEdit->setEchoMode(QLineEdit::Password);
-    m_passwordEdit->setMinimumHeight(48);
+    m_passwordEdit->setObjectName("passwordInput");
     
-    m_togglePasswordBtn = new QPushButton("SHOW", this);
+    m_togglePasswordBtn = new QPushButton("SHOW", passwordContainer);
     m_togglePasswordBtn->setObjectName("togglePassword");
-    m_togglePasswordBtn->setFixedSize(52, 48);
+    m_togglePasswordBtn->setFixedSize(60, 46);
     m_togglePasswordBtn->setCursor(Qt::PointingHandCursor);
     m_togglePasswordBtn->setToolTip("Toggle password visibility");
     
@@ -125,7 +130,7 @@ void LoginDialog::setupUI()
     passwordInputLayout->addWidget(m_togglePasswordBtn);
     
     passwordLayout->addWidget(passwordLabel);
-    passwordLayout->addLayout(passwordInputLayout);
+    passwordLayout->addWidget(passwordContainer);
     
     // Remember me checkbox
     m_rememberMeCheck = new QCheckBox("Remember me on this device", this);
