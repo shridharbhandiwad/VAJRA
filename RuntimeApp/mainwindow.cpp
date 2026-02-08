@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QToolBar>
 #include <QDebug>
+#include <QDir>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -135,36 +136,59 @@ void MainWindow::loadDesign()
 
 void MainWindow::autoLoadDesign()
 {
-    // Try to auto-load radar_system.design from the workspace root
-    QString fileName = "radar_system.design";
-    QFile file(fileName);
+    qDebug() << "[MainWindow] autoLoadDesign() called";
+    qDebug() << "[MainWindow] Current working directory:" << QDir::currentPath();
     
-    if (!file.exists()) {
-        qDebug() << "No radar_system.design found in current directory, skipping auto-load";
+    // Try multiple potential locations for the design file
+    QStringList searchPaths;
+    searchPaths << "radar_system.design";  // Current directory
+    searchPaths << "../radar_system.design";  // Parent directory
+    searchPaths << "/workspace/radar_system.design";  // Absolute path
+    
+    QString foundPath;
+    for (const QString& path : searchPaths) {
+        QFile testFile(path);
+        if (testFile.exists()) {
+            foundPath = path;
+            qDebug() << "[MainWindow] Found design file at:" << path;
+            break;
+        }
+    }
+    
+    if (foundPath.isEmpty()) {
+        qDebug() << "[MainWindow] No radar_system.design found in any search path, skipping auto-load";
+        qDebug() << "[MainWindow] Searched paths:" << searchPaths;
         return;
     }
     
+    QFile file(foundPath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qDebug() << "Found radar_system.design but could not open it";
+        qDebug() << "[MainWindow] Found radar_system.design but could not open it:" << file.errorString();
         return;
     }
     
     QString json = file.readAll();
     file.close();
     
+    qDebug() << "[MainWindow] Read" << json.length() << "bytes from design file";
+    qDebug() << "[MainWindow] Clearing analytics...";
     m_analytics->clear();
+    
+    qDebug() << "[MainWindow] Loading JSON into canvas...";
     m_canvas->loadFromJson(json);
     
-    qDebug() << "Auto-loaded radar_system.design successfully";
+    qDebug() << "[MainWindow] Auto-loaded radar_system.design successfully from:" << foundPath;
     m_statusLabel->setText(QString("Server Status: Running on port 12345 | Clients: %1 | Design: radar_system.design")
         .arg(m_connectedClients));
 }
 
 void MainWindow::onMessageReceived(const QString& componentId, const QString& color, qreal size)
 {
+    qDebug() << "[MainWindow] onMessageReceived called for component:" << componentId << "color:" << color << "size:" << size;
     Component* comp = m_canvas->getComponentById(componentId);
     
     if (comp) {
+        qDebug() << "[MainWindow] Component found! Updating appearance...";
         // Update component appearance
         comp->setColor(QColor(color));
         comp->setSize(size);
