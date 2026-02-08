@@ -60,9 +60,11 @@ void Canvas::loadFromJson(const QString& json)
         qreal size = compObj["size"].toDouble();
         
         ComponentType type;
-        if (typeStr == "Circle") type = ComponentType::Circle;
-        else if (typeStr == "Square") type = ComponentType::Square;
-        else if (typeStr == "Triangle") type = ComponentType::Triangle;
+        if (typeStr == "Antenna") type = ComponentType::Antenna;
+        else if (typeStr == "PowerSystem") type = ComponentType::PowerSystem;
+        else if (typeStr == "LiquidCoolingUnit") type = ComponentType::LiquidCoolingUnit;
+        else if (typeStr == "CommunicationSystem") type = ComponentType::CommunicationSystem;
+        else if (typeStr == "RadarComputer") type = ComponentType::RadarComputer;
         else continue;
         
         Component* comp = Component::fromJson(id, type, x, y, QColor(colorStr), size);

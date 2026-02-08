@@ -14,7 +14,7 @@ MainWindow::MainWindow(QWidget* parent)
     , m_analytics(nullptr)
 {
     setupUI();
-    setWindowTitle("Designer Application - Component Editor");
+    setWindowTitle("Radar System Designer - Subsystem Layout Editor");
     resize(1200, 700);
 }
 
@@ -47,7 +47,7 @@ void MainWindow::setupUI()
     QWidget* leftPanel = new QWidget(this);
     QVBoxLayout* leftLayout = new QVBoxLayout(leftPanel);
     
-    QLabel* componentsLabel = new QLabel("All Components", leftPanel);
+    QLabel* componentsLabel = new QLabel("Radar Subsystems", leftPanel);
     QFont font = componentsLabel->font();
     font.setPointSize(12);
     font.setBold(true);
@@ -166,9 +166,11 @@ void MainWindow::onComponentAdded(const QString& id, ComponentType type)
 QString MainWindow::getComponentTypeName(ComponentType type)
 {
     switch (type) {
-        case ComponentType::Circle: return "Circle";
-        case ComponentType::Square: return "Square";
-        case ComponentType::Triangle: return "Triangle";
+        case ComponentType::Antenna: return "Antenna";
+        case ComponentType::PowerSystem: return "Power System";
+        case ComponentType::LiquidCoolingUnit: return "Liquid Cooling Unit";
+        case ComponentType::CommunicationSystem: return "Communication System";
+        case ComponentType::RadarComputer: return "Radar Computer";
         default: return "Unknown";
     }
 }

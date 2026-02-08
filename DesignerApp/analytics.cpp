@@ -68,24 +68,21 @@ void Analytics::clear()
 
 void Analytics::updateDisplay()
 {
-    QString text = "Component Statistics:\n\n";
+    QString text = "Radar Subsystem Count:\n\n";
     
     if (m_stats.isEmpty()) {
-        text += "No components on canvas";
+        text += "No subsystems on canvas";
     } else {
-        for (auto it = m_stats.begin(); it != m_stats.end(); ++it) {
-            const QString& id = it.key();
-            const ComponentStats& stats = it.value();
-            QString type = m_componentTypes.value(id, "Unknown");
-            
-            text += QString("ID: %1\n").arg(id);
-            text += QString("Type: %1\n").arg(type);
-            text += QString("Messages: %2\n").arg(stats.messageCount);
-            text += QString("Current Color: %3\n").arg(stats.currentColor.isEmpty() ? "N/A" : stats.currentColor);
-            text += QString("Current Size: %4\n").arg(stats.currentSize == 0 ? "N/A" : QString::number(stats.currentSize));
-            text += QString("Color Changes: %5\n").arg(stats.colorChanges);
-            text += QString("Size Changes: %6\n").arg(stats.sizeChanges);
-            text += "\n";
+        QMap<QString, int> typeCounts;
+        for (auto it = m_componentTypes.begin(); it != m_componentTypes.end(); ++it) {
+            QString type = it.value();
+            typeCounts[type]++;
+        }
+        
+        text += QString("Total Subsystems: %1\n\n").arg(m_stats.size());
+        
+        for (auto it = typeCounts.begin(); it != typeCounts.end(); ++it) {
+            text += QString("%1: %2\n").arg(it.key()).arg(it.value());
         }
     }
     

@@ -68,10 +68,10 @@ void Analytics::clear()
 
 void Analytics::updateDisplay()
 {
-    QString text = "Component Statistics:\n\n";
+    QString text = "Radar Subsystem Health:\n\n";
     
     if (m_stats.isEmpty()) {
-        text += "No components loaded";
+        text += "No subsystems loaded";
     } else {
         int totalMessages = 0;
         for (auto it = m_stats.begin(); it != m_stats.end(); ++it) {
@@ -80,18 +80,18 @@ void Analytics::updateDisplay()
             QString type = m_componentTypes.value(id, "Unknown");
             
             text += QString("ID: %1\n").arg(id);
-            text += QString("Type: %1\n").arg(type);
-            text += QString("Messages: %2\n").arg(stats.messageCount);
-            text += QString("Current Color: %3\n").arg(stats.currentColor.isEmpty() ? "N/A" : stats.currentColor);
-            text += QString("Current Size: %4\n").arg(stats.currentSize == 0 ? "N/A" : QString::number(stats.currentSize, 'f', 1));
-            text += QString("Color Changes: %5\n").arg(stats.colorChanges);
-            text += QString("Size Changes: %6\n").arg(stats.sizeChanges);
+            text += QString("Subsystem: %1\n").arg(type);
+            text += QString("Health Updates: %2\n").arg(stats.messageCount);
+            text += QString("Status Color: %3\n").arg(stats.currentColor.isEmpty() ? "N/A" : stats.currentColor);
+            text += QString("Health Level: %4\n").arg(stats.currentSize == 0 ? "N/A" : QString::number(stats.currentSize, 'f', 1) + "%");
+            text += QString("Status Changes: %5\n").arg(stats.colorChanges);
+            text += QString("Level Changes: %6\n").arg(stats.sizeChanges);
             text += "\n";
             
             totalMessages += stats.messageCount;
         }
         
-        text += QString("--- Total Messages Received: %1 ---").arg(totalMessages);
+        text += QString("--- Total Health Updates: %1 ---").arg(totalMessages);
     }
     
     m_textEdit->setText(text);
