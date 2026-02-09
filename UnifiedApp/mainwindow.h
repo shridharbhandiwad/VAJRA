@@ -7,7 +7,6 @@
 #include <QComboBox>
 #include <QTabWidget>
 #include <QMap>
-#include "logindialog.h"
 #include "componentlist.h"
 #include "canvas.h"
 #include "analytics.h"
@@ -15,13 +14,29 @@
 #include "voicealertmanager.h"
 #include "enlargedcomponentview.h"
 #include "thememanager.h"
+#include "designsubcomponent.h"
 
+/**
+ * MainWindow - Unified application window that combines Designer and Runtime
+ * features into a single cohesive interface.
+ *
+ * Features:
+ *   - Component drag-drop design (from ComponentList to Canvas)
+ *   - Sub-component (Label/LineEdit/Button) drag-drop with resize inside components
+ *   - Connection drawing between components
+ *   - Real-time health monitoring via MessageServer
+ *   - Voice alerts for critical health states
+ *   - Enlarged per-component views with health trend charts
+ *   - Analytics panel
+ *   - Save/Load design files
+ *   - Dark/Light theme switching
+ */
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
     
 public:
-    MainWindow(UserRole userRole, const QString& username, QWidget* parent = nullptr);
+    MainWindow(const QString& username, QWidget* parent = nullptr);
     ~MainWindow();
     
 private slots:
@@ -30,8 +45,10 @@ private slots:
     void clearCanvas();
     void addNewComponentType();
     void onComponentAdded(const QString& id, const QString& typeId);
-    void onMessageReceived(const QString& componentId, const QString& color, qreal size);
     void onComponentLoaded(const QString& id, const QString& typeId);
+    void onDesignSubComponentAdded(const QString& parentId, SubComponentType subType);
+    void onDropRejected(const QString& reason);
+    void onMessageReceived(const QString& componentId, const QString& color, qreal size);
     void onClientConnected();
     void onClientDisconnected();
     void toggleVoiceAlerts();
@@ -48,15 +65,13 @@ private slots:
     
 private:
     void setupUI();
-    void setupDesignerMode();
-    void setupRuntimeMode();
     void autoLoadDesign();
     void createComponentTabs();
     void clearComponentTabs();
+    void addComponentTab(Component* comp);
     void updateThemeButtonText();
     void refreshCanvasBackground();
     
-    UserRole m_userRole;
     QString m_username;
     
     ComponentList* m_componentList;
@@ -77,7 +92,7 @@ private:
     // Theme UI
     QPushButton* m_themeToggleBtn;
     
-    // Tab widget for enlarged component views (Runtime mode)
+    // Tab widget for enlarged component views
     QTabWidget* m_tabWidget;
     QMap<QString, EnlargedComponentView*> m_enlargedViews;
 };

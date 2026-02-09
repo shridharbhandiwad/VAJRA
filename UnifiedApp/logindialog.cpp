@@ -33,7 +33,6 @@ LoginDialog::LoginDialog(QWidget* parent)
     , m_fadeAnimation(nullptr)
     , m_slideAnimation(nullptr)
     , m_entranceAnimation(nullptr)
-    , m_userRole(UserRole::User)
     , m_passwordVisible(false)
     , m_loginAttempts(0)
 {
@@ -197,8 +196,8 @@ void LoginDialog::setupUI()
     
     QLabel* infoPanelText = new QLabel(
         "<b>DEFAULT CREDENTIALS</b><br><br>"
-        "Designer Mode: <b>Designer</b> / <b>designer</b><br>"
-        "Runtime Mode: <b>User</b> / <b>user</b>",
+        "Username: <b>Designer</b> / Password: <b>designer</b><br>"
+        "Username: <b>User</b> / Password: <b>user</b>",
         this
     );
     infoPanelText->setObjectName("infoPanelText");
@@ -295,21 +294,11 @@ void LoginDialog::onLoginClicked()
     
     // Simulate authentication delay for UX
     QTimer::singleShot(500, this, [this, username, password]() {
-        // Validate credentials
-        if (username == "Designer" && password == "designer") {
-            m_userRole = UserRole::Designer;
+        // Validate credentials - both sets of credentials grant full unified access
+        if ((username == "Designer" && password == "designer") ||
+            (username == "User" && password == "user")) {
             m_username = username;
-            m_successLabel->setText("AUTHENTICATION SUCCESS - DESIGNER ACCESS GRANTED");
-            m_successLabel->setVisible(true);
-            animateSuccess();
-            
-            // Close dialog after success animation
-            QTimer::singleShot(800, this, &QDialog::accept);
-            
-        } else if (username == "User" && password == "user") {
-            m_userRole = UserRole::User;
-            m_username = username;
-            m_successLabel->setText("AUTHENTICATION SUCCESS - RUNTIME ACCESS GRANTED");
+            m_successLabel->setText("AUTHENTICATION SUCCESS - ACCESS GRANTED");
             m_successLabel->setVisible(true);
             animateSuccess();
             

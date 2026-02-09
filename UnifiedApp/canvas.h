@@ -7,6 +7,7 @@
 #include <QMap>
 #include "component.h"
 #include "connection.h"
+#include "designsubcomponent.h"
 
 /**
  * CanvasMode - Defines the current interaction mode of the canvas.
@@ -57,6 +58,8 @@ public:
 signals:
     void componentAdded(const QString& id, const QString& typeId);
     void componentLoaded(const QString& id, const QString& typeId);
+    void designSubComponentAdded(const QString& parentId, SubComponentType subType);
+    void dropRejected(const QString& reason);
     void modeChanged(CanvasMode mode);
     void connectionAdded(Connection* conn);
     
@@ -72,6 +75,7 @@ protected:
 private:
     void updateAllConnections();
     Component* componentAtPoint(const QPointF& scenePos);
+    Component* componentAtScenePos(const QPointF& scenePos) const;
     void drawPendingConnection(const QPointF& from, const QPointF& to);
     
     QGraphicsScene* m_scene;

@@ -6,6 +6,7 @@
 Analytics::Analytics(QWidget* parent)
     : QWidget(parent)
     , m_textEdit(new QTextEdit(this))
+    , m_totalDesignSubComponents(0)
 {
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -55,10 +56,20 @@ void Analytics::recordMessage(const QString& id, const QString& color, qreal siz
     updateDisplay();
 }
 
+void Analytics::addDesignSubComponent(const QString& parentId, const QString& subType)
+{
+    Q_UNUSED(parentId);
+    m_totalDesignSubComponents++;
+    m_designSubTypeCounts[subType]++;
+    updateDisplay();
+}
+
 void Analytics::clear()
 {
     m_stats.clear();
     m_componentTypes.clear();
+    m_totalDesignSubComponents = 0;
+    m_designSubTypeCounts.clear();
     updateDisplay();
 }
 
@@ -120,6 +131,18 @@ void Analytics::updateDisplay()
                     .arg(it.key()).arg(it.value());
         }
         html += "<br>";
+        
+        // Design sub-component breakdown
+        if (m_totalDesignSubComponents > 0) {
+            html += "<br><div class='header'>DESIGN WIDGETS</div>";
+            html += QString("<div class='stat'>Total Widgets: <span class='count'>%1</span></div>")
+                    .arg(m_totalDesignSubComponents);
+            for (auto it = m_designSubTypeCounts.begin(); it != m_designSubTypeCounts.end(); ++it) {
+                html += QString("<div class='stat'>  %1: <span class='count'>%2</span></div>")
+                        .arg(it.key()).arg(it.value());
+            }
+            html += "<br>";
+        }
         
         // Per-component details
         html += "<div class='header'>COMPONENT STATUS</div>";

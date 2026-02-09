@@ -187,6 +187,70 @@ void Canvas::dragMoveEvent(QDragMoveEvent* event)
 
 void Canvas::dropEvent(QDropEvent* event)
 {
+    QString mimeText = event->mimeData()->hasText() ? event->mimeData()->text() : QString();
+    
+    // ------------------------------------------------------------------
+    // Sub-component (design widget) drop
+    // ------------------------------------------------------------------
+    if (mimeText.startsWith("subcomponent:")) {
+        QString subTypeStr = mimeText.mid(13);  // after "subcomponent:"
+        SubComponentType subType = DesignSubComponent::stringToType(subTypeStr);
+        
+        QPointF scenePos = mapToScene(event->pos());
+        
+        // Find the parent component at the drop position
+        Component* parentComp = componentAtScenePos(scenePos);
+        
+        if (!parentComp) {
+            emit dropRejected("Sub-components must be dropped inside a parent component.\n"
+                              "Drag this item onto an existing component on the canvas.");
+            return;
+        }
+        
+        // Validate
+        if (!parentComp->canAcceptDesignSubComponent(subType)) {
+            QString msg = Component::widgetValidationMessage(parentComp->getTypeId(), subType);
+            emit dropRejected(msg);
+            return;
+        }
+        
+        // Determine default text
+        QString defaultText;
+        switch (subType) {
+        case SubComponentType::Label:    defaultText = "Label";        break;
+        case SubComponentType::LineEdit: defaultText = "Enter text..."; break;
+        case SubComponentType::Button:   defaultText = "Click Me";     break;
+        }
+        
+        // Create the design sub-component
+        DesignSubComponent* sub = new DesignSubComponent(subType, defaultText);
+        
+        // Add to parent first (sets parentItem)
+        parentComp->addDesignSubComponent(sub);
+        
+        // Compute position in parent coordinates
+        QRectF container = parentComp->designContainerRect();
+        QPointF localPos = parentComp->mapFromScene(scenePos);
+        
+        // Clamp to container body (skip header)
+        qreal headerOffset = 18.0;
+        localPos.setX(qBound(container.left(),
+                              localPos.x() - sub->getWidth() / 2.0,
+                              container.right() - sub->getWidth()));
+        localPos.setY(qBound(container.top() + headerOffset,
+                              localPos.y() - sub->getHeight() / 2.0,
+                              container.bottom() - sub->getHeight()));
+        
+        sub->setPos(localPos);
+        
+        emit designSubComponentAdded(parentComp->getId(), subType);
+        event->acceptProposedAction();
+        return;
+    }
+    
+    // ------------------------------------------------------------------
+    // Main component drop
+    // ------------------------------------------------------------------
     ComponentRegistry& registry = ComponentRegistry::instance();
     QString typeId;
     
@@ -307,6 +371,19 @@ void Canvas::mouseReleaseEvent(QMouseEvent* event)
 void Canvas::keyPressEvent(QKeyEvent* event)
 {
     if (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace) {
+        // Delete selected design sub-components first
+        QList<QGraphicsItem*> selected = m_scene->selectedItems();
+        foreach (QGraphicsItem* item, selected) {
+            DesignSubComponent* dsub = dynamic_cast<DesignSubComponent*>(item);
+            if (dsub) {
+                Component* parent = dynamic_cast<Component*>(dsub->parentItem());
+                if (parent) {
+                    parent->removeDesignSubComponent(dsub);
+                }
+                delete dsub;
+            }
+        }
+        // Also delete selected connections
         deleteSelectedConnections();
     } else if (event->key() == Qt::Key_Escape) {
         if (m_mode == CanvasMode::Connect) {
@@ -344,7 +421,61 @@ Component* Canvas::componentAtPoint(const QPointF& scenePos)
             Component* parentComp = dynamic_cast<Component*>(sub->parentItem());
             if (parentComp) return parentComp;
         }
+        
+        // Check if we clicked on a design sub-component - return its parent
+        DesignSubComponent* dsub = dynamic_cast<DesignSubComponent*>(item);
+        if (dsub && dsub->parentItem()) {
+            Component* parentComp = dynamic_cast<Component*>(dsub->parentItem());
+            if (parentComp) return parentComp;
+        }
     }
+    return nullptr;
+}
+
+// ======================================================================
+// Helper – find Component at scene position for sub-component drops
+// ======================================================================
+
+Component* Canvas::componentAtScenePos(const QPointF& scenePos) const
+{
+    QList<QGraphicsItem*> itemsAtPos = m_scene->items(scenePos);
+    
+    foreach (QGraphicsItem* item, itemsAtPos) {
+        // Direct Component hit
+        Component* comp = dynamic_cast<Component*>(item);
+        if (comp) return comp;
+        
+        // If hit a SubComponent, return its parent Component
+        SubComponent* sub = dynamic_cast<SubComponent*>(item);
+        if (sub) {
+            Component* parent = dynamic_cast<Component*>(sub->parentItem());
+            if (parent) return parent;
+        }
+        
+        // If hit a DesignSubComponent, return its parent Component
+        DesignSubComponent* dsub = dynamic_cast<DesignSubComponent*>(item);
+        if (dsub) {
+            Component* parent = dynamic_cast<Component*>(dsub->parentItem());
+            if (parent) return parent;
+        }
+    }
+    
+    // Also check if the scenePos is inside any Component's bounding rect
+    // (needed for the design container area which might not have items yet)
+    foreach (QGraphicsItem* item, m_scene->items()) {
+        Component* comp = dynamic_cast<Component*>(item);
+        if (comp) {
+            QPointF local = comp->mapFromScene(scenePos);
+            if (comp->boundingRect().contains(local)) {
+                return comp;
+            }
+            // Also check the design container rect (for dropping into empty area)
+            if (comp->designContainerRect().contains(local)) {
+                return comp;
+            }
+        }
+    }
+    
     return nullptr;
 }
 
@@ -361,7 +492,7 @@ QString Canvas::saveToJson() const
         compObj["color"] = comp->getColor().name();
         compObj["size"] = comp->getSize();
         
-        // Save sub-components
+        // Save sub-components (health-tracking subsystems)
         QJsonArray subArray;
         for (SubComponent* sub : comp->getSubComponents()) {
             QJsonObject subObj;
@@ -371,6 +502,22 @@ QString Canvas::saveToJson() const
             subArray.append(subObj);
         }
         compObj["subcomponents"] = subArray;
+        
+        // Save design sub-components (drag-drop widgets)
+        QJsonArray designSubArray;
+        for (DesignSubComponent* dsub : comp->getDesignSubComponents()) {
+            QJsonObject dsubObj;
+            dsubObj["type"]   = DesignSubComponent::typeToString(dsub->getType());
+            dsubObj["text"]   = dsub->getText();
+            dsubObj["x"]      = dsub->pos().x();
+            dsubObj["y"]      = dsub->pos().y();
+            dsubObj["width"]  = dsub->getWidth();
+            dsubObj["height"] = dsub->getHeight();
+            designSubArray.append(dsubObj);
+        }
+        if (!designSubArray.isEmpty()) {
+            compObj["design_subcomponents"] = designSubArray;
+        }
         
         componentsArray.append(compObj);
     }
@@ -451,9 +598,27 @@ void Canvas::loadFromJson(const QString& json)
             }
         }
         
+        // Load design sub-components (drag-drop widgets)
+        QJsonArray designSubArray = compObj["design_subcomponents"].toArray();
+        foreach (const QJsonValue& dsubVal, designSubArray) {
+            QJsonObject dsubObj = dsubVal.toObject();
+            SubComponentType subType = DesignSubComponent::stringToType(dsubObj["type"].toString());
+            QString text = dsubObj["text"].toString();
+            qreal sx     = dsubObj["x"].toDouble();
+            qreal sy     = dsubObj["y"].toDouble();
+            qreal sw     = dsubObj["width"].toDouble();
+            qreal sh     = dsubObj["height"].toDouble();
+            
+            DesignSubComponent* dsub = new DesignSubComponent(subType, text);
+            dsub->setSize(sw, sh);
+            comp->addDesignSubComponent(dsub);   // sets parent
+            dsub->setPos(sx, sy);                 // in parent coords
+        }
+        
         qDebug() << "[Canvas] Loaded component" << id << "of type" << typeId 
                  << "at (" << x << "," << y << ")"
-                 << "with" << comp->subComponentCount() << "sub-components";
+                 << "with" << comp->subComponentCount() << "sub-components"
+                 << "and" << comp->designSubComponentCount() << "design sub-components";
         
         emit componentLoaded(id, typeId);
         

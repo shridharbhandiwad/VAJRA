@@ -13,6 +13,7 @@ SOURCES += \
     mainwindow.cpp \
     component.cpp \
     subcomponent.cpp \
+    designsubcomponent.cpp \
     connection.cpp \
     canvas.cpp \
     componentlist.cpp \
@@ -29,6 +30,7 @@ HEADERS += \
     mainwindow.h \
     component.h \
     subcomponent.h \
+    designsubcomponent.h \
     connection.h \
     canvas.h \
     componentlist.h \

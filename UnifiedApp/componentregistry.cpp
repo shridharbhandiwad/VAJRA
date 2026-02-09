@@ -33,6 +33,12 @@ QJsonObject ComponentDefinition::toJson() const
     obj["category"] = category;
     obj["shape"] = shape;
     
+    QJsonArray widgetsArr;
+    for (const QString& w : allowedWidgets) {
+        widgetsArr.append(w);
+    }
+    obj["allowed_widgets"] = widgetsArr;
+    
     return obj;
 }
 
@@ -55,6 +61,17 @@ ComponentDefinition ComponentDefinition::fromJson(const QJsonObject& obj)
     def.port = obj["port"].toInt(12345);
     def.category = obj["category"].toString("General");
     def.shape = obj["shape"].toString("rect");
+    
+    QJsonArray widgetsArr = obj["allowed_widgets"].toArray();
+    if (widgetsArr.isEmpty()) {
+        // Default: all widget types allowed
+        def.allowedWidgets = QStringList() << "Label" << "LineEdit" << "Button";
+    } else {
+        def.allowedWidgets.clear();
+        for (const QJsonValue& v : widgetsArr) {
+            def.allowedWidgets.append(v.toString());
+        }
+    }
     
     return def;
 }

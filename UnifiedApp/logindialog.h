@@ -11,18 +11,12 @@
 #include <QCheckBox>
 #include "thememanager.h"
 
-enum class UserRole {
-    Designer,
-    User
-};
-
 class LoginDialog : public QDialog
 {
     Q_OBJECT
     
 public:
     explicit LoginDialog(QWidget* parent = nullptr);
-    UserRole getUserRole() const { return m_userRole; }
     QString getUsername() const { return m_username; }
     
 protected:
@@ -67,7 +61,6 @@ private:
     QParallelAnimationGroup* m_entranceAnimation;
     
     // State
-    UserRole m_userRole;
     QString m_username;
     bool m_passwordVisible;
     int m_loginAttempts;

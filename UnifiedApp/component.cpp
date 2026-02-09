@@ -14,6 +14,9 @@ constexpr qreal Component::PADDING;
 constexpr qreal Component::SUB_SPACING;
 constexpr qreal Component::MIN_WIDTH;
 constexpr qreal Component::FOOTER_HEIGHT;
+constexpr qreal Component::DESIGN_CONTAINER_HEADER;
+constexpr qreal Component::DESIGN_CONTAINER_MIN_HEIGHT;
+constexpr qreal Component::DESIGN_CONTAINER_FULL_HEIGHT;
 
 Component::Component(const QString& typeId, const QString& id, QGraphicsItem* parent)
     : QGraphicsItem(parent)
@@ -89,6 +92,87 @@ SubComponent* Component::getSubComponent(const QString& name) const
     return nullptr;
 }
 
+// ======================================================================
+// Design sub-component management (drag-drop widgets)
+// ======================================================================
+
+QRectF Component::designContainerRect() const
+{
+    // The design container sits below the subsystem sub-components area
+    qreal y = HEADER_HEIGHT + PADDING;
+    if (!m_subComponents.isEmpty()) {
+        y += m_subComponents.size() * (SubComponent::itemHeight() + SUB_SPACING);
+    } else {
+        y += 30;
+    }
+    y += 4; // gap between subsystem area and design container
+    
+    qreal w = containerWidth();
+    qreal h = m_designSubComponents.isEmpty() ? DESIGN_CONTAINER_MIN_HEIGHT : DESIGN_CONTAINER_FULL_HEIGHT;
+    
+    return QRectF(0, y, w, h);
+}
+
+bool Component::canAcceptDesignSubComponent(SubComponentType subType) const
+{
+    QStringList allowed = allowedWidgetTypes(m_typeId);
+    QString typeName = DesignSubComponent::typeToString(subType);
+    return allowed.contains(typeName);
+}
+
+void Component::addDesignSubComponent(DesignSubComponent* sub)
+{
+    if (!sub) return;
+    prepareGeometryChange();
+    sub->setParentItem(this);
+    m_designSubComponents.append(sub);
+    update();
+}
+
+void Component::removeDesignSubComponent(DesignSubComponent* sub)
+{
+    if (!sub) return;
+    prepareGeometryChange();
+    m_designSubComponents.removeOne(sub);
+    update();
+}
+
+QStringList Component::allowedWidgetTypes(const QString& typeId)
+{
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    if (registry.hasComponent(typeId)) {
+        ComponentDefinition def = registry.getComponent(typeId);
+        if (!def.allowedWidgets.isEmpty()) {
+            return def.allowedWidgets;
+        }
+    }
+    // Default: all types allowed
+    return QStringList() << "Label" << "LineEdit" << "Button";
+}
+
+QString Component::widgetValidationMessage(const QString& typeId, SubComponentType subType)
+{
+    QStringList allowed = allowedWidgetTypes(typeId);
+    QString typeName = DesignSubComponent::typeToString(subType);
+    
+    if (allowed.contains(typeName)) {
+        return QString(); // Valid
+    }
+    
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    QString compName = typeId;
+    if (registry.hasComponent(typeId)) {
+        compName = registry.getComponent(typeId).displayName;
+    }
+    
+    return QString("%1 cannot be placed inside %2.\nAllowed widget types: %3")
+            .arg(typeName, compName, allowed.join(", "));
+}
+
+// ======================================================================
+// Container dimensions
+// ======================================================================
+
 qreal Component::containerWidth() const
 {
     qreal subWidth = SubComponent::itemWidth() + PADDING * 2;
@@ -104,6 +188,10 @@ qreal Component::containerHeight() const
     } else {
         height += 30; // Minimum content area
     }
+    
+    // Design container area (always present to serve as drop target)
+    height += 4; // gap
+    height += m_designSubComponents.isEmpty() ? DESIGN_CONTAINER_MIN_HEIGHT : DESIGN_CONTAINER_FULL_HEIGHT;
     
     height += FOOTER_HEIGHT;
     return height;
@@ -266,6 +354,33 @@ void Component::paintContainer(QPainter* painter)
         painter->drawText(subLabelRect, Qt::AlignVCenter | Qt::AlignLeft, 
                           QString("SUB-SYSTEMS (%1)").arg(m_subComponents.size()));
     }
+    
+    // Design container area (for drag-drop widgets)
+    QRectF dContainer = designContainerRect();
+    
+    if (!m_designSubComponents.isEmpty()) {
+        // Container with visible border when widgets exist
+        painter->setPen(QPen(tm.accentPrimary().darker(120), 1, Qt::DashLine));
+        painter->setBrush(tm.isDark() ? QColor(25, 28, 35, 180) : QColor(240, 245, 252, 180));
+        painter->drawRoundedRect(dContainer.adjusted(2, 0, -2, -2), 4, 4);
+        
+        // Header label
+        painter->setPen(tm.accentPrimary());
+        painter->setFont(QFont("Segoe UI", 6, QFont::Bold));
+        painter->drawText(QRectF(dContainer.left() + PADDING, dContainer.top() + 2,
+                                 dContainer.width() - PADDING * 2, DESIGN_CONTAINER_HEADER - 2),
+                          Qt::AlignVCenter | Qt::AlignLeft,
+                          QString("WIDGETS (%1)").arg(m_designSubComponents.size()));
+    } else {
+        // Subtle placeholder when empty (still a valid drop target)
+        painter->setPen(QPen(tm.borderSubtle(), 1, Qt::DotLine));
+        painter->setBrush(Qt::NoBrush);
+        painter->drawRoundedRect(dContainer.adjusted(2, 0, -2, -2), 4, 4);
+        
+        painter->setPen(tm.mutedText());
+        painter->setFont(QFont("Segoe UI", 6));
+        painter->drawText(dContainer, Qt::AlignCenter, "Drop widgets here");
+    }
 }
 
 QString Component::getDisplayName() const
@@ -317,6 +432,7 @@ void Component::setSize(qreal size)
 
 QString Component::toJson() const
 {
+    // Note: full JSON serialization with design sub-components is handled by Canvas::saveToJson()
     return QString("{\"id\":\"%1\",\"type\":\"%2\",\"x\":%3,\"y\":%4,\"color\":\"%5\",\"size\":%6}")
         .arg(m_id)
         .arg(m_typeId)
