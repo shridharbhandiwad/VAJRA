@@ -7,6 +7,7 @@
 #include "canvas.h"
 #include "analytics.h"
 #include "messageserver.h"
+#include "voicealertmanager.h"
 
 class MainWindow : public QMainWindow
 {
@@ -22,6 +23,7 @@ private slots:
     void onComponentLoaded(const QString& id, const QString& type);
     void onClientConnected();
     void onClientDisconnected();
+    void toggleVoiceAlerts();
     
 private:
     void setupUI();
@@ -32,6 +34,9 @@ private:
     MessageServer* m_messageServer;
     QLabel* m_statusLabel;
     int m_connectedClients;
+    
+    VoiceAlertManager* m_voiceAlertManager;
+    QPushButton* m_voiceToggleBtn;
 };
 
 #endif // MAINWINDOW_H
