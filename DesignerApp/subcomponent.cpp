@@ -4,6 +4,11 @@
 #include <QCursor>
 #include <QLinearGradient>
 
+// Out-of-class definitions for static constexpr members (required for ODR-use in C++14)
+constexpr qreal SubComponent::HANDLE_SIZE;
+constexpr qreal SubComponent::MIN_WIDTH;
+constexpr qreal SubComponent::MIN_HEIGHT;
+
 SubComponent::SubComponent(SubComponentType type, const QString& text, QGraphicsItem* parent)
     : QGraphicsItem(parent)
     , m_type(type)
