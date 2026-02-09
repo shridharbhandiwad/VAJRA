@@ -12,10 +12,10 @@
 #include <QDebug>
 #include <QDir>
 #include <QFrame>
+#include <QSplitter>
 
-MainWindow::MainWindow(UserRole userRole, const QString& username, QWidget* parent)
+MainWindow::MainWindow(const QString& username, QWidget* parent)
     : QMainWindow(parent)
-    , m_userRole(userRole)
     , m_username(username)
     , m_componentList(nullptr)
     , m_canvas(nullptr)
@@ -33,17 +33,15 @@ MainWindow::MainWindow(UserRole userRole, const QString& username, QWidget* pare
 {
     setupUI();
     
-    if (m_userRole == UserRole::Designer) {
-        setWindowTitle("Radar System - Designer Mode");
-    } else {
-        setWindowTitle("Radar System - Runtime Monitor");
-    }
-    
+    setWindowTitle("Radar System - Unified Designer & Monitor");
     resize(1400, 850);
     
     // Connect to theme changes for live updates
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged,
             this, &MainWindow::onThemeChanged);
+    
+    // Auto-load design if available
+    autoLoadDesign();
 }
 
 MainWindow::~MainWindow()
@@ -55,31 +53,18 @@ MainWindow::~MainWindow()
 
 void MainWindow::setupUI()
 {
-    // Create toolbar
+    // ========== TOOLBAR ==========
     QToolBar* toolbar = addToolBar("Main Toolbar");
+    toolbar->setObjectName("mainToolbar");
+    toolbar->setMovable(false);
     
     // User info label
-    m_userLabel = new QLabel(QString("  %1  |  %2  ")
-        .arg(m_username.toUpper())
-        .arg(m_userRole == UserRole::Designer ? "DESIGNER" : "RUNTIME"), this);
+    m_userLabel = new QLabel(QString("  %1  |  UNIFIED  ").arg(m_username.toUpper()), this);
     m_userLabel->setObjectName("userLabel");
     toolbar->addWidget(m_userLabel);
     toolbar->addSeparator();
     
-    if (m_userRole == UserRole::Designer) {
-        setupDesignerMode();
-    } else {
-        setupRuntimeMode();
-    }
-}
-
-void MainWindow::setupDesignerMode()
-{
-    QToolBar* toolbar = this->findChild<QToolBar*>();
-    toolbar->setObjectName("mainToolbar");
-    toolbar->setMovable(false);
-    
-    // Designer toolbar buttons
+    // Design toolbar buttons
     QPushButton* saveBtn = new QPushButton("SAVE DESIGN", this);
     saveBtn->setObjectName("saveButton");
     saveBtn->setToolTip("Save the current radar system design");
@@ -92,9 +77,9 @@ void MainWindow::setupDesignerMode()
     clearBtn->setObjectName("clearButton");
     clearBtn->setToolTip("Clear all components from the canvas");
     
-    QPushButton* addTypeBtn = new QPushButton("+ ADD COMPONENT TYPE", this);
+    QPushButton* addTypeBtn = new QPushButton("+ ADD TYPE", this);
     addTypeBtn->setObjectName("addTypeButton");
-    addTypeBtn->setToolTip("Add a new component type to the registry (no code changes needed)");
+    addTypeBtn->setToolTip("Add a new component type to the registry");
     
     toolbar->addWidget(saveBtn);
     toolbar->addWidget(loadBtn);
@@ -119,6 +104,26 @@ void MainWindow::setupDesignerMode()
     toolbar->addWidget(m_connectionTypeCombo);
     toolbar->addSeparator();
     
+    // Runtime status & voice controls
+    m_statusLabel = new QLabel("STATUS: INITIALIZING", this);
+    m_statusLabel->setObjectName("statusLabel");
+    toolbar->addWidget(m_statusLabel);
+    toolbar->addSeparator();
+    
+    m_voiceToggleBtn = new QPushButton("VOICE: ON", this);
+    m_voiceToggleBtn->setObjectName("voiceToggleBtn");
+    m_voiceToggleBtn->setToolTip("Toggle voice-based health status alerts");
+    m_voiceToggleBtn->setCheckable(true);
+    m_voiceToggleBtn->setChecked(true);
+    
+    QPushButton* testVoiceBtn = new QPushButton("TEST VOICE", this);
+    testVoiceBtn->setObjectName("testVoiceBtn");
+    testVoiceBtn->setToolTip("Test voice output");
+    
+    toolbar->addWidget(m_voiceToggleBtn);
+    toolbar->addWidget(testVoiceBtn);
+    toolbar->addSeparator();
+    
     // Theme toggle button
     m_themeToggleBtn = new QPushButton(this);
     m_themeToggleBtn->setObjectName("themeToggleBtn");
@@ -127,6 +132,7 @@ void MainWindow::setupDesignerMode()
     updateThemeButtonText();
     toolbar->addWidget(m_themeToggleBtn);
     
+    // Connect toolbar signals
     connect(saveBtn, &QPushButton::clicked, this, &MainWindow::saveDesign);
     connect(loadBtn, &QPushButton::clicked, this, &MainWindow::loadDesign);
     connect(clearBtn, &QPushButton::clicked, this, &MainWindow::clearCanvas);
@@ -134,16 +140,18 @@ void MainWindow::setupDesignerMode()
     connect(m_connectBtn, &QPushButton::clicked, this, &MainWindow::toggleConnectionMode);
     connect(m_connectionTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MainWindow::onConnectionTypeChanged);
+    connect(m_voiceToggleBtn, &QPushButton::clicked, this, &MainWindow::toggleVoiceAlerts);
+    connect(testVoiceBtn, &QPushButton::clicked, this, &MainWindow::testVoice);
     connect(m_themeToggleBtn, &QPushButton::clicked, this, &MainWindow::onThemeToggle);
     
-    // Create main widget and layout
+    // ========== MAIN LAYOUT ==========
     QWidget* centralWidget = new QWidget(this);
     centralWidget->setObjectName("centralWidget");
     QHBoxLayout* mainLayout = new QHBoxLayout(centralWidget);
     mainLayout->setSpacing(12);
     mainLayout->setContentsMargins(12, 12, 12, 12);
     
-    // ========== LEFT PANEL - Components List ==========
+    // ========== LEFT PANEL - Components & Sub-Components List ==========
     QWidget* leftPanel = new QWidget(this);
     leftPanel->setObjectName("leftPanel");
     QVBoxLayout* leftLayout = new QVBoxLayout(leftPanel);
@@ -153,7 +161,6 @@ void MainWindow::setupDesignerMode()
     QLabel* componentsLabel = new QLabel("COMPONENTS", leftPanel);
     componentsLabel->setObjectName("componentsLabel");
     
-    // Component count badge
     ComponentRegistry& registry = ComponentRegistry::instance();
     QLabel* countLabel = new QLabel(
         QString("%1 types available").arg(registry.componentCount()), leftPanel);
@@ -162,62 +169,76 @@ void MainWindow::setupDesignerMode()
     m_componentList = new ComponentList(leftPanel);
     m_componentList->setObjectName("componentList");
     
-    // Inline add button in the panel
     QPushButton* addInlineBtn = new QPushButton("+ New Type", leftPanel);
     addInlineBtn->setObjectName("addInlineButton");
     addInlineBtn->setCursor(Qt::PointingHandCursor);
     connect(addInlineBtn, &QPushButton::clicked, this, &MainWindow::addNewComponentType);
     
-    // Connection help text
-    QLabel* connectionHelpLabel = new QLabel(
-        "To connect components:\n"
-        "1. Click 'CONNECT MODE'\n"
-        "2. Choose direction type\n"
-        "3. Click source, drag to target\n"
-        "4. Enter optional label\n"
-        "Press Escape to cancel", leftPanel);
-    connectionHelpLabel->setObjectName("connectionHelpLabel");
-    connectionHelpLabel->setProperty("hint", true);
-    connectionHelpLabel->setWordWrap(true);
+    QLabel* helpLabel = new QLabel(
+        "Drag components onto the canvas.\n"
+        "Drag Label/LineEdit/Button into\n"
+        "components as sub-widgets.\n\n"
+        "Connect Mode: click source,\n"
+        "drag to target.\n"
+        "Press Delete to remove selected.", leftPanel);
+    helpLabel->setObjectName("connectionHelpLabel");
+    helpLabel->setProperty("hint", true);
+    helpLabel->setWordWrap(true);
     
     leftLayout->addWidget(componentsLabel);
     leftLayout->addWidget(countLabel);
     leftLayout->addWidget(m_componentList);
     leftLayout->addWidget(addInlineBtn);
-    leftLayout->addWidget(connectionHelpLabel);
+    leftLayout->addWidget(helpLabel);
     leftPanel->setLayout(leftLayout);
     leftPanel->setMaximumWidth(240);
     leftPanel->setMinimumWidth(210);
     
-    // Update count when registry changes
     connect(&registry, &ComponentRegistry::registryChanged, this, [countLabel, &registry]() {
         countLabel->setText(QString("%1 types available").arg(registry.componentCount()));
     });
     
-    // ========== CENTER PANEL - Canvas ==========
+    // ========== CENTER PANEL - Tab Widget (Canvas + Enlarged Views) ==========
     QWidget* centerPanel = new QWidget(this);
     centerPanel->setObjectName("centerPanel");
     QVBoxLayout* centerLayout = new QVBoxLayout(centerPanel);
     centerLayout->setSpacing(8);
-    centerLayout->setContentsMargins(14, 14, 14, 14);
+    centerLayout->setContentsMargins(0, 0, 0, 0);
     
-    QLabel* canvasLabel = new QLabel("DESIGNER VIEW", centerPanel);
+    m_tabWidget = new QTabWidget(centerPanel);
+    m_tabWidget->setObjectName("componentTabWidget");
+    m_tabWidget->setDocumentMode(false);
+    m_tabWidget->setTabPosition(QTabWidget::North);
+    
+    // System Overview tab with canvas
+    QWidget* overviewTab = new QWidget();
+    overviewTab->setObjectName("overviewTab");
+    QVBoxLayout* overviewLayout = new QVBoxLayout(overviewTab);
+    overviewLayout->setSpacing(8);
+    overviewLayout->setContentsMargins(8, 8, 8, 8);
+    
+    QLabel* canvasLabel = new QLabel("DESIGN & MONITOR", overviewTab);
     canvasLabel->setProperty("heading", true);
     
-    m_canvas = new Canvas(centerPanel);
+    m_canvas = new Canvas(overviewTab);
     m_canvas->setObjectName("mainCanvas");
     
     QLabel* hintLabel = new QLabel(
         "Drag components from the left panel onto the canvas. "
-        "Use Connect Mode to draw relations between components. "
-        "Press Delete to remove selected connections.", centerPanel);
+        "Drop Label/LineEdit/Button sub-components inside parent components. "
+        "Use Connect Mode to draw relations. "
+        "Health updates appear in real-time when external systems connect.", overviewTab);
     hintLabel->setProperty("hint", true);
     hintLabel->setAlignment(Qt::AlignCenter);
     hintLabel->setWordWrap(true);
     
-    centerLayout->addWidget(canvasLabel);
-    centerLayout->addWidget(m_canvas);
-    centerLayout->addWidget(hintLabel);
+    overviewLayout->addWidget(canvasLabel);
+    overviewLayout->addWidget(m_canvas);
+    overviewLayout->addWidget(hintLabel);
+    
+    m_tabWidget->addTab(overviewTab, "  System Overview  ");
+    
+    centerLayout->addWidget(m_tabWidget);
     centerPanel->setLayout(centerLayout);
     
     // ========== RIGHT PANEL - Analytics ==========
@@ -236,10 +257,10 @@ void MainWindow::setupDesignerMode()
     rightLayout->addWidget(analyticsLabel);
     rightLayout->addWidget(m_analytics);
     rightPanel->setLayout(rightLayout);
-    rightPanel->setMaximumWidth(300);
-    rightPanel->setMinimumWidth(250);
+    rightPanel->setMaximumWidth(320);
+    rightPanel->setMinimumWidth(260);
     
-    // Add panels to main layout
+    // ========== ASSEMBLE MAIN LAYOUT ==========
     mainLayout->addWidget(leftPanel);
     mainLayout->addWidget(centerPanel, 1);
     mainLayout->addWidget(rightPanel);
@@ -247,68 +268,24 @@ void MainWindow::setupDesignerMode()
     centralWidget->setLayout(mainLayout);
     setCentralWidget(centralWidget);
     
-    // Connect signals
+    // ========== CONNECT CANVAS SIGNALS ==========
     connect(m_canvas, &Canvas::componentAdded, this, &MainWindow::onComponentAdded);
+    connect(m_canvas, &Canvas::componentLoaded, this, &MainWindow::onComponentLoaded);
+    connect(m_canvas, &Canvas::designSubComponentAdded, this, &MainWindow::onDesignSubComponentAdded);
+    connect(m_canvas, &Canvas::dropRejected, this, &MainWindow::onDropRejected);
     connect(m_canvas, &Canvas::modeChanged, this, &MainWindow::onModeChanged);
-}
-
-void MainWindow::setupRuntimeMode()
-{
-    QToolBar* toolbar = this->findChild<QToolBar*>();
-    toolbar->setObjectName("mainToolbar");
-    toolbar->setMovable(false);
     
-    // Runtime toolbar buttons
-    QPushButton* loadBtn = new QPushButton("LOAD DESIGN", this);
-    loadBtn->setObjectName("loadButton");
-    loadBtn->setToolTip("Load a radar system design file");
-    
-    m_statusLabel = new QLabel("STATUS: INITIALIZING", this);
-    m_statusLabel->setObjectName("statusLabel");
-    
-    // Voice alert mute/unmute toggle button
-    m_voiceToggleBtn = new QPushButton("VOICE ALERTS: ON", this);
-    m_voiceToggleBtn->setObjectName("voiceToggleBtn");
-    m_voiceToggleBtn->setToolTip("Toggle voice-based health status alerts");
-    m_voiceToggleBtn->setCheckable(true);
-    m_voiceToggleBtn->setChecked(true);
-    connect(m_voiceToggleBtn, &QPushButton::clicked, this, &MainWindow::toggleVoiceAlerts);
-    
-    // Test voice button to verify audio output
-    QPushButton* testVoiceBtn = new QPushButton("TEST VOICE", this);
-    testVoiceBtn->setObjectName("testVoiceBtn");
-    testVoiceBtn->setToolTip("Test voice output - plays a brief test message");
-    connect(testVoiceBtn, &QPushButton::clicked, this, &MainWindow::testVoice);
-    
-    toolbar->addWidget(loadBtn);
-    toolbar->addSeparator();
-    toolbar->addWidget(m_statusLabel);
-    toolbar->addSeparator();
-    toolbar->addWidget(m_voiceToggleBtn);
-    toolbar->addWidget(testVoiceBtn);
-    toolbar->addSeparator();
-    
-    // Theme toggle button
-    m_themeToggleBtn = new QPushButton(this);
-    m_themeToggleBtn->setObjectName("themeToggleBtn");
-    m_themeToggleBtn->setCursor(Qt::PointingHandCursor);
-    m_themeToggleBtn->setToolTip("Switch between Dark and Light themes");
-    updateThemeButtonText();
-    toolbar->addWidget(m_themeToggleBtn);
-    
-    connect(loadBtn, &QPushButton::clicked, this, &MainWindow::loadDesign);
-    connect(m_themeToggleBtn, &QPushButton::clicked, this, &MainWindow::onThemeToggle);
-    
-    // Initialize voice alert manager
+    // ========== INITIALIZE RUNTIME SERVICES ==========
+    // Voice alert manager
     m_voiceAlertManager = new VoiceAlertManager(this);
     
-    // Start message server
+    // Message server for health data from external systems
     m_messageServer = new MessageServer(this);
     if (m_messageServer->startServer(12345)) {
         m_statusLabel->setText("STATUS: ACTIVE  |  PORT: 12345  |  CLIENTS: 0");
     } else {
-        m_statusLabel->setText("STATUS: ERROR - SERVER FAILED");
-        QMessageBox::warning(this, "Server Error", "Failed to start message server on port 12345");
+        m_statusLabel->setText("STATUS: SERVER FAILED");
+        qWarning() << "[MainWindow] Failed to start message server on port 12345";
     }
     
     connect(m_messageServer, &MessageServer::messageReceived, 
@@ -317,85 +294,11 @@ void MainWindow::setupRuntimeMode()
             this, &MainWindow::onClientConnected);
     connect(m_messageServer, &MessageServer::clientDisconnected,
             this, &MainWindow::onClientDisconnected);
-    
-    // ── Central widget with tab view ───────────────────────
-    QWidget* centralWidget = new QWidget(this);
-    centralWidget->setObjectName("centralWidget");
-    QVBoxLayout* centralLayout = new QVBoxLayout(centralWidget);
-    centralLayout->setSpacing(0);
-    centralLayout->setContentsMargins(8, 8, 8, 8);
-    
-    // Tab widget for System Overview + per-component enlarged views
-    m_tabWidget = new QTabWidget(centralWidget);
-    m_tabWidget->setObjectName("componentTabWidget");
-    m_tabWidget->setDocumentMode(false);
-    m_tabWidget->setTabPosition(QTabWidget::North);
-    
-    // ── "System Overview" tab (existing canvas + analytics) ─
-    QWidget* overviewTab = new QWidget();
-    overviewTab->setObjectName("overviewTab");
-    QHBoxLayout* overviewLayout = new QHBoxLayout(overviewTab);
-    overviewLayout->setSpacing(12);
-    overviewLayout->setContentsMargins(10, 10, 10, 10);
-    
-    // Center panel - Canvas
-    QWidget* centerPanel = new QWidget(overviewTab);
-    centerPanel->setObjectName("centerPanel");
-    QVBoxLayout* centerLayout = new QVBoxLayout(centerPanel);
-    centerLayout->setSpacing(8);
-    centerLayout->setContentsMargins(14, 14, 14, 14);
-    
-    QLabel* canvasLabel = new QLabel("SYSTEM MONITOR", centerPanel);
-    canvasLabel->setProperty("heading", true);
-    
-    m_canvas = new Canvas(centerPanel);
-    m_canvas->setObjectName("mainCanvas");
-    
-    QLabel* hintLabel = new QLabel(
-        "Load a system layout to monitor subsystems in real-time. "
-        "Each component shows embedded sub-systems with individual health status. "
-        "Click on component tabs above to see enlarged views and detailed analytics.", centerPanel);
-    hintLabel->setProperty("hint", true);
-    hintLabel->setAlignment(Qt::AlignCenter);
-    hintLabel->setWordWrap(true);
-    
-    centerLayout->addWidget(canvasLabel);
-    centerLayout->addWidget(m_canvas);
-    centerLayout->addWidget(hintLabel);
-    
-    // Right panel - Analytics
-    QWidget* rightPanel = new QWidget(overviewTab);
-    rightPanel->setObjectName("rightPanel");
-    QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
-    rightLayout->setSpacing(10);
-    rightLayout->setContentsMargins(14, 14, 14, 14);
-    
-    QLabel* analyticsLabel = new QLabel("HEALTH ANALYTICS", rightPanel);
-    analyticsLabel->setProperty("heading", true);
-    
-    m_analytics = new Analytics(rightPanel);
-    m_analytics->setObjectName("analyticsPanel");
-    
-    rightLayout->addWidget(analyticsLabel);
-    rightLayout->addWidget(m_analytics);
-    rightPanel->setMaximumWidth(340);
-    rightPanel->setMinimumWidth(280);
-    
-    overviewLayout->addWidget(centerPanel, 1);
-    overviewLayout->addWidget(rightPanel);
-    
-    // Add overview as first tab
-    m_tabWidget->addTab(overviewTab, "  System Overview  ");
-    
-    centralLayout->addWidget(m_tabWidget);
-    setCentralWidget(centralWidget);
-    
-    // Connect signals
-    connect(m_canvas, &Canvas::componentLoaded, this, &MainWindow::onComponentLoaded);
-    
-    // Auto-load radar_system.design if it exists
-    autoLoadDesign();
 }
+
+// ======================================================================
+// Component Tabs (Enlarged Views)
+// ======================================================================
 
 void MainWindow::createComponentTabs()
 {
@@ -405,33 +308,40 @@ void MainWindow::createComponentTabs()
     qDebug() << "[MainWindow] Creating enlarged tabs for" << components.size() << "components";
     
     for (Component* comp : components) {
-        QString id = comp->getId();
-        QString typeId = comp->getTypeId();
-        
-        // Collect subcomponent names
-        QStringList subNames;
-        for (SubComponent* sub : comp->getSubComponents()) {
-            subNames.append(sub->getName());
-        }
-        
-        EnlargedComponentView* view = new EnlargedComponentView(id, typeId, subNames, m_tabWidget);
-        m_enlargedViews[id] = view;
-        
-        // Set initial health from the component
-        view->updateComponentHealth(comp->getColor(), comp->getSize());
-        
-        // Tab name from display name
-        QString displayName = comp->getDisplayName();
-        QString tabName = "  " + displayName + "  ";
-        m_tabWidget->addTab(view, tabName);
-        
-        qDebug() << "[MainWindow] Added enlarged tab for" << id << "(" << displayName << ")";
+        addComponentTab(comp);
     }
+}
+
+void MainWindow::addComponentTab(Component* comp)
+{
+    if (!comp || !m_tabWidget) return;
+    
+    QString id = comp->getId();
+    
+    // Skip if tab already exists
+    if (m_enlargedViews.contains(id)) return;
+    
+    QString typeId = comp->getTypeId();
+    
+    QStringList subNames;
+    for (SubComponent* sub : comp->getSubComponents()) {
+        subNames.append(sub->getName());
+    }
+    
+    EnlargedComponentView* view = new EnlargedComponentView(id, typeId, subNames, m_tabWidget);
+    m_enlargedViews[id] = view;
+    
+    view->updateComponentHealth(comp->getColor(), comp->getSize());
+    
+    QString displayName = comp->getDisplayName();
+    QString tabName = "  " + displayName + "  ";
+    m_tabWidget->addTab(view, tabName);
+    
+    qDebug() << "[MainWindow] Added enlarged tab for" << id << "(" << displayName << ")";
 }
 
 void MainWindow::clearComponentTabs()
 {
-    // Remove all tabs except the first one (System Overview)
     while (m_tabWidget && m_tabWidget->count() > 1) {
         QWidget* w = m_tabWidget->widget(m_tabWidget->count() - 1);
         m_tabWidget->removeTab(m_tabWidget->count() - 1);
@@ -440,13 +350,12 @@ void MainWindow::clearComponentTabs()
     m_enlargedViews.clear();
 }
 
+// ======================================================================
+// Design Actions
+// ======================================================================
+
 void MainWindow::saveDesign()
 {
-    if (m_userRole != UserRole::Designer) {
-        QMessageBox::warning(this, "Access Denied", "Only Designer users can save designs.");
-        return;
-    }
-    
     QString fileName = QFileDialog::getSaveFileName(this, 
         "Save Design", "", "Design Files (*.design)");
     
@@ -485,28 +394,24 @@ void MainWindow::loadDesign()
     m_analytics->clear();
     m_canvas->loadFromJson(json);
     
-    if (m_userRole == UserRole::Designer) {
-        foreach (Component* comp, m_canvas->getComponents()) {
-            onComponentAdded(comp->getId(), comp->getTypeId());
-        }
-        QMessageBox::information(this, "Success", "Design loaded successfully!");
-    } else {
-        // Create enlarged component tabs for runtime mode
-        createComponentTabs();
-        QMessageBox::information(this, "Success", 
-            "Radar system layout loaded!\nClick component tabs to see enlarged views and analytics.\nWaiting for health updates...");
+    // Update analytics for all loaded components
+    foreach (Component* comp, m_canvas->getComponents()) {
+        onComponentAdded(comp->getId(), comp->getTypeId());
     }
+    
+    // Create enlarged component tabs
+    createComponentTabs();
+    
+    QMessageBox::information(this, "Success", 
+        "Design loaded!\nComponent tabs created for enlarged views.\n"
+        "Health updates will appear when external systems connect.");
 }
 
 void MainWindow::clearCanvas()
 {
-    if (m_userRole != UserRole::Designer) {
-        QMessageBox::warning(this, "Access Denied", "Only Designer users can clear the canvas.");
-        return;
-    }
-    
     m_canvas->clearCanvas();
     m_analytics->clear();
+    clearComponentTabs();
 }
 
 void MainWindow::addNewComponentType()
@@ -515,7 +420,6 @@ void MainWindow::addNewComponentType()
     if (dialog.exec() == QDialog::Accepted) {
         ComponentDefinition def = dialog.getComponentDefinition();
         
-        // Refresh the component list
         if (m_componentList) {
             m_componentList->refreshFromRegistry();
         }
@@ -528,40 +432,8 @@ void MainWindow::addNewComponentType()
     }
 }
 
-void MainWindow::toggleConnectionMode()
-{
-    if (!m_canvas || !m_connectBtn) return;
-    
-    if (m_connectBtn->isChecked()) {
-        m_canvas->setMode(CanvasMode::Connect);
-        // Set connection type from combo
-        int typeIdx = m_connectionTypeCombo->currentData().toInt();
-        m_canvas->setConnectionType(static_cast<ConnectionType>(typeIdx));
-    } else {
-        m_canvas->setMode(CanvasMode::Select);
-    }
-}
-
-void MainWindow::onConnectionTypeChanged(int index)
-{
-    Q_UNUSED(index);
-    if (!m_canvas || !m_connectionTypeCombo) return;
-    
-    int typeVal = m_connectionTypeCombo->currentData().toInt();
-    m_canvas->setConnectionType(static_cast<ConnectionType>(typeVal));
-}
-
-void MainWindow::onModeChanged(CanvasMode mode)
-{
-    if (m_connectBtn) {
-        m_connectBtn->setChecked(mode == CanvasMode::Connect);
-    }
-}
-
 void MainWindow::autoLoadDesign()
 {
-    if (m_userRole != UserRole::User) return;
-    
     QStringList searchPaths;
     searchPaths << "radar_system.design"
                 << "../radar_system.design"
@@ -586,7 +458,12 @@ void MainWindow::autoLoadDesign()
     m_analytics->clear();
     m_canvas->loadFromJson(json);
     
-    // Create enlarged component tabs for runtime mode
+    // Update analytics
+    foreach (Component* comp, m_canvas->getComponents()) {
+        onComponentAdded(comp->getId(), comp->getTypeId());
+    }
+    
+    // Create enlarged component tabs
     createComponentTabs();
     
     qDebug() << "[MainWindow] Auto-loaded design from:" << foundPath;
@@ -596,6 +473,10 @@ void MainWindow::autoLoadDesign()
     }
 }
 
+// ======================================================================
+// Signal Handlers
+// ======================================================================
+
 void MainWindow::onComponentAdded(const QString& id, const QString& typeId)
 {
     ComponentRegistry& registry = ComponentRegistry::instance();
@@ -604,6 +485,32 @@ void MainWindow::onComponentAdded(const QString& id, const QString& typeId)
         displayName = registry.getComponent(typeId).displayName;
     }
     m_analytics->addComponent(id, displayName);
+    
+    // Create enlarged tab for the new component
+    Component* comp = m_canvas->getComponentById(id);
+    if (comp) {
+        addComponentTab(comp);
+    }
+}
+
+void MainWindow::onComponentLoaded(const QString& id, const QString& typeId)
+{
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    QString displayName = typeId;
+    if (registry.hasComponent(typeId)) {
+        displayName = registry.getComponent(typeId).displayName;
+    }
+    m_analytics->addComponent(id, displayName);
+}
+
+void MainWindow::onDesignSubComponentAdded(const QString& parentId, SubComponentType subType)
+{
+    m_analytics->addDesignSubComponent(parentId, DesignSubComponent::typeToString(subType));
+}
+
+void MainWindow::onDropRejected(const QString& reason)
+{
+    QMessageBox::warning(this, "Invalid Drop", reason);
 }
 
 void MainWindow::onMessageReceived(const QString& componentId, const QString& color, qreal size)
@@ -619,7 +526,7 @@ void MainWindow::onMessageReceived(const QString& componentId, const QString& co
     
     m_analytics->recordMessage(componentId, color, size);
     
-    // Update enlarged view if it exists for this component
+    // Update enlarged view if it exists
     if (m_enlargedViews.contains(componentId)) {
         m_enlargedViews[componentId]->updateComponentHealth(QColor(color), size);
     }
@@ -632,16 +539,6 @@ void MainWindow::onMessageReceived(const QString& componentId, const QString& co
         }
         m_voiceAlertManager->processHealthUpdate(componentId, componentName, color, size);
     }
-}
-
-void MainWindow::onComponentLoaded(const QString& id, const QString& typeId)
-{
-    ComponentRegistry& registry = ComponentRegistry::instance();
-    QString displayName = typeId;
-    if (registry.hasComponent(typeId)) {
-        displayName = registry.getComponent(typeId).displayName;
-    }
-    m_analytics->addComponent(id, displayName);
 }
 
 void MainWindow::onClientConnected()
@@ -663,13 +560,50 @@ void MainWindow::onClientDisconnected()
     }
 }
 
+// ======================================================================
+// Connection Mode
+// ======================================================================
+
+void MainWindow::toggleConnectionMode()
+{
+    if (!m_canvas || !m_connectBtn) return;
+    
+    if (m_connectBtn->isChecked()) {
+        m_canvas->setMode(CanvasMode::Connect);
+        int typeIdx = m_connectionTypeCombo->currentData().toInt();
+        m_canvas->setConnectionType(static_cast<ConnectionType>(typeIdx));
+    } else {
+        m_canvas->setMode(CanvasMode::Select);
+    }
+}
+
+void MainWindow::onConnectionTypeChanged(int index)
+{
+    Q_UNUSED(index);
+    if (!m_canvas || !m_connectionTypeCombo) return;
+    
+    int typeVal = m_connectionTypeCombo->currentData().toInt();
+    m_canvas->setConnectionType(static_cast<ConnectionType>(typeVal));
+}
+
+void MainWindow::onModeChanged(CanvasMode mode)
+{
+    if (m_connectBtn) {
+        m_connectBtn->setChecked(mode == CanvasMode::Connect);
+    }
+}
+
+// ======================================================================
+// Voice Alerts
+// ======================================================================
+
 void MainWindow::toggleVoiceAlerts()
 {
     if (!m_voiceAlertManager || !m_voiceToggleBtn) return;
     
     bool isOn = m_voiceToggleBtn->isChecked();
     m_voiceAlertManager->setMuted(!isOn);
-    m_voiceToggleBtn->setText(isOn ? "VOICE ALERTS: ON" : "VOICE ALERTS: OFF");
+    m_voiceToggleBtn->setText(isOn ? "VOICE: ON" : "VOICE: OFF");
 }
 
 void MainWindow::testVoice()
@@ -688,7 +622,9 @@ void MainWindow::testVoice()
     m_voiceAlertManager->testVoice();
 }
 
-// ── Theme handling ─────────────────────────────────────────────
+// ======================================================================
+// Theme
+// ======================================================================
 
 void MainWindow::onThemeToggle()
 {
@@ -701,7 +637,6 @@ void MainWindow::onThemeChanged(AppTheme theme)
     updateThemeButtonText();
     refreshCanvasBackground();
     
-    // Force analytics to redraw with new theme colours
     if (m_analytics) {
         m_analytics->updateDisplay();
     }
@@ -727,7 +662,6 @@ void MainWindow::refreshCanvasBackground()
     m_canvas->setBackgroundBrush(QBrush(tm.canvasBackground()));
     m_canvas->viewport()->update();
     
-    // Force repaint of all scene items (Components, SubComponents, Connections)
     if (m_canvas->scene()) {
         m_canvas->scene()->update();
     }

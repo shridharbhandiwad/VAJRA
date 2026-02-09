@@ -10,6 +10,9 @@
  * This list auto-populates from the registry. When new components are added
  * to the registry (via JSON or UI), the list updates automatically.
  * No code changes needed to display new component types.
+ * 
+ * Also includes draggable sub-component widget types (Label, LineEdit, Button)
+ * that can be dropped inside parent components on the canvas.
  */
 class ComponentList : public QListWidget
 {
@@ -28,6 +31,7 @@ protected:
 private:
     void addComponentItem(const QString& displayName, const QString& typeId, 
                           const QString& imageDir, const QColor& iconColor);
+    void addSubComponentItem(const QString& name);
     QPoint m_dragStartPosition;
 };
 

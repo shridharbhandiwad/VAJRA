@@ -8,6 +8,7 @@
 #include <QPixmap>
 #include <QList>
 #include "subcomponent.h"
+#include "designsubcomponent.h"
 
 /**
  * Component - A visual graphics item representing a radar subsystem on the canvas.
@@ -43,12 +44,26 @@ public:
     void setColor(const QColor& color);
     void setSize(qreal size);
     
-    // Sub-component management
+    // Sub-component management (auto-created health-tracking subsystems)
     void addSubComponent(const QString& name);
     void removeSubComponent(int index);
     QList<SubComponent*> getSubComponents() const { return m_subComponents; }
     SubComponent* getSubComponent(const QString& name) const;
     int subComponentCount() const { return m_subComponents.size(); }
+    
+    // Design sub-component management (user drag-dropped Label/LineEdit/Button widgets)
+    QRectF designContainerRect() const;
+    bool canAcceptDesignSubComponent(SubComponentType subType) const;
+    void addDesignSubComponent(DesignSubComponent* sub);
+    void removeDesignSubComponent(DesignSubComponent* sub);
+    QList<DesignSubComponent*> getDesignSubComponents() const { return m_designSubComponents; }
+    int designSubComponentCount() const { return m_designSubComponents.size(); }
+    
+    /** Returns the set of allowed SubComponentTypes for this component's type. */
+    static QStringList allowedWidgetTypes(const QString& typeId);
+    
+    /** Human-readable validation error message. Empty string if valid. */
+    static QString widgetValidationMessage(const QString& typeId, SubComponentType subType);
     
     // Container dimensions
     qreal containerWidth() const;
@@ -79,6 +94,7 @@ private:
     bool m_hasImage;
     
     QList<SubComponent*> m_subComponents;
+    QList<DesignSubComponent*> m_designSubComponents;
     
     // Layout constants
     static constexpr qreal HEADER_HEIGHT = 40;
@@ -86,6 +102,9 @@ private:
     static constexpr qreal SUB_SPACING = 4;
     static constexpr qreal MIN_WIDTH = 160;
     static constexpr qreal FOOTER_HEIGHT = 8;
+    static constexpr qreal DESIGN_CONTAINER_HEADER = 18.0;
+    static constexpr qreal DESIGN_CONTAINER_MIN_HEIGHT = 35.0;
+    static constexpr qreal DESIGN_CONTAINER_FULL_HEIGHT = 150.0;
 };
 
 #endif // COMPONENT_H

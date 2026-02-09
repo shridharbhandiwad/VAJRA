@@ -26,12 +26,14 @@ struct ComponentDefinition {
     int port;                // Port number for health data
     QString category;        // Grouping category (e.g., "Sensor", "Infrastructure")
     QString shape;           // Fallback geometric shape: "ellipse", "rect", "hexagon", "diamond"
+    QStringList allowedWidgets; // Widget sub-component types allowed: "Label", "LineEdit", "Button"
 
     ComponentDefinition()
         : iconColor(Qt::blue)
         , protocol("TCP")
         , port(12345)
         , shape("rect")
+        , allowedWidgets({"Label", "LineEdit", "Button"})
     {}
 
     QJsonObject toJson() const;

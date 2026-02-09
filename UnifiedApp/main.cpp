@@ -32,9 +32,6 @@ int main(int argc, char *argv[])
     theme.applyTheme();
     
     // Initialize the component registry from JSON config
-    // This is the core of the modular architecture - components are defined
-    // in components.json, not in code. New components can be added without
-    // any code changes.
     ComponentRegistry& registry = ComponentRegistry::instance();
     if (!registry.loadFromFile()) {
         qWarning() << "[Main] Could not load components.json - starting with empty registry.";
@@ -45,13 +42,13 @@ int main(int argc, char *argv[])
                  << registry.getCategories().size() << "categories";
     }
     
-    // Show login dialog
+    // Show login dialog (unified - no role selection)
     LoginDialog loginDialog;
     if (loginDialog.exec() == QDialog::Accepted) {
-        UserRole userRole = loginDialog.getUserRole();
         QString username = loginDialog.getUsername();
         
-        MainWindow window(userRole, username);
+        // Create unified MainWindow (no separate Designer/Runtime modes)
+        MainWindow window(username);
         window.show();
         
         return app.exec();
