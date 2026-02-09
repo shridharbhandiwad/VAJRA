@@ -17,9 +17,9 @@
  * component type in components.json via the "allowed_widgets" field.
  *
  *   Default allowed_widgets:
- *     Antenna:              Label, Button
+ *     Antenna:              Label, LineEdit, Button
  *     PowerSystem:          Label, LineEdit, Button
- *     LiquidCoolingUnit:    Label, Button
+ *     LiquidCoolingUnit:    Label, LineEdit, Button
  *     CommunicationSystem:  Label, LineEdit, Button
  *     RadarComputer:        Label, LineEdit, Button
  */

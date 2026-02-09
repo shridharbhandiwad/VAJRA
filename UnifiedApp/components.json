@@ -16,7 +16,7 @@
         "Feed Horn",
         "Rotary Joint"
       ],
-      "allowed_widgets": ["Label", "Button"],
+      "allowed_widgets": ["Label", "LineEdit", "Button"],
       "protocol": "TCP",
       "port": 12345,
       "category": "Sensor",
@@ -55,7 +55,7 @@
         "Pump Status",
         "Heat Exchanger"
       ],
-      "allowed_widgets": ["Label", "Button"],
+      "allowed_widgets": ["Label", "LineEdit", "Button"],
       "protocol": "TCP",
       "port": 12345,
       "category": "Infrastructure",
