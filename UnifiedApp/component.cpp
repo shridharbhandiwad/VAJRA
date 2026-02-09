@@ -7,6 +7,13 @@
 #include <QtMath>
 #include <QRandomGenerator>
 
+// Out-of-class definitions for static constexpr members (required for ODR-use in C++14)
+constexpr qreal Component::HEADER_HEIGHT;
+constexpr qreal Component::PADDING;
+constexpr qreal Component::SUB_SPACING;
+constexpr qreal Component::MIN_WIDTH;
+constexpr qreal Component::FOOTER_HEIGHT;
+
 Component::Component(const QString& typeId, const QString& id, QGraphicsItem* parent)
     : QGraphicsItem(parent)
     , m_typeId(typeId)
