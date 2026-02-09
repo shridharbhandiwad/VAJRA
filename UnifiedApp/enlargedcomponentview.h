@@ -82,7 +82,6 @@ private:
     QGraphicsView* m_componentView;
     QGraphicsScene* m_componentScene;
     Component* m_displayComponent;
-    QMap<QString, SubsystemHealthBar*> m_subsystemBars;
     QLabel* m_healthStatusLabel;
     QLabel* m_healthValueLabel;
 

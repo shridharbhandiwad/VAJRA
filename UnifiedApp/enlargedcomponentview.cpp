@@ -298,7 +298,7 @@ void EnlargedComponentView::setupUI()
     }
 
     // ════════════════════════════════════════════════════════
-    //  LEFT PANEL – Component enlarged + subsystems
+    //  LEFT PANEL – Component enlarged
     // ════════════════════════════════════════════════════════
     QWidget* leftPanel = new QWidget(this);
     leftPanel->setObjectName("enlargedLeftPanel");
@@ -347,36 +347,10 @@ void EnlargedComponentView::setupUI()
     m_componentView->setFrameShape(QFrame::NoFrame);
     m_componentView->setObjectName("mainCanvas");
 
-    // Subsystems section
-    QLabel* subsysTitle = new QLabel("SUBSYSTEMS", leftPanel);
-    subsysTitle->setObjectName("subsysTitle");
-
-    // Subsystem list with scroll area
-    QScrollArea* scrollArea = new QScrollArea(leftPanel);
-    scrollArea->setObjectName("subsysScrollArea");
-    scrollArea->setWidgetResizable(true);
-    scrollArea->setFrameShape(QFrame::NoFrame);
-
-    QWidget* subsysContainer = new QWidget();
-    subsysContainer->setObjectName("subsysContainer");
-    QVBoxLayout* subsysLayout = new QVBoxLayout(subsysContainer);
-    subsysLayout->setSpacing(4);
-    subsysLayout->setContentsMargins(0, 0, 0, 0);
-
-    for (const QString& subName : m_subcomponentNames) {
-        SubsystemHealthBar* bar = new SubsystemHealthBar(subName, 100.0, QColor("#4CAF50"), subsysContainer);
-        subsysLayout->addWidget(bar);
-        m_subsystemBars[subName] = bar;
-    }
-    subsysLayout->addStretch();
-    scrollArea->setWidget(subsysContainer);
-
     leftLayout->addWidget(leftTitle);
     leftLayout->addWidget(idLabel);
     leftLayout->addWidget(statusRow);
-    leftLayout->addWidget(m_componentView, 2);
-    leftLayout->addWidget(subsysTitle);
-    leftLayout->addWidget(scrollArea, 1);
+    leftLayout->addWidget(m_componentView, 1);
 
     // ════════════════════════════════════════════════════════
     //  RIGHT PANEL – Data Analytics
@@ -568,15 +542,11 @@ void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal siz
         QString("color: %1; font-size: 18px; font-weight: 700;"
                 "background: transparent; border: none;").arg(color.name()));
 
-    // Update subsystem bars with distributed health
+    // Update subsystem overview dots/percentages
     for (SubComponent* sub : m_displayComponent->getSubComponents()) {
         QString subName = sub->getName();
         qreal subHealth = sub->getHealth();
         QColor subColor = sub->getColor();
-
-        if (m_subsystemBars.contains(subName)) {
-            m_subsystemBars[subName]->updateHealth(subHealth, subColor);
-        }
 
         // Update the overview dots/percentages
         QLabel* dot = findChild<QLabel*>("dot_" + subName);
@@ -594,11 +564,9 @@ void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal siz
     }
 }
 
-void EnlargedComponentView::updateSubcomponentHealth(const QString& subName, qreal health, const QColor& color)
+void EnlargedComponentView::updateSubcomponentHealth(const QString& /*subName*/, qreal /*health*/, const QColor& /*color*/)
 {
-    if (m_subsystemBars.contains(subName)) {
-        m_subsystemBars[subName]->updateHealth(health, color);
-    }
+    // Subsystem health bars removed from enlarged view
 }
 
 QString EnlargedComponentView::healthStatusText(const QColor& color) const
