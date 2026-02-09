@@ -14,6 +14,7 @@
 Canvas::Canvas(QWidget* parent)
     : QGraphicsView(parent)
     , m_scene(new QGraphicsScene(this))
+    , m_readOnly(false)
     , m_componentCounter(0)
     , m_connectionCounter(0)
     , m_mode(CanvasMode::Select)
@@ -38,6 +39,21 @@ Canvas::Canvas(QWidget* parent)
 
 Canvas::~Canvas()
 {
+}
+
+void Canvas::setReadOnly(bool readOnly)
+{
+    m_readOnly = readOnly;
+    setAcceptDrops(!readOnly);
+    
+    // In read-only mode, components should not be movable or selectable
+    for (auto it = m_componentMap.begin(); it != m_componentMap.end(); ++it) {
+        Component* comp = it.value();
+        if (comp) {
+            comp->setFlag(QGraphicsItem::ItemIsMovable, !readOnly);
+            comp->setFlag(QGraphicsItem::ItemIsSelectable, !readOnly);
+        }
+    }
 }
 
 Component* Canvas::getComponentById(const QString& id)
@@ -171,6 +187,8 @@ void Canvas::deleteSelectedConnections()
 
 void Canvas::dragEnterEvent(QDragEnterEvent* event)
 {
+    if (m_readOnly) { event->ignore(); return; }
+    
     if (event->mimeData()->hasText() || 
         event->mimeData()->hasFormat("application/x-component-typeid")) {
         event->acceptProposedAction();
@@ -179,6 +197,8 @@ void Canvas::dragEnterEvent(QDragEnterEvent* event)
 
 void Canvas::dragMoveEvent(QDragMoveEvent* event)
 {
+    if (m_readOnly) { event->ignore(); return; }
+    
     if (event->mimeData()->hasText() || 
         event->mimeData()->hasFormat("application/x-component-typeid")) {
         event->acceptProposedAction();
@@ -187,6 +207,8 @@ void Canvas::dragMoveEvent(QDragMoveEvent* event)
 
 void Canvas::dropEvent(QDropEvent* event)
 {
+    if (m_readOnly) { event->ignore(); return; }
+    
     QString mimeText = event->mimeData()->hasText() ? event->mimeData()->text() : QString();
     
     // ------------------------------------------------------------------
@@ -286,6 +308,11 @@ void Canvas::dropEvent(QDropEvent* event)
 
 void Canvas::mousePressEvent(QMouseEvent* event)
 {
+    if (m_readOnly) {
+        QGraphicsView::mousePressEvent(event);
+        return;
+    }
+    
     if (m_mode == CanvasMode::Connect && event->button() == Qt::LeftButton) {
         QPointF scenePos = mapToScene(event->pos());
         Component* comp = componentAtPoint(scenePos);
@@ -370,6 +397,11 @@ void Canvas::mouseReleaseEvent(QMouseEvent* event)
 
 void Canvas::keyPressEvent(QKeyEvent* event)
 {
+    if (m_readOnly) {
+        QGraphicsView::keyPressEvent(event);
+        return;
+    }
+    
     if (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace) {
         // Delete selected design sub-components first
         QList<QGraphicsItem*> selected = m_scene->selectedItems();
@@ -676,6 +708,17 @@ void Canvas::loadFromJson(const QString& json)
         } else {
             qWarning() << "[Canvas] Could not load connection: source=" << sourceId 
                        << "target=" << targetId;
+        }
+    }
+    
+    // Re-apply read-only state to newly loaded components
+    if (m_readOnly) {
+        for (auto it = m_componentMap.begin(); it != m_componentMap.end(); ++it) {
+            Component* comp = it.value();
+            if (comp) {
+                comp->setFlag(QGraphicsItem::ItemIsMovable, false);
+                comp->setFlag(QGraphicsItem::ItemIsSelectable, false);
+            }
         }
     }
     

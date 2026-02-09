@@ -33,6 +33,7 @@ LoginDialog::LoginDialog(QWidget* parent)
     , m_fadeAnimation(nullptr)
     , m_slideAnimation(nullptr)
     , m_entranceAnimation(nullptr)
+    , m_userRole(UserRole::User)
     , m_passwordVisible(false)
     , m_loginAttempts(0)
 {
@@ -41,7 +42,7 @@ LoginDialog::LoginDialog(QWidget* parent)
     
     setWindowTitle("Radar System - Access Control");
     setModal(true);
-    setFixedSize(480, 650);
+    setFixedSize(480, 700);
     setObjectName("LoginDialog");
     
     // Standard window frame for professional look
@@ -197,7 +198,9 @@ void LoginDialog::setupUI()
     QLabel* infoPanelText = new QLabel(
         "<b>DEFAULT CREDENTIALS</b><br><br>"
         "Username: <b>Designer</b> / Password: <b>designer</b><br>"
-        "Username: <b>User</b> / Password: <b>user</b>",
+        "&nbsp;&nbsp;&rarr; Design &amp; monitor on System Overview canvas<br><br>"
+        "Username: <b>User</b> / Password: <b>user</b><br>"
+        "&nbsp;&nbsp;&rarr; Monitor-only (no design, no components panel)",
         this
     );
     infoPanelText->setObjectName("infoPanelText");
@@ -294,11 +297,20 @@ void LoginDialog::onLoginClicked()
     
     // Simulate authentication delay for UX
     QTimer::singleShot(500, this, [this, username, password]() {
-        // Validate credentials - both sets of credentials grant full unified access
+        // Validate credentials - role-based access
         if ((username == "Designer" && password == "designer") ||
             (username == "User" && password == "user")) {
             m_username = username;
-            m_successLabel->setText("AUTHENTICATION SUCCESS - ACCESS GRANTED");
+            
+            // Assign role based on username
+            if (username == "Designer") {
+                m_userRole = UserRole::Designer;
+            } else {
+                m_userRole = UserRole::User;
+            }
+            
+            QString roleStr = (m_userRole == UserRole::Designer) ? "DESIGNER" : "USER";
+            m_successLabel->setText(QString("AUTHENTICATION SUCCESS - %1 ACCESS GRANTED").arg(roleStr));
             m_successLabel->setVisible(true);
             animateSuccess();
             
