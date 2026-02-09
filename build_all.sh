@@ -14,6 +14,17 @@ if ! command -v qmake &> /dev/null; then
     exit 1
 fi
 
+# Check for TTS engine (optional - for voice health alerts)
+if command -v espeak-ng &> /dev/null; then
+    echo "Voice Alerts: espeak-ng detected"
+elif command -v espeak &> /dev/null; then
+    echo "Voice Alerts: espeak detected"
+else
+    echo "Note: No TTS engine found. Voice health alerts will be logged only."
+    echo "Install espeak-ng for voice alerts: sudo apt-get install espeak-ng"
+fi
+echo
+
 # Build Unified Application (Recommended)
 echo "Building Unified Application (Recommended)..."
 cd UnifiedApp || exit 1
@@ -74,4 +85,9 @@ echo
 echo "To run separate applications:"
 echo "  ./DesignerApp/DesignerApp"
 echo "  ./RuntimeApp/RuntimeApp"
+echo
+echo "Voice Health Alerts:"
+echo "  Runtime mode announces 'System Status Critical/Degraded <health>%'"
+echo "  when subsystem health drops. Toggle via VOICE ALERTS button in toolbar."
+echo "  Requires: espeak-ng (sudo apt-get install espeak-ng)"
 echo
