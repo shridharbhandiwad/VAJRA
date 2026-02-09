@@ -69,10 +69,8 @@ MainWindow::~MainWindow()
 void MainWindow::applyRoleRestrictions()
 {
     if (m_role == UserRole::Designer) {
-        // Designer: Full design on System Overview canvas only.
-        // Hide per-component enlarged view tabs (keep only System Overview).
-        // Component tabs are NOT created for the Designer role.
-        // (createComponentTabs / addComponentTab are gated below.)
+        // Designer: Full design capabilities plus per-component enlarged views
+        // with data analytics tabs for each component.
         
     } else if (m_role == UserRole::User) {
         // User: Monitor-only. No design tools, no components panel.
@@ -358,12 +356,6 @@ void MainWindow::setupUI()
 
 void MainWindow::createComponentTabs()
 {
-    // Designer sees only System Overview canvas; User sees only monitor view.
-    // Neither role gets per-component enlarged tabs.
-    if (m_role == UserRole::Designer || m_role == UserRole::User) {
-        return;
-    }
-    
     clearComponentTabs();
     
     QList<Component*> components = m_canvas->getComponents();
@@ -376,11 +368,6 @@ void MainWindow::createComponentTabs()
 
 void MainWindow::addComponentTab(Component* comp)
 {
-    // No per-component tabs for Designer or User roles
-    if (m_role == UserRole::Designer || m_role == UserRole::User) {
-        return;
-    }
-    
     if (!comp || !m_tabWidget) return;
     
     QString id = comp->getId();
