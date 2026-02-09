@@ -140,7 +140,7 @@ void MessageServer::parseAndEmitMessage(const QByteArray& data)
     QString color = obj["color"].toString();
     qreal size = obj["size"].toDouble();
     
-    if (!componentId.isEmpty() && !color.isEmpty() && size > 0) {
+    if (!componentId.isEmpty() && !color.isEmpty() && size >= 0) {
         qDebug() << "[MessageServer] Health update for" << componentId 
                  << ":" << color << size;
         emit messageReceived(componentId, color, size);
