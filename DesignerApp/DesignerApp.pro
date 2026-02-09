@@ -13,14 +13,16 @@ SOURCES += \
     component.cpp \
     canvas.cpp \
     componentlist.cpp \
-    analytics.cpp
+    analytics.cpp \
+    subcomponent.cpp
 
 HEADERS += \
     mainwindow.h \
     component.h \
     canvas.h \
     componentlist.h \
-    analytics.h
+    analytics.h \
+    subcomponent.h
 
 RESOURCES += \
     resources.qrc

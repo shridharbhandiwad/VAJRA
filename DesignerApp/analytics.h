@@ -27,6 +27,10 @@ public:
     void addComponent(const QString& id, const QString& type);
     void removeComponent(const QString& id);
     void recordMessage(const QString& id, const QString& color, qreal size);
+    
+    /** Track a sub-component being added to a parent component. */
+    void addSubComponent(const QString& parentId, const QString& subType);
+    
     void clear();
     void updateDisplay();
     
@@ -34,6 +38,10 @@ private:
     QTextEdit* m_textEdit;
     QMap<QString, ComponentStats> m_stats;
     QMap<QString, QString> m_componentTypes;
+    
+    // Sub-component tracking
+    int m_totalSubComponents;
+    QMap<QString, int> m_subTypeCounts;   // "Label" -> count, etc.
 };
 
 #endif // ANALYTICS_H

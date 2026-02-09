@@ -20,6 +20,8 @@ private slots:
     void loadDesign();
     void clearCanvas();
     void onComponentAdded(const QString& id, ComponentType type);
+    void onSubComponentAdded(const QString& parentId, SubComponentType subType);
+    void onDropRejected(const QString& reason);
     
 private:
     void setupUI();

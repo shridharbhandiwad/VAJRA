@@ -18,6 +18,7 @@ protected:
     
 private:
     void addComponentItem(const QString& name, ComponentType type);
+    void addSubComponentItem(const QString& name);
     QPoint m_dragStartPosition;
 };
 
