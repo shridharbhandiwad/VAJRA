@@ -5,6 +5,7 @@
 #include <QFileInfo>
 #include <QDebug>
 #include <QtMath>
+#include <QRandomGenerator>
 
 Component::Component(const QString& typeId, const QString& id, QGraphicsItem* parent)
     : QGraphicsItem(parent)
@@ -28,22 +29,101 @@ Component::Component(const QString& typeId, const QString& id, QGraphicsItem* pa
     
     // Load subsystem image
     loadSubsystemImage();
+    
+    // Create default sub-components from registry definition
+    createDefaultSubComponents();
+}
+
+void Component::createDefaultSubComponents()
+{
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    if (registry.hasComponent(m_typeId)) {
+        ComponentDefinition def = registry.getComponent(m_typeId);
+        for (int i = 0; i < def.subsystems.size(); ++i) {
+            addSubComponent(def.subsystems[i]);
+        }
+    }
+}
+
+void Component::addSubComponent(const QString& name)
+{
+    int index = m_subComponents.size();
+    SubComponent* sub = new SubComponent(name, index, this);
+    m_subComponents.append(sub);
+    
+    prepareGeometryChange();
+    layoutSubComponents();
+}
+
+void Component::removeSubComponent(int index)
+{
+    if (index >= 0 && index < m_subComponents.size()) {
+        SubComponent* sub = m_subComponents.takeAt(index);
+        delete sub;
+        
+        // Re-index remaining sub-components
+        for (int i = 0; i < m_subComponents.size(); ++i) {
+            m_subComponents[i]->setIndex(i);
+        }
+        
+        prepareGeometryChange();
+        layoutSubComponents();
+    }
+}
+
+SubComponent* Component::getSubComponent(const QString& name) const
+{
+    for (SubComponent* sub : m_subComponents) {
+        if (sub->getName() == name) {
+            return sub;
+        }
+    }
+    return nullptr;
+}
+
+qreal Component::containerWidth() const
+{
+    qreal subWidth = SubComponent::itemWidth() + PADDING * 2;
+    return qMax(MIN_WIDTH, subWidth);
+}
+
+qreal Component::containerHeight() const
+{
+    qreal height = HEADER_HEIGHT + PADDING;
+    
+    if (!m_subComponents.isEmpty()) {
+        height += m_subComponents.size() * (SubComponent::itemHeight() + SUB_SPACING);
+    } else {
+        height += 30; // Minimum content area
+    }
+    
+    height += FOOTER_HEIGHT;
+    return height;
+}
+
+void Component::layoutSubComponents()
+{
+    qreal yOffset = HEADER_HEIGHT + PADDING;
+    qreal xOffset = PADDING;
+    
+    for (int i = 0; i < m_subComponents.size(); ++i) {
+        m_subComponents[i]->setPos(xOffset, yOffset);
+        yOffset += SubComponent::itemHeight() + SUB_SPACING;
+    }
+}
+
+QPointF Component::anchorPoint() const
+{
+    return pos() + QPointF(containerWidth() / 2.0, containerHeight() / 2.0);
 }
 
 QRectF Component::boundingRect() const
 {
-    qreal halfSize = m_size / 2.0;
+    qreal w = containerWidth();
+    qreal h = containerHeight();
     
-    // Generous bounds that cover all possible drawing operations
-    qreal top = -halfSize * 1.3;
-    qreal bottom = halfSize * 2.5;
-    qreal left = -halfSize * 1.3;
-    qreal right = halfSize * 1.3;
-    
-    qreal width = right - left;
-    qreal height = bottom - top;
-    
-    return QRectF(left, top, width, height);
+    // Add extra space for label below
+    return QRectF(-2, -2, w + 4, h + 4);
 }
 
 void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
@@ -54,131 +134,118 @@ void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setRenderHint(QPainter::SmoothPixmapTransform);
     
-    if (m_hasImage && !m_image.isNull()) {
-        paintWithImage(painter);
-    } else {
-        paintGeometric(painter);
-    }
+    paintContainer(painter);
     
     // Draw selection border if selected
     if (isSelected()) {
         painter->setPen(QPen(QColor("#00BCD4"), 2, Qt::DashLine));
         painter->setBrush(Qt::NoBrush);
-        painter->drawRect(boundingRect());
+        painter->drawRoundedRect(boundingRect().adjusted(1, 1, -1, -1), 8, 8);
     }
 }
 
-void Component::paintWithImage(QPainter* painter)
+void Component::paintContainer(QPainter* painter)
 {
-    qreal imageSize = m_size * 1.8;
-    qreal imageHalfSize = imageSize / 2.0;
+    qreal w = containerWidth();
+    qreal h = containerHeight();
     
-    // Draw card background with subtle shadow effect
+    // Shadow
     painter->setPen(Qt::NoPen);
-    painter->setBrush(QColor(30, 30, 35, 180));
-    painter->drawRoundedRect(-imageHalfSize + 2, -imageHalfSize + 2, imageSize, imageSize, 8, 8);
+    painter->setBrush(QColor(0, 0, 0, 50));
+    painter->drawRoundedRect(3, 3, w, h, 8, 8);
     
-    // Draw card
-    painter->setPen(QPen(QColor(60, 65, 75), 1));
-    painter->setBrush(QColor(36, 39, 46));
-    painter->drawRoundedRect(-imageHalfSize, -imageHalfSize, imageSize, imageSize, 8, 8);
+    // Main container background
+    painter->setPen(QPen(QColor(55, 60, 70), 1.5));
+    painter->setBrush(QColor(28, 30, 38));
+    painter->drawRoundedRect(0, 0, w, h, 8, 8);
     
-    // Draw the subsystem image with rounded corners
-    QRectF imageRect(-imageHalfSize + 3, -imageHalfSize + 3, imageSize - 6, imageSize - 6);
+    // Header background with component color
+    QPainterPath headerPath;
+    headerPath.addRoundedRect(0, 0, w, HEADER_HEIGHT, 8, 8);
+    // Clip bottom corners of header
+    headerPath.addRect(0, HEADER_HEIGHT - 8, w, 8);
     
-    // Create rounded clip for image
-    QPainterPath clipPath;
-    clipPath.addRoundedRect(imageRect, 6, 6);
-    painter->setClipPath(clipPath);
-    painter->drawPixmap(imageRect.toRect(), m_image);
+    QLinearGradient headerGrad(0, 0, w, 0);
+    headerGrad.setColorAt(0, m_color.darker(180));
+    headerGrad.setColorAt(1, m_color.darker(220));
+    
+    painter->setPen(Qt::NoPen);
+    painter->setClipPath(headerPath);
+    painter->setBrush(headerGrad);
+    painter->drawRect(0, 0, w, HEADER_HEIGHT);
     painter->setClipping(false);
     
-    // Draw health indicator bar at bottom of image
-    QColor healthColor = m_color;
-    qreal barWidth = imageSize - 6;
-    qreal barHeight = 4;
-    qreal barY = imageHalfSize - 7;
+    // Header top border accent
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(m_color);
+    painter->drawRoundedRect(0, 0, w, 3, 2, 2);
+    
+    // Component icon/thumbnail in header
+    if (m_hasImage && !m_image.isNull()) {
+        qreal imgSize = HEADER_HEIGHT - 10;
+        QRectF imgRect(6, 5, imgSize, imgSize);
+        QPainterPath clipPath;
+        clipPath.addRoundedRect(imgRect, 4, 4);
+        painter->setClipPath(clipPath);
+        painter->drawPixmap(imgRect.toRect(), m_image);
+        painter->setClipping(false);
+        
+        // Component name next to image
+        painter->setPen(QColor(230, 232, 237));
+        painter->setFont(QFont("Segoe UI", 9, QFont::Bold));
+        QRectF nameRect(6 + imgSize + 6, 2, w - imgSize - 18, HEADER_HEIGHT / 2);
+        painter->drawText(nameRect, Qt::AlignVCenter | Qt::AlignLeft, getDisplayName());
+        
+        // Label/type ID below name
+        painter->setPen(QColor(m_color.lighter(150)));
+        painter->setFont(QFont("Segoe UI", 7, QFont::Normal));
+        QRectF labelRect(6 + imgSize + 6, HEADER_HEIGHT / 2, w - imgSize - 18, HEADER_HEIGHT / 2 - 4);
+        painter->drawText(labelRect, Qt::AlignVCenter | Qt::AlignLeft, getLabel());
+    } else {
+        // Geometric icon
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(m_color);
+        painter->drawRoundedRect(8, 8, 24, 24, 4, 4);
+        
+        // Label inside icon
+        painter->setPen(Qt::white);
+        painter->setFont(QFont("Segoe UI", 7, QFont::Bold));
+        painter->drawText(QRectF(8, 8, 24, 24), Qt::AlignCenter, getLabel());
+        
+        // Component name
+        painter->setPen(QColor(230, 232, 237));
+        painter->setFont(QFont("Segoe UI", 9, QFont::Bold));
+        QRectF nameRect(38, 2, w - 44, HEADER_HEIGHT / 2);
+        painter->drawText(nameRect, Qt::AlignVCenter | Qt::AlignLeft, getDisplayName());
+        
+        // Health percentage
+        painter->setPen(m_color.lighter(130));
+        painter->setFont(QFont("Segoe UI", 7, QFont::Bold));
+        QRectF healthRect(38, HEADER_HEIGHT / 2, w - 44, HEADER_HEIGHT / 2 - 4);
+        QString healthText = QString("Health: %1%").arg(qRound(m_size));
+        painter->drawText(healthRect, Qt::AlignVCenter | Qt::AlignLeft, healthText);
+    }
+    
+    // Health indicator bar below header
+    qreal barY = HEADER_HEIGHT - 1;
+    qreal barWidth = w;
+    qreal barHeight = 3;
     
     painter->setPen(Qt::NoPen);
-    painter->setBrush(QColor(0, 0, 0, 120));
-    painter->drawRoundedRect(-imageHalfSize + 3, barY, barWidth, barHeight, 2, 2);
-    painter->setBrush(healthColor);
+    painter->setBrush(QColor(20, 22, 28));
+    painter->drawRect(0, barY, barWidth, barHeight);
+    
     qreal healthFraction = qBound(0.0, m_size / 100.0, 1.0);
-    painter->drawRoundedRect(-imageHalfSize + 3, barY, barWidth * healthFraction, barHeight, 2, 2);
+    painter->setBrush(m_color);
+    painter->drawRect(0, barY, barWidth * healthFraction, barHeight);
     
-    // Draw label below the image
-    QString label = getLabel();
-    painter->setFont(QFont("Segoe UI", 8, QFont::Bold));
-    painter->setPen(QColor(200, 200, 210));
-    painter->drawText(QRectF(-imageHalfSize, imageHalfSize + 3, imageSize, 14), Qt::AlignCenter, label);
-}
-
-void Component::paintGeometric(QPainter* painter)
-{
-    qreal halfSize = m_size / 2.0;
-    
-    // Get shape from registry
-    QString shape = "rect";
-    ComponentRegistry& registry = ComponentRegistry::instance();
-    if (registry.hasComponent(m_typeId)) {
-        shape = registry.getComponent(m_typeId).shape;
-    }
-    
-    // Draw shadow
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(QColor(0, 0, 0, 60));
-    if (shape == "ellipse") {
-        painter->drawEllipse(QRectF(-halfSize + 3, -halfSize + 3, m_size, m_size));
-    } else {
-        painter->drawRoundedRect(-halfSize + 3, -halfSize + 3, m_size, m_size, 6, 6);
-    }
-    
-    // Draw main shape
-    painter->setPen(QPen(m_color.darker(120), 2));
-    
-    // Create gradient fill
-    QLinearGradient gradient(0, -halfSize, 0, halfSize);
-    gradient.setColorAt(0, m_color.lighter(130));
-    gradient.setColorAt(1, m_color);
-    painter->setBrush(gradient);
-    
-    drawShape(painter, shape, halfSize);
-    
-    // Draw label below
-    QString label = getLabel();
-    painter->setFont(QFont("Segoe UI", 8, QFont::Bold));
-    painter->setPen(QColor(200, 200, 210));
-    painter->drawText(QRectF(-halfSize, halfSize + 4, m_size, 14), Qt::AlignCenter, label);
-    
-    // Draw health percentage inside
-    painter->setFont(QFont("Segoe UI", 9, QFont::Bold));
-    painter->setPen(Qt::white);
-    QString healthText = QString("%1%").arg(qRound(m_size));
-    painter->drawText(QRectF(-halfSize, -halfSize, m_size, m_size), Qt::AlignCenter, healthText);
-}
-
-void Component::drawShape(QPainter* painter, const QString& shape, qreal halfSize)
-{
-    if (shape == "ellipse") {
-        painter->drawEllipse(QRectF(-halfSize, -halfSize, m_size, m_size));
-    } else if (shape == "hexagon") {
-        // Draw hexagon
-        QPolygonF hex;
-        for (int i = 0; i < 6; ++i) {
-            qreal angle = M_PI / 3.0 * i - M_PI / 6.0;
-            hex << QPointF(halfSize * qCos(angle), halfSize * qSin(angle));
-        }
-        painter->drawPolygon(hex);
-    } else if (shape == "diamond") {
-        QPolygonF diamond;
-        diamond << QPointF(0, -halfSize);
-        diamond << QPointF(halfSize, 0);
-        diamond << QPointF(0, halfSize);
-        diamond << QPointF(-halfSize, 0);
-        painter->drawPolygon(diamond);
-    } else {
-        // Default: rounded rectangle
-        painter->drawRoundedRect(-halfSize, -halfSize, m_size, m_size, 6, 6);
+    // Sub-components section label (if there are sub-components)
+    if (!m_subComponents.isEmpty()) {
+        painter->setPen(QColor(120, 125, 135));
+        painter->setFont(QFont("Segoe UI", 6, QFont::Bold));
+        QRectF subLabelRect(PADDING, HEADER_HEIGHT + 1, w - PADDING * 2, PADDING - 1);
+        painter->drawText(subLabelRect, Qt::AlignVCenter | Qt::AlignLeft, 
+                          QString("SUB-SYSTEMS (%1)").arg(m_subComponents.size()));
     }
 }
 
@@ -204,6 +271,12 @@ QString Component::getLabel() const
 void Component::setColor(const QColor& color)
 {
     m_color = color;
+    
+    // Propagate color to sub-components
+    for (SubComponent* sub : m_subComponents) {
+        sub->setColor(color);
+    }
+    
     update();
 }
 
@@ -211,6 +284,15 @@ void Component::setSize(qreal size)
 {
     prepareGeometryChange();
     m_size = size;
+    
+    // Distribute health proportionally to sub-components
+    for (SubComponent* sub : m_subComponents) {
+        // Each sub-component gets a slightly varied health based on parent
+        qreal variation = (QRandomGenerator::global()->bounded(20) - 10);  // +/- 10%
+        qreal subHealth = qBound(0.0, size + variation, 100.0);
+        sub->setHealth(subHealth);
+    }
+    
     update();
 }
 
@@ -238,7 +320,7 @@ Component* Component::fromJson(const QString& id, const QString& typeId, qreal x
 QVariant Component::itemChange(GraphicsItemChange change, const QVariant& value)
 {
     if (change == ItemPositionChange && scene()) {
-        // Component position changed
+        // Component position changed - connections will be updated by the canvas
     }
     return QGraphicsItem::itemChange(change, value);
 }

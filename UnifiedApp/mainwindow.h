@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QPushButton>
 #include <QLabel>
+#include <QComboBox>
 #include "logindialog.h"
 #include "componentlist.h"
 #include "canvas.h"
@@ -32,6 +33,11 @@ private slots:
     void toggleVoiceAlerts();
     void testVoice();
     
+    // Connection mode slots
+    void toggleConnectionMode();
+    void onConnectionTypeChanged(int index);
+    void onModeChanged(CanvasMode mode);
+    
 private:
     void setupUI();
     void setupDesignerMode();
@@ -51,6 +57,10 @@ private:
     
     VoiceAlertManager* m_voiceAlertManager;
     QPushButton* m_voiceToggleBtn;
+    
+    // Connection UI
+    QPushButton* m_connectBtn;
+    QComboBox* m_connectionTypeCombo;
 };
 
 #endif // MAINWINDOW_H
