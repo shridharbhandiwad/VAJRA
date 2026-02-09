@@ -15,7 +15,9 @@ SOURCES += \
     canvas.cpp \
     componentlist.cpp \
     analytics.cpp \
-    messageserver.cpp
+    messageserver.cpp \
+    componentregistry.cpp \
+    addcomponentdialog.cpp
 
 HEADERS += \
     logindialog.h \
@@ -24,10 +26,17 @@ HEADERS += \
     canvas.h \
     componentlist.h \
     analytics.h \
-    messageserver.h
+    messageserver.h \
+    componentregistry.h \
+    addcomponentdialog.h
 
 RESOURCES += \
     resources.qrc
+
+# Copy components.json to build directory
+config_file.files = components.json
+config_file.path = $$OUT_PWD
+INSTALLS += config_file
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

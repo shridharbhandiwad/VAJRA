@@ -22,9 +22,10 @@ private slots:
     void saveDesign();
     void loadDesign();
     void clearCanvas();
-    void onComponentAdded(const QString& id, ComponentType type);
+    void addNewComponentType();
+    void onComponentAdded(const QString& id, const QString& typeId);
     void onMessageReceived(const QString& componentId, const QString& color, qreal size);
-    void onComponentLoaded(const QString& id, const QString& type);
+    void onComponentLoaded(const QString& id, const QString& typeId);
     void onClientConnected();
     void onClientDisconnected();
     
@@ -33,7 +34,6 @@ private:
     void setupDesignerMode();
     void setupRuntimeMode();
     void autoLoadDesign();
-    QString getComponentTypeName(ComponentType type);
     
     UserRole m_userRole;
     QString m_username;

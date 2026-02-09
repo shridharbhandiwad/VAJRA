@@ -1,15 +1,39 @@
 # Radar System Monitoring Application
 
-A comprehensive Qt-based application system for designing, deploying, and monitoring radar subsystems in real-time. This system provides both separate and unified application options:
+A comprehensive Qt-based application system for designing, deploying, and monitoring radar subsystems in real-time. Features a **fully modular architecture** where new component types can be added without changing any code.
+
+## Key Feature: Modular Component Architecture
+
+**Add new component types without touching a single line of C++ code!**
+
+Components are defined in `components.json` and can be added at runtime through the UI:
+
+```json
+{
+  "type_id": "GpsReceiver",
+  "display_name": "GPS Receiver",
+  "label": "GPS",
+  "description": "Satellite navigation and positioning",
+  "image_dir": "gps_receiver",
+  "subsystems": ["Signal Strength", "Satellite Lock", "Position Accuracy"],
+  "protocol": "TCP",
+  "port": 12345,
+  "category": "Navigation",
+  "shape": "hexagon"
+}
+```
+
+Or use the **"+ Add Component Type"** button in the Designer to add new types via the UI.
 
 ## Available Applications
 
-### **UnifiedApp** (Recommended)
+### **UnifiedApp** (Recommended - v3.0)
 A single, unified application combining both Designer and Runtime capabilities with role-based access control:
 - Login as **Designer** (`Designer`/`designer`) for full design capabilities
 - Login as **User** (`User`/`user`) for runtime monitoring
-- One application to install and maintain
-- Consistent user experience across modes
+- **Modular component registry** - add new component types via JSON or UI
+- **Multi-protocol support** - TCP and UDP for health data
+- **Modern glass-morphism UI** with teal accent theme
 - See `UnifiedApp/README.md` for details
 
 ### **Separate Applications** (Legacy)
@@ -18,23 +42,24 @@ Original standalone applications:
 2. **RuntimeApp** - Real-time health monitoring display for radar subsystems
 
 ### **External Subsystem Simulators**
-Python scripts that simulate radar subsystems sending health status updates (works with both UnifiedApp and separate apps)
+Python scripts that simulate subsystems sending health status updates (works with both UnifiedApp and separate apps)
 
 ## System Overview
 
-### Designer Application
+### Designer Mode
 
-The Designer Application provides a visual interface for creating radar system layouts with:
-- **Radar Subsystems Panel** - Draggable subsystem list (Antenna, Power System, Liquid Cooling Unit, Communication System, Radar Computer)
+The Designer provides a visual interface for creating system layouts with:
+- **Component Panel** - Draggable list of all registered component types
+- **"+ Add Component Type"** - Button to define new component types at runtime
 - **Designer View** - Canvas for placing and arranging subsystems
 - **Analytics Panel** - Statistics about subsystems on the canvas
 - **Save/Load** - Export designs to `.design` files
 
-### Runtime Application
+### Runtime Mode
 
-The Runtime Application is the monitoring application that:
-- Loads layouts created by the Designer Application
-- Receives health status messages from external subsystems via TCP socket (port 12345)
+The Runtime Monitor:
+- Loads layouts created by the Designer
+- Receives health status messages via TCP (port 12345) and UDP (port 12346)
 - Updates subsystem visual indicators based on health status
 - Tracks analytics: health updates, status changes, health level changes
 - Displays real-time health status with color coding:
@@ -47,71 +72,45 @@ The Runtime Application is the monitoring application that:
 ### External Subsystem Simulators
 
 Python simulators that:
-- Connect to the Runtime Application via TCP
-- Send periodic health status messages
+- Connect via TCP or UDP
+- Send periodic health status messages in JSON format
 - Simulate realistic health degradation and recovery
-- Generate random events (health spikes, drops, system restoration)
-- Each external system monitors one subsystem (by ID)
+- Work with any component type (just pass the canvas component ID)
 
 ## Architecture
 
 ```
-┌─────────────────────┐
-│ Designer App        │
-│                     │
-│  ┌──────────────┐   │
-│  │ Subsystems   │   │
-│  │ - Antenna    │   │
-│  │ - Power      │   │
-│  │ - Cooling    │   │
-│  │ - Comm       │   │
-│  │ - Computer   │   │
-│  └──────────────┘   │
-│                     │
-│  ┌──────────────┐   │
-│  │ Canvas       │   │
-│  │ (drag/drop)  │   │
-│  └──────────────┘   │
-│                     │
-│  ┌──────────────┐   │
-│  │ Analytics    │   │
-│  └──────────────┘   │
-│                     │
-│  [Save Design]      │
-└─────────────────────┘
-         │
-         ▼
-    design.file
-         │
-         ▼
-┌─────────────────────┐       ┌─────────────────────┐
-│ Runtime Monitor     │◄──────│ External Subsystems │
-│                     │ TCP   │                     │
-│  ┌──────────────┐   │:12345 │  ┌──────────────┐   │
-│  │ Radar View   │◄──┼───────┤  │ Antenna      │   │
-│  │ (real-time)  │   │       │  │ Health Mon.  │   │
-│  └──────────────┘   │       │  └──────────────┘   │
-│                     │       │                     │
-│  ┌──────────────┐   │       │  ┌──────────────┐   │
-│  │ Health       │   │       │  │ Power System │   │
-│  │ Analytics    │   │       │  │ Health Mon.  │   │
-│  └──────────────┘   │       │  └──────────────┘   │
-│                     │       │                     │
-│  [Load Design]      │       │  ┌──────────────┐   │
-└─────────────────────┘       │  │ Cooling Unit │   │
-                              │  │ Health Mon.  │   │
-                              │  └──────────────┘   │
-                              │                     │
-                              │  ┌──────────────┐   │
-                              │  │ Comm System  │   │
-                              │  │ Health Mon.  │   │
-                              │  └──────────────┘   │
-                              │                     │
-                              │  ┌──────────────┐   │
-                              │  │ Radar Comp.  │   │
-                              │  │ Health Mon.  │   │
-                              │  └──────────────┘   │
-                              └─────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    components.json                           │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ Antenna  │ │ Power    │ │ Cooling  │ │ Custom!  │ ...    │
+│  │ ANT/TCP  │ │ PWR/TCP  │ │ COOL/TCP │ │ GPS/UDP  │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ loaded at startup
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│  UnifiedApp (Qt C++)                                        │
+│                                                              │
+│  ComponentRegistry ──→ ComponentList ──→ Canvas              │
+│        │                                   │                 │
+│        │              ┌───────────────┐    │                 │
+│        └─────────────→│ AddComponent  │    │                 │
+│                       │ Dialog (UI)   │    │                 │
+│                       └───────────────┘    │                 │
+│                                            ▼                 │
+│  MessageServer (TCP:12345, UDP:12346) ──→ Analytics          │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ TCP / UDP
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│  External Subsystem Simulators (Python)                      │
+│                                                              │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐                    │
+│  │ comp_1   │ │ comp_2   │ │ comp_N   │  (any component)   │
+│  │ TCP/UDP  │ │ TCP/UDP  │ │ TCP/UDP  │                    │
+│  └──────────┘ └──────────┘ └──────────┘                    │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## Requirements
@@ -140,302 +139,12 @@ Login with `Designer`/`designer` for design mode or `User`/`user` for runtime mo
 ### Build All Applications (Including Legacy Apps)
 
 ```bash
-# Make scripts executable
 chmod +x build_all.sh clean_all.sh
-
-# Build all applications (DesignerApp, RuntimeApp, and UnifiedApp)
 ./build_all.sh
 ```
 
-### Windows
+### Installing Qt (if needed)
 
-```cmd
-# Build Designer Application
-cd DesignerApp
-qmake DesignerApp.pro
-nmake  # or mingw32-make
-cd ..
-
-# Build Runtime Application
-cd RuntimeApp
-qmake RuntimeApp.pro
-nmake  # or mingw32-make
-cd ..
-```
-
-### Using Qt Creator
-
-1. Open `DesignerApp/DesignerApp.pro` in Qt Creator
-2. Build and run
-3. Open `RuntimeApp/RuntimeApp.pro` in Qt Creator
-4. Build and run
-
-## Usage
-
-### Complete Workflow
-
-#### Using UnifiedApp (Recommended)
-
-**Step 1: Design Your Radar System Layout**
-
-```bash
-# Run Unified Application
-./UnifiedApp/UnifiedApp
-```
-
-1. Login with `Designer`/`designer`
-2. Drag subsystems (Antenna, Power System, etc.) from the left panel to the canvas
-3. Position subsystems as desired to represent your radar system layout
-4. Note the subsystem IDs (e.g., component_1, component_2, etc.)
-5. Click "Save Design" and save as `radar_system.design`
-
-**Step 2: Run Runtime Monitoring**
-
-```bash
-# Run Unified Application (or keep it open from Step 1)
-./UnifiedApp/UnifiedApp
-```
-
-1. Login with `User`/`user`
-2. Click "Load Design"
-3. Select your saved `radar_system.design` file
-4. The canvas will display your radar subsystems
-5. The server automatically starts listening on port 12345 for health updates
-
-#### Using Separate Applications (Legacy)
-
-**Step 1: Design Your Radar System Layout**
-
-```bash
-# Run Designer Application
-./DesignerApp/DesignerApp
-```
-
-1. Drag subsystems (Antenna, Power System, etc.) from the left panel to the canvas
-2. Position subsystems as desired to represent your radar system layout
-3. Note the subsystem IDs (e.g., antenna_1, power_1, cooling_1, comm_1, computer_1)
-4. Click "Save Design" and save as `radar_system.design`
-
-**Step 2: Run Runtime Monitoring Application**
-
-```bash
-# Run Runtime Application
-./RuntimeApp/RuntimeApp
-```
-
-1. Click "Load Design"
-2. Select your saved `radar_system.design` file
-3. The canvas will display your radar subsystems
-4. The server will start listening on port 12345 for health updates
-
-#### Step 3: Start Subsystem Health Monitors
-
-```bash
-cd ExternalSystems
-
-# Option 1: Run individual health monitors
-python3 external_system.py antenna_1 &
-python3 external_system.py power_1 &
-python3 external_system.py cooling_1 &
-python3 external_system.py comm_1 &
-python3 external_system.py computer_1 &
-
-# Option 2: Run all monitors at once (recommended)
-python3 run_multiple_systems.py --components antenna_1 power_1 cooling_1 comm_1 computer_1
-```
-
-#### Step 4: Watch Real-Time Health Monitoring
-
-- Subsystems will change color based on health status
-- The Analytics panel shows:
-  - Health update counts per subsystem
-  - Current status color and health level
-  - Number of status and level changes
-  - Total health updates across all subsystems
-
-## Health Status Protocol
-
-External subsystems communicate with the Runtime Application via TCP socket using JSON messages:
-
-### Message Format
-
-```json
-{
-  "component_id": "antenna_1",
-  "color": "#00FF00",
-  "size": 95.5
-}
-```
-
-### Health Status Mapping
-
-| Health Level | Status | Color | Description |
-|-------------|--------|-------|-------------|
-| 90-100% | Operational | Green (#00FF00) | Normal operation |
-| 70-89% | Warning | Yellow (#FFFF00) | Minor issues detected |
-| 40-69% | Degraded | Orange (#FFA500) | Performance degraded |
-| 10-39% | Critical | Red (#FF0000) | Critical issues |
-| 0-9% | Offline | Gray (#808080) | System offline |
-
-### Fields
-- `component_id` (string): ID of the subsystem to update
-- `color` (string): Hex color code representing health status
-- `size` (number): Health percentage (0-100)
-
-### Connection
-- **Protocol**: TCP
-- **Port**: 12345
-- **Format**: JSON, one message per line (newline-delimited)
-
-## Radar Subsystems
-
-### Antenna
-- Primary radar signal transmission and reception
-- Health indicators: signal strength, alignment, mechanical status
-- Visual: Dish antenna with support structure
-
-### Power System
-- Provides power to all radar components
-- Health indicators: voltage levels, current draw, battery status
-- Visual: Battery/power unit with lightning bolt
-
-### Liquid Cooling Unit
-- Maintains optimal temperature for radar components
-- Health indicators: coolant temperature, flow rate, pump status
-- Visual: Cooling system with pipes and radiators
-
-### Communication System
-- Handles data transmission and network connectivity
-- Health indicators: signal quality, bandwidth, link status
-- Visual: Radio tower with signal waves
-
-### Radar Computer
-- Processes radar data and controls system operations
-- Health indicators: CPU usage, memory, processing capacity
-- Visual: Computer unit with circuit patterns
-
-## Examples
-
-### Create a Radar System Layout
-
-1. Start Designer Application
-2. Drag one of each subsystem type to canvas
-3. Arrange them to represent your radar system architecture
-4. Save as `my_radar.design`
-
-### Monitor with Simulated Health Data
-
-```bash
-# Terminal 1: Start Runtime Monitor
-./RuntimeApp/RuntimeApp
-# Load my_radar.design
-
-# Terminal 2: Start health simulators
-cd ExternalSystems
-python3 run_multiple_systems.py --components antenna_1 power_1 cooling_1 comm_1 computer_1
-```
-
-Watch the subsystems change colors and sizes based on simulated health data!
-
-### Custom Health Monitor
-
-Create your own health monitor by connecting to port 12345 and sending JSON messages:
-
-```python
-import socket
-import json
-import time
-
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(('localhost', 12345))
-
-while True:
-    # Simulate operational status
-    message = {
-        "component_id": "antenna_1",
-        "color": "#00FF00",  # Green - operational
-        "size": 95.0         # 95% health
-    }
-    sock.sendall((json.dumps(message) + '\n').encode('utf-8'))
-    time.sleep(2)
-```
-
-## Project Structure
-
-```
-.
-├── UnifiedApp/               # Unified Application (RECOMMENDED)
-│   ├── UnifiedApp.pro        # Qt project file
-│   ├── main.cpp
-│   ├── logindialog.cpp/h     # Login dialog with role-based auth
-│   ├── mainwindow.cpp/h      # Main window (Designer + Runtime modes)
-│   ├── component.cpp/h       # Subsystem graphics item
-│   ├── canvas.cpp/h          # Unified canvas widget
-│   ├── componentlist.cpp/h   # Subsystem list with drag/drop
-│   ├── analytics.cpp/h       # Analytics widget
-│   ├── messageserver.cpp/h   # TCP server for health updates
-│   ├── README.md             # Detailed documentation
-│   └── QUICKSTART.md         # Quick start guide
-│
-├── DesignerApp/              # Designer Application (Legacy)
-│   ├── DesignerApp.pro       # Qt project file
-│   ├── main.cpp
-│   ├── mainwindow.cpp/h      # Main window with UI
-│   ├── component.cpp/h       # Subsystem graphics item
-│   ├── canvas.cpp/h          # Canvas widget
-│   ├── componentlist.cpp/h   # Subsystem list with drag/drop
-│   └── analytics.cpp/h       # Analytics widget
-│
-├── RuntimeApp/               # Runtime Monitoring Application (Legacy)
-│   ├── RuntimeApp.pro        # Qt project file
-│   ├── main.cpp
-│   ├── mainwindow.cpp/h      # Main window with UI
-│   ├── component.cpp/h       # Subsystem graphics item
-│   ├── canvas.cpp/h          # Canvas widget
-│   ├── analytics.cpp/h       # Health analytics widget
-│   └── messageserver.cpp/h   # TCP server for health updates
-│
-├── ExternalSystems/          # Subsystem health simulators
-│   ├── external_system.py    # Single subsystem health monitor
-│   ├── run_multiple_systems.py  # Multi-monitor launcher
-│   └── README.md
-│
-├── build_all.sh              # Build script (Linux/macOS)
-├── clean_all.sh              # Clean script (Linux/macOS)
-└── README.md                 # This file
-```
-
-## Features
-
-### Designer Application Features
-- ✓ Drag-and-drop subsystem placement
-- ✓ Five subsystem types: Antenna, Power System, Liquid Cooling Unit, Communication System, Radar Computer
-- ✓ Save/Load system layouts
-- ✓ Subsystem analytics
-- ✓ Visual subsystem icons
-
-### Runtime Application Features
-- ✓ Load layouts from Designer App
-- ✓ TCP server for external health monitoring
-- ✓ Real-time subsystem health updates
-- ✓ Multi-client support (multiple subsystems simultaneously)
-- ✓ Color-coded health status
-- ✓ Comprehensive health analytics
-- ✓ Connection status monitoring
-
-### External Subsystem Features
-- ✓ Realistic health simulation with degradation
-- ✓ Random event generation (spikes, drops, restoration)
-- ✓ Configurable update intervals
-- ✓ Command-line configuration
-- ✓ Multi-subsystem manager
-- ✓ Automatic reconnection
-
-## Troubleshooting
-
-### Build Issues
-
-**Problem**: `qmake: command not found`
 ```bash
 # Ubuntu/Debian
 sudo apt-get install qt5-qmake qtbase5-dev qtbase5-dev-tools libqt5network5
@@ -447,62 +156,272 @@ sudo dnf install qt5-qtbase-devel
 brew install qt@5
 ```
 
-**Problem**: Network headers not found
+## Usage
+
+### Adding a New Component Type (No Code Changes!)
+
+**Option 1: Via the UI**
+1. Run UnifiedApp, login as Designer
+2. Click **"+ Add Component Type"** in the toolbar
+3. Fill in: name, label, image, subsystems, protocol, port
+4. Click "Add Component" - it's immediately available!
+
+**Option 2: Edit components.json**
+```json
+{
+  "type_id": "GpsReceiver",
+  "display_name": "GPS Receiver",
+  "label": "GPS",
+  "description": "Satellite navigation and positioning",
+  "image_dir": "gps_receiver",
+  "icon_color": "#2196F3",
+  "subsystems": ["Signal Strength", "Satellite Lock", "Position Accuracy"],
+  "protocol": "UDP",
+  "port": 12346,
+  "category": "Navigation",
+  "shape": "hexagon"
+}
+```
+
+**Option 3: Add image for the component**
+1. Create directory: `assets/subsystems/gps_receiver/`
+2. Add image: `assets/subsystems/gps_receiver/gps_receiver_main.jpg`
+3. The component will display the image on the canvas automatically
+
+### Complete Workflow
+
+**Step 1: Design Your System Layout**
+
 ```bash
-# Ubuntu/Debian
-sudo apt-get install qtbase5-dev libqt5network5
+./UnifiedApp/UnifiedApp
+```
+
+1. Login with `Designer`/`designer`
+2. Drag components from the left panel to the canvas
+3. Use "+" to add custom component types if needed
+4. Save as `radar_system.design`
+
+**Step 2: Run Runtime Monitoring**
+
+1. Login with `User`/`user` (or keep app open)
+2. Load your saved design
+3. The server starts on port 12345 (TCP) and 12346 (UDP)
+
+**Step 3: Start Health Monitors**
+
+```bash
+cd ExternalSystems
+
+# Monitor via TCP (default)
+python3 run_multiple_systems.py --components component_1 component_2 component_3
+
+# Monitor via UDP
+python3 run_multiple_systems.py --protocol udp --components component_1 component_2
+
+# Monitor individual components
+python3 external_system.py component_1
+python3 external_system.py component_2 --protocol udp --port 12346
+```
+
+## Health Status Protocol
+
+External systems communicate via TCP or UDP using JSON messages:
+
+### Message Format
+
+```json
+{
+  "component_id": "component_1",
+  "color": "#00FF00",
+  "size": 95.5
+}
+```
+
+### Supported Protocols
+
+| Protocol | Port (default) | Format | Notes |
+|----------|---------------|--------|-------|
+| TCP | 12345 | Line-delimited JSON | Default, reliable delivery |
+| UDP | 12346 | JSON datagrams | Lower latency, fire-and-forget |
+| WebSocket | - | JSON | Available in registry, extensible |
+| MQTT | - | JSON | Available in registry, extensible |
+
+### Health Status Mapping
+
+| Health Level | Status | Color | Description |
+|-------------|--------|-------|-------------|
+| 90-100% | Operational | Green (#00FF00) | Normal operation |
+| 70-89% | Warning | Yellow (#FFFF00) | Minor issues detected |
+| 40-69% | Degraded | Orange (#FFA500) | Performance degraded |
+| 10-39% | Critical | Red (#FF0000) | Critical issues |
+| 0-9% | Offline | Gray (#808080) | System offline |
+
+## Component Registry (components.json)
+
+The component registry is the heart of the modular architecture:
+
+```json
+{
+  "version": "2.0",
+  "components": [
+    {
+      "type_id": "Antenna",          // Unique identifier
+      "display_name": "Antenna",     // Human-readable name
+      "label": "ANT",                // Short label on canvas
+      "description": "...",          // Component description
+      "image_dir": "antenna",        // Image directory name
+      "icon_color": "#4CAF50",       // Fallback color
+      "subsystems": [...],           // Sub-components for health tracking
+      "protocol": "TCP",             // Health data protocol
+      "port": 12345,                 // Protocol port
+      "category": "Sensor",          // Grouping category
+      "shape": "ellipse"             // Fallback geometric shape
+    }
+  ]
+}
+```
+
+### Default Component Types
+
+| Type | Label | Category | Shape | Protocol |
+|------|-------|----------|-------|----------|
+| Antenna | ANT | Sensor | Ellipse | TCP |
+| Power System | PWR | Infrastructure | Rect | TCP |
+| Liquid Cooling Unit | COOL | Infrastructure | Ellipse | TCP |
+| Communication System | COMM | Network | Rect | TCP |
+| Radar Computer | CPU | Processing | Rect | TCP |
+
+## Project Structure
+
+```
+.
+├── UnifiedApp/                  # Unified Application (RECOMMENDED)
+│   ├── UnifiedApp.pro           # Qt project file
+│   ├── components.json          # Component registry (edit to add types!)
+│   ├── main.cpp                 # App entry, initializes registry
+│   ├── componentregistry.h/cpp  # Modular component registry
+│   ├── addcomponentdialog.h/cpp # UI for adding new types
+│   ├── logindialog.h/cpp        # Login dialog with role-based auth
+│   ├── mainwindow.h/cpp         # Main window (Designer + Runtime)
+│   ├── component.h/cpp          # Data-driven component graphics item
+│   ├── canvas.h/cpp             # Canvas with dynamic type resolution
+│   ├── componentlist.h/cpp      # Auto-populated component list
+│   ├── analytics.h/cpp          # Dynamic analytics widget
+│   ├── messageserver.h/cpp      # Multi-protocol health server (TCP+UDP)
+│   ├── styles.qss               # Modern glass-morphism theme
+│   └── resources.qrc
+│
+├── DesignerApp/                 # Designer Application (Legacy)
+├── RuntimeApp/                  # Runtime Application (Legacy)
+│
+├── ExternalSystems/             # Subsystem health simulators
+│   ├── external_system.py       # Single component monitor (TCP/UDP)
+│   └── run_multiple_systems.py  # Multi-monitor launcher
+│
+├── assets/subsystems/           # Component images
+│   ├── antenna/
+│   ├── power_system/
+│   ├── liquid_cooling_unit/
+│   ├── communication_system/
+│   └── radar_computer/
+│
+├── build_all.sh
+├── clean_all.sh
+└── README.md
+```
+
+## Features
+
+### Modular Architecture
+- Component types defined in JSON config, not code
+- Add new types via UI dialog or config file
+- Auto-populated component list from registry
+- Data-driven rendering (image + fallback geometric shapes)
+- String-based type system (no hardcoded enums)
+- Full backward compatibility with existing .design files
+
+### Multi-Protocol Support
+- TCP (default) for reliable health data delivery
+- UDP for low-latency health updates
+- WebSocket and MQTT protocol options in registry
+- Extensible protocol handler architecture
+
+### Modern UI Design
+- Glass-morphism inspired dark theme
+- Teal/cyan accent color palette
+- Rounded corners, subtle borders, gradient backgrounds
+- Rich HTML analytics display with health bars
+- Responsive card-based layout
+
+### Designer Features
+- Drag-and-drop component placement
+- Dynamic component type list
+- "+" button to add new types without code changes
+- Save/Load system layouts
+- Component analytics
+
+### Runtime Features
+- Load layouts from Designer
+- Multi-protocol health server (TCP + UDP)
+- Real-time component health updates
+- Multi-client support
+- Color-coded health status
+- Comprehensive health analytics
+
+## Extending the System
+
+### Add New Component Types (No Code Changes!)
+
+See "Adding a New Component Type" section above. Just edit `components.json` or use the UI.
+
+### Add New Protocols
+
+1. Extend `MessageServer` with a new receiver method
+2. Add the protocol name to `ComponentRegistry::availableProtocols()`
+3. That's it - existing components can select the new protocol
+
+### Custom Health Monitors
+
+Create your own monitor by sending JSON to port 12345 (TCP) or 12346 (UDP):
+
+```python
+import socket, json, time
+
+# TCP example
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(('localhost', 12345))
+msg = {"component_id": "component_1", "color": "#00FF00", "size": 95.0}
+sock.sendall((json.dumps(msg) + '\n').encode())
+
+# UDP example
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+msg = {"component_id": "component_1", "color": "#FFFF00", "size": 75.0}
+sock.sendto((json.dumps(msg) + '\n').encode(), ('localhost', 12346))
+```
+
+## Troubleshooting
+
+### Build Issues
+
+**Problem**: `qmake: command not found`
+```bash
+sudo apt-get install qt5-qmake qtbase5-dev qtbase5-dev-tools libqt5network5
 ```
 
 ### Runtime Issues
 
 **Problem**: Server fails to start
-- Check if port 12345 is already in use: `lsof -i :12345`
-- Try a different port (requires code modification)
+- Check if port 12345 is in use: `lsof -i :12345`
 
-**Problem**: Health monitors can't connect
-- Ensure Runtime Application is running and loaded a design
-- Check firewall settings
-- Verify correct host and port
+**Problem**: Components not updating
+- Verify component IDs match (e.g., `component_1`, not `antenna_1`)
+- Check the design file for actual component IDs
+- Ensure messages are valid JSON with `component_id`, `color`, and `size` fields
 
-**Problem**: Subsystems not updating
-- Verify subsystem IDs match between design and health monitors
-- Check external system console for connection status
-- Ensure messages are properly formatted JSON
-
-## Extending the System
-
-### Add New Subsystem Types
-
-1. Update `ComponentType` enum in `component.h`
-2. Add rendering code in `Component::paint()`
-3. Add to subsystem list in `componentlist.cpp`
-4. Update type name conversions
-
-### Change Communication Protocol
-
-Modify `messageserver.cpp` to support different protocols:
-- UDP instead of TCP
-- WebSocket for web integration
-- MQTT for IoT scenarios
-- gRPC for microservices
-
-### Add More Health Metrics
-
-Enhance the health monitoring system:
-- Temperature sensors
-- Vibration analysis
-- Power consumption tracking
-- Network latency
-- Error rates
-
-### Enhanced Analytics
-
-Upgrade `analytics.cpp` to include:
-- Time-series graphs
-- Health history tracking
-- Predictive maintenance alerts
-- Export to CSV/JSON
-- Historical trends
+**Problem**: New component type not showing
+- Verify `components.json` is valid JSON
+- Check the application console for registry loading messages
+- Restart the application after editing `components.json`
 
 ## License
 
@@ -510,4 +429,4 @@ This project is provided as-is for educational and demonstration purposes.
 
 ## Author
 
-Created as a Qt-based Radar System Monitoring demonstration.
+Created as a Qt-based Radar System Monitoring demonstration with modular component architecture.
