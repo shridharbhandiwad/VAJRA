@@ -23,6 +23,8 @@
  *   - Priority queuing (critical > degraded > warning)
  *   - Mute/unmute toggle
  *   - Rate-limited speech to avoid overlapping announcements
+ *   - Robust TTS engine detection via QStandardPaths + common paths
+ *   - Watchdog timer to recover from hung TTS processes
  */
 class VoiceAlertManager : public QObject
 {
@@ -65,6 +67,8 @@ signals:
 private slots:
     void processQueue();
     void onSpeechFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    void onSpeechError(QProcess::ProcessError error);
+    void onSpeechWatchdogTimeout();
 
 private:
     struct AlertEntry {
@@ -79,6 +83,7 @@ private:
     int     statusPriority(const QString& status) const;
     bool    shouldAlert(const QString& status) const;
     void    speak(const QString& text);
+    void    resetSpeakingState();
     QString findTtsEngine() const;
 
     // Alert queue and processing
@@ -89,6 +94,10 @@ private:
     // TTS engine
     QProcess* m_ttsProcess;
     QString m_ttsEngine;
+
+    // Watchdog timer to recover from hung TTS processes
+    QTimer* m_watchdogTimer;
+    static const int WATCHDOG_TIMEOUT_MS = 10000; // 10 seconds max for any speech
 
     // Per-component cooldown tracking
     QMap<QString, QElapsedTimer*> m_lastAlertTime;
