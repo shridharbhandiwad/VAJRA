@@ -1,5 +1,6 @@
 #include "canvas.h"
 #include "componentregistry.h"
+#include "thememanager.h"
 #include <QDragEnterEvent>
 #include <QMouseEvent>
 #include <QKeyEvent>
@@ -28,8 +29,8 @@ Canvas::Canvas(QWidget* parent)
     // Set scene size
     m_scene->setSceneRect(0, 0, 1200, 900);
     
-    // Modern dark background
-    setBackgroundBrush(QBrush(QColor(24, 26, 31)));
+    // Theme-aware background
+    setBackgroundBrush(QBrush(ThemeManager::instance().canvasBackground()));
     
     // Enable rubber band selection in select mode
     setDragMode(QGraphicsView::NoDrag);

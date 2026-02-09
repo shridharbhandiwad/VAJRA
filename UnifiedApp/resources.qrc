@@ -1,7 +1,8 @@
 <!DOCTYPE RCC>
 <RCC version="1.0">
     <qresource prefix="/styles">
-        <file>styles.qss</file>
+        <file>styles_dark.qss</file>
+        <file>styles_light.qss</file>
     </qresource>
     <qresource prefix="/config">
         <file>components.json</file>

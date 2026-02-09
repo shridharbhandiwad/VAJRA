@@ -1,5 +1,6 @@
 #include "connection.h"
 #include "component.h"
+#include "thememanager.h"
 #include <QPainter>
 #include <QtMath>
 #include <QDebug>
@@ -13,7 +14,7 @@ Connection::Connection(Component* source, Component* target,
     , m_target(target)
     , m_connectionType(type)
     , m_label(label)
-    , m_color(QColor(100, 180, 220))
+    , m_color(ThemeManager::instance().connectionDefaultColor())
 {
     setFlag(QGraphicsItem::ItemIsSelectable);
     setZValue(-1);  // Draw behind components
@@ -147,7 +148,7 @@ void Connection::paint(QPainter* painter, const QStyleOptionGraphicsItem* option
         textRect.moveCenter(QPointF(0, -10));
         
         painter->setPen(Qt::NoPen);
-        painter->setBrush(QColor(24, 26, 31, 220));
+        painter->setBrush(ThemeManager::instance().connectionLabelBackground());
         painter->drawRoundedRect(textRect, 4, 4);
         
         // Draw border

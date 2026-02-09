@@ -1,4 +1,5 @@
 #include "subcomponent.h"
+#include "thememanager.h"
 #include <QPainter>
 #include <QDebug>
 
@@ -23,15 +24,16 @@ void SubComponent::paint(QPainter* painter, const QStyleOptionGraphicsItem* opti
     Q_UNUSED(option);
     Q_UNUSED(widget);
     
+    ThemeManager& tm = ThemeManager::instance();
+    
     painter->setRenderHint(QPainter::Antialiasing);
     
     qreal w = itemWidth();
     qreal h = itemHeight();
     
     // Background with rounded corners
-    QColor bgColor(36, 39, 46);
-    painter->setPen(QPen(QColor(55, 60, 70), 1));
-    painter->setBrush(bgColor);
+    painter->setPen(QPen(tm.subcomponentBorder(), 1));
+    painter->setBrush(tm.subcomponentBackground());
     painter->drawRoundedRect(0, 0, w, h, 4, 4);
     
     // Health indicator bar on the left
@@ -41,7 +43,7 @@ void SubComponent::paint(QPainter* painter, const QStyleOptionGraphicsItem* opti
     painter->drawRoundedRect(0, 0, barWidth, h, 2, 2);
     
     // Sub-component name
-    painter->setPen(QColor(200, 200, 210));
+    painter->setPen(tm.subcomponentText());
     painter->setFont(QFont("Segoe UI", 7, QFont::Normal));
     QRectF textRect(barWidth + 6, 0, w - barWidth - 40, h);
     painter->drawText(textRect, Qt::AlignVCenter | Qt::AlignLeft, m_name);
@@ -55,7 +57,7 @@ void SubComponent::paint(QPainter* painter, const QStyleOptionGraphicsItem* opti
     
     // Selection highlight (from parent's selection state)
     if (isSelected()) {
-        painter->setPen(QPen(QColor("#00BCD4"), 1, Qt::DashLine));
+        painter->setPen(QPen(tm.accentPrimary(), 1, Qt::DashLine));
         painter->setBrush(Qt::NoBrush);
         painter->drawRoundedRect(0, 0, w, h, 4, 4);
     }

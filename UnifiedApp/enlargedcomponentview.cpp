@@ -1,5 +1,6 @@
 #include "enlargedcomponentview.h"
 #include "componentregistry.h"
+#include "thememanager.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QGridLayout>
@@ -38,14 +39,15 @@ void SubsystemHealthBar::paintEvent(QPaintEvent* /*event*/)
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
 
+    ThemeManager& tm = ThemeManager::instance();
+
     int w = width();
     int h = height();
     int margin = 4;
 
     // Background card
-    QColor cardBg(36, 39, 46);
-    p.setPen(QPen(QColor(58, 63, 75), 1));
-    p.setBrush(cardBg);
+    p.setPen(QPen(tm.subcomponentBorder(), 1));
+    p.setBrush(tm.cardBackground());
     p.drawRoundedRect(margin, 1, w - 2 * margin, h - 2, 6, 6);
 
     // Left colour indicator strip
@@ -56,7 +58,7 @@ void SubsystemHealthBar::paintEvent(QPaintEvent* /*event*/)
     p.drawPath(strip);
 
     // Subsystem name
-    p.setPen(QColor(200, 203, 210));
+    p.setPen(tm.primaryText());
     p.setFont(QFont("Segoe UI", 9));
     QRectF nameRect(margin + 12, 0, w * 0.42, h);
     p.drawText(nameRect, Qt::AlignVCenter | Qt::AlignLeft, m_name);
@@ -67,7 +69,7 @@ void SubsystemHealthBar::paintEvent(QPaintEvent* /*event*/)
     int barH = 10;
     int barY = (h - barH) / 2;
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor(45, 49, 59));
+    p.setBrush(tm.healthBarBackground());
     p.drawRoundedRect(barX, barY, barW, barH, 5, 5);
 
     // Health bar fill
@@ -127,6 +129,8 @@ void HealthTrendChart::paintEvent(QPaintEvent* /*event*/)
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
 
+    ThemeManager& tm = ThemeManager::instance();
+
     int w = width();
     int h = height();
 
@@ -140,37 +144,37 @@ void HealthTrendChart::paintEvent(QPaintEvent* /*event*/)
 
     // Background
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor(18, 20, 26));
+    p.setBrush(tm.chartBackground());
     p.drawRoundedRect(0, 0, w, h, 8, 8);
 
     // Border
-    p.setPen(QPen(QColor(55, 60, 70, 120), 1));
+    p.setPen(QPen(tm.chartBorder(), 1));
     p.setBrush(Qt::NoBrush);
     p.drawRoundedRect(0, 0, w, h, 8, 8);
 
     // Grid lines
-    p.setPen(QPen(QColor(50, 54, 65), 1, Qt::DotLine));
+    p.setPen(QPen(tm.chartGridLine(), 1, Qt::DotLine));
     for (int i = 0; i <= 4; i++) {
         int y = chartTop + chartH * i / 4;
         p.drawLine(chartLeft, y, chartRight, y);
         // Y-axis labels
-        p.setPen(QColor(140, 143, 150));
+        p.setPen(tm.chartAxisText());
         p.setFont(QFont("Segoe UI", 7));
         p.drawText(QRectF(0, y - 8, chartLeft - 4, 16),
                    Qt::AlignVCenter | Qt::AlignRight,
                    QString("%1").arg(100 - 25 * i));
-        p.setPen(QPen(QColor(50, 54, 65), 1, Qt::DotLine));
+        p.setPen(QPen(tm.chartGridLine(), 1, Qt::DotLine));
     }
 
     // X-axis label
-    p.setPen(QColor(140, 143, 150));
+    p.setPen(tm.chartAxisText());
     p.setFont(QFont("Segoe UI", 7));
     p.drawText(QRectF(chartLeft, chartBottom + 4, chartW, 18),
                Qt::AlignCenter, "Time (updates)");
 
     if (m_dataPoints.isEmpty()) {
         // Placeholder text
-        p.setPen(QColor(100, 104, 115));
+        p.setPen(tm.chartPlaceholderText());
         p.setFont(QFont("Segoe UI", 10));
         p.drawText(QRectF(chartLeft, chartTop, chartW, chartH),
                    Qt::AlignCenter, "Waiting for health data...");
@@ -279,6 +283,8 @@ EnlargedComponentView::~EnlargedComponentView()
 
 void EnlargedComponentView::setupUI()
 {
+    ThemeManager& tm = ThemeManager::instance();
+
     // ── Main horizontal layout: left panel + right panel ──
     QHBoxLayout* mainLayout = new QHBoxLayout(this);
     mainLayout->setSpacing(12);
@@ -296,46 +302,30 @@ void EnlargedComponentView::setupUI()
     // ════════════════════════════════════════════════════════
     QWidget* leftPanel = new QWidget(this);
     leftPanel->setObjectName("enlargedLeftPanel");
-    leftPanel->setStyleSheet(
-        "QWidget#enlargedLeftPanel {"
-        "  background: rgba(24, 27, 33, 0.95);"
-        "  border: 1px solid rgba(255, 255, 255, 0.06);"
-        "  border-radius: 12px;"
-        "}");
     QVBoxLayout* leftLayout = new QVBoxLayout(leftPanel);
     leftLayout->setSpacing(10);
     leftLayout->setContentsMargins(16, 16, 16, 16);
 
     // Title
     QLabel* leftTitle = new QLabel(displayName.toUpper() + "  —  ENLARGED VIEW", leftPanel);
-    leftTitle->setStyleSheet(
-        "color: #e8eaed; font-size: 15px; font-weight: 700;"
-        "letter-spacing: 1.5px; background: transparent; padding: 4px 0;");
+    leftTitle->setObjectName("enlargedTitle");
 
     // Component ID subtitle
     QLabel* idLabel = new QLabel("ID: " + m_componentId, leftPanel);
-    idLabel->setStyleSheet(
-        "color: #00BCD4; font-size: 10px; font-weight: 600;"
-        "letter-spacing: 1px; background: transparent; padding: 0 0 4px 0;");
+    idLabel->setObjectName("enlargedIdLabel");
 
     // Health status row
     QWidget* statusRow = new QWidget(leftPanel);
-    statusRow->setStyleSheet("background: transparent;");
+    statusRow->setObjectName("statusRow");
     QHBoxLayout* statusLayout = new QHBoxLayout(statusRow);
     statusLayout->setContentsMargins(0, 0, 0, 0);
     statusLayout->setSpacing(12);
 
     m_healthStatusLabel = new QLabel("STATUS: NOMINAL", statusRow);
-    m_healthStatusLabel->setStyleSheet(
-        "color: #66bb6a; font-size: 11px; font-weight: 600;"
-        "padding: 4px 12px; background: rgba(46,125,50,0.15);"
-        "border-radius: 6px; border-left: 3px solid #4CAF50;");
+    m_healthStatusLabel->setObjectName("healthStatusLabel");
 
     m_healthValueLabel = new QLabel("HEALTH: --", statusRow);
-    m_healthValueLabel->setStyleSheet(
-        "color: #90caf9; font-size: 11px; font-weight: 600;"
-        "padding: 4px 12px; background: rgba(21,101,192,0.15);"
-        "border-radius: 6px;");
+    m_healthValueLabel->setObjectName("healthValueLabel");
 
     statusLayout->addWidget(m_healthStatusLabel);
     statusLayout->addWidget(m_healthValueLabel);
@@ -351,26 +341,21 @@ void EnlargedComponentView::setupUI()
 
     m_componentView = new QGraphicsView(m_componentScene, leftPanel);
     m_componentView->setRenderHint(QPainter::Antialiasing);
-    m_componentView->setBackgroundBrush(QBrush(QColor(14, 16, 21)));
+    m_componentView->setBackgroundBrush(QBrush(tm.canvasBackground()));
     m_componentView->setMinimumHeight(220);
     m_componentView->setMaximumHeight(380);
     m_componentView->setFrameShape(QFrame::NoFrame);
-    m_componentView->setStyleSheet(
-        "border: 1px solid rgba(255,255,255,0.06); border-radius: 8px;");
+    m_componentView->setObjectName("mainCanvas");
 
     // Subsystems section
     QLabel* subsysTitle = new QLabel("SUBSYSTEMS", leftPanel);
-    subsysTitle->setStyleSheet(
-        "color: #9aa0a6; font-size: 11px; font-weight: 600;"
-        "letter-spacing: 1.5px; padding: 8px 0 2px 0; background: transparent;");
+    subsysTitle->setObjectName("subsysTitle");
 
     // Subsystem list with scroll area
     QScrollArea* scrollArea = new QScrollArea(leftPanel);
+    scrollArea->setObjectName("subsysScrollArea");
     scrollArea->setWidgetResizable(true);
     scrollArea->setFrameShape(QFrame::NoFrame);
-    scrollArea->setStyleSheet(
-        "QScrollArea { background: transparent; border: none; }"
-        "QWidget#subsysContainer { background: transparent; }");
 
     QWidget* subsysContainer = new QWidget();
     subsysContainer->setObjectName("subsysContainer");
@@ -398,60 +383,41 @@ void EnlargedComponentView::setupUI()
     // ════════════════════════════════════════════════════════
     QWidget* rightPanel = new QWidget(this);
     rightPanel->setObjectName("enlargedRightPanel");
-    rightPanel->setStyleSheet(
-        "QWidget#enlargedRightPanel {"
-        "  background: rgba(24, 27, 33, 0.95);"
-        "  border: 1px solid rgba(255, 255, 255, 0.06);"
-        "  border-radius: 12px;"
-        "}");
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
     rightLayout->setSpacing(12);
     rightLayout->setContentsMargins(16, 16, 16, 16);
 
     QLabel* rightTitle = new QLabel("DATA ANALYTICS", rightPanel);
-    rightTitle->setStyleSheet(
-        "color: #e8eaed; font-size: 15px; font-weight: 700;"
-        "letter-spacing: 1.5px; background: transparent; padding: 4px 0;");
+    rightTitle->setObjectName("enlargedTitle");
 
     // Health trend chart
     QLabel* chartLabel = new QLabel("HEALTH TREND", rightPanel);
-    chartLabel->setStyleSheet(
-        "color: #9aa0a6; font-size: 10px; font-weight: 600;"
-        "letter-spacing: 1.5px; padding: 2px 0; background: transparent;");
+    chartLabel->setObjectName("chartLabel");
 
     m_trendChart = new HealthTrendChart(rightPanel);
 
     // Stats cards
     QLabel* statsLabel = new QLabel("STATISTICS", rightPanel);
-    statsLabel->setStyleSheet(
-        "color: #9aa0a6; font-size: 10px; font-weight: 600;"
-        "letter-spacing: 1.5px; padding: 8px 0 2px 0; background: transparent;");
+    statsLabel->setObjectName("statsLabel");
 
     QWidget* statsContainer = new QWidget(rightPanel);
-    statsContainer->setStyleSheet("background: transparent;");
+    statsContainer->setObjectName("statusRow"); // transparent bg
     QGridLayout* statsGrid = new QGridLayout(statsContainer);
     statsGrid->setSpacing(8);
     statsGrid->setContentsMargins(0, 0, 0, 0);
 
     auto createStatCard = [&](const QString& label, const QString& value, int row, int col) -> QLabel* {
         QWidget* card = new QWidget(statsContainer);
-        card->setStyleSheet(
-            "background: rgba(18, 20, 26, 0.9);"
-            "border: 1px solid rgba(255, 255, 255, 0.06);"
-            "border-radius: 8px;");
+        card->setObjectName("statCard");
         QVBoxLayout* cardLayout = new QVBoxLayout(card);
         cardLayout->setContentsMargins(12, 10, 12, 10);
         cardLayout->setSpacing(4);
 
         QLabel* lbl = new QLabel(label, card);
-        lbl->setStyleSheet(
-            "color: #6c717a; font-size: 9px; font-weight: 600;"
-            "letter-spacing: 1px; background: transparent; border: none;");
+        lbl->setObjectName("statCardLabel");
 
         QLabel* val = new QLabel(value, card);
-        val->setStyleSheet(
-            "color: #e8eaed; font-size: 18px; font-weight: 700;"
-            "background: transparent; border: none;");
+        val->setObjectName("statCardValue");
 
         cardLayout->addWidget(lbl);
         cardLayout->addWidget(val);
@@ -466,16 +432,12 @@ void EnlargedComponentView::setupUI()
 
     // Subsystem overview section on the analytics side
     QLabel* subOverviewLabel = new QLabel("SUBSYSTEM OVERVIEW", rightPanel);
-    subOverviewLabel->setStyleSheet(
-        "color: #9aa0a6; font-size: 10px; font-weight: 600;"
-        "letter-spacing: 1.5px; padding: 8px 0 2px 0; background: transparent;");
+    subOverviewLabel->setObjectName("subOverviewLabel");
 
     QScrollArea* subOverviewScroll = new QScrollArea(rightPanel);
+    subOverviewScroll->setObjectName("subOverviewScroll");
     subOverviewScroll->setWidgetResizable(true);
     subOverviewScroll->setFrameShape(QFrame::NoFrame);
-    subOverviewScroll->setStyleSheet(
-        "QScrollArea { background: transparent; border: none; }"
-        "QWidget#subOverviewContainer { background: transparent; }");
 
     QWidget* subOverviewContainer = new QWidget();
     subOverviewContainer->setObjectName("subOverviewContainer");
@@ -485,7 +447,7 @@ void EnlargedComponentView::setupUI()
 
     for (const QString& subName : m_subcomponentNames) {
         QWidget* row = new QWidget(subOverviewContainer);
-        row->setStyleSheet("background: transparent;");
+        row->setObjectName("subOverviewRow");
         QHBoxLayout* rowLayout = new QHBoxLayout(row);
         rowLayout->setContentsMargins(8, 3, 8, 3);
         rowLayout->setSpacing(8);
@@ -493,18 +455,18 @@ void EnlargedComponentView::setupUI()
         // Colour dot
         QLabel* dot = new QLabel(row);
         dot->setFixedSize(8, 8);
-        dot->setStyleSheet(
-            "background: #4CAF50; border-radius: 4px; border: none;");
         dot->setObjectName("dot_" + subName);
+        dot->setStyleSheet(
+            QString("background: #4CAF50; border-radius: 4px; border: none;"));
 
         QLabel* name = new QLabel(subName, row);
-        name->setStyleSheet("color: #c4c7cc; font-size: 10px; background: transparent; border: none;");
+        name->setObjectName("subNameLabel");
 
         QLabel* pct = new QLabel("100%", row);
+        pct->setObjectName("pct_" + subName);
         pct->setStyleSheet(
             "color: #4CAF50; font-size: 10px; font-weight: 700;"
             "background: transparent; border: none;");
-        pct->setObjectName("pct_" + subName);
 
         rowLayout->addWidget(dot);
         rowLayout->addWidget(name, 1);
@@ -529,6 +491,8 @@ void EnlargedComponentView::setupUI()
 
 void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal size)
 {
+    ThemeManager& tm = ThemeManager::instance();
+
     m_currentColor = color;
     m_currentSize = size;
     m_updateCount++;
@@ -540,26 +504,46 @@ void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal siz
         m_displayComponent->setSize(size);
     }
 
+    // Update the QGraphicsView background to match current theme
+    if (m_componentView) {
+        m_componentView->setBackgroundBrush(QBrush(tm.canvasBackground()));
+    }
+
     // Update status labels
     QString statusText = healthStatusText(color);
     m_healthStatusLabel->setText("STATUS: " + statusText);
 
-    // Colour-code the status label
+    // Colour-code the status label dynamically
     if (color.green() > 150 && color.red() < 150) {
+        // Green / Nominal
+        QString greenBg = tm.isDark() ? "rgba(46,125,50,0.15)" : "rgba(22,163,74,0.06)";
         m_healthStatusLabel->setStyleSheet(
-            "color: #66bb6a; font-size: 11px; font-weight: 600;"
-            "padding: 4px 12px; background: rgba(46,125,50,0.15);"
-            "border-radius: 6px; border-left: 3px solid #4CAF50;");
+            QString("color: %1; font-size: 11px; font-weight: 600;"
+                    "padding: 4px 12px; background: %2;"
+                    "border-radius: 6px; border-left: 3px solid %3;")
+            .arg(tm.isDark() ? "#66bb6a" : "#16A34A")
+            .arg(greenBg)
+            .arg(tm.isDark() ? "#4CAF50" : "#16A34A"));
     } else if (color.red() > 200 && color.green() < 100) {
+        // Red / Critical
+        QString redBg = tm.isDark() ? "rgba(183,28,28,0.15)" : "rgba(220,38,38,0.06)";
         m_healthStatusLabel->setStyleSheet(
-            "color: #ef5350; font-size: 11px; font-weight: 600;"
-            "padding: 4px 12px; background: rgba(183,28,28,0.15);"
-            "border-radius: 6px; border-left: 3px solid #f44336;");
+            QString("color: %1; font-size: 11px; font-weight: 600;"
+                    "padding: 4px 12px; background: %2;"
+                    "border-radius: 6px; border-left: 3px solid %3;")
+            .arg(tm.isDark() ? "#ef5350" : "#DC2626")
+            .arg(redBg)
+            .arg(tm.isDark() ? "#f44336" : "#DC2626"));
     } else {
+        // Orange / Warning
+        QString orangeBg = tm.isDark() ? "rgba(230,126,34,0.15)" : "rgba(234,88,12,0.06)";
         m_healthStatusLabel->setStyleSheet(
-            "color: #ffb74d; font-size: 11px; font-weight: 600;"
-            "padding: 4px 12px; background: rgba(230,126,34,0.15);"
-            "border-radius: 6px; border-left: 3px solid #FF9800;");
+            QString("color: %1; font-size: 11px; font-weight: 600;"
+                    "padding: 4px 12px; background: %2;"
+                    "border-radius: 6px; border-left: 3px solid %3;")
+            .arg(tm.isDark() ? "#ffb74d" : "#EA580C")
+            .arg(orangeBg)
+            .arg(tm.isDark() ? "#FF9800" : "#EA580C"));
     }
 
     m_healthValueLabel->setText(QString("HEALTH: %1%").arg(qRound(size)));

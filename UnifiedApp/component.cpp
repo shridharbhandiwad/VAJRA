@@ -1,5 +1,6 @@
 #include "component.h"
 #include "componentregistry.h"
+#include "thememanager.h"
 #include <QPainter>
 #include <QCursor>
 #include <QFileInfo>
@@ -153,17 +154,19 @@ void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
 
 void Component::paintContainer(QPainter* painter)
 {
+    ThemeManager& tm = ThemeManager::instance();
+    
     qreal w = containerWidth();
     qreal h = containerHeight();
     
     // Shadow
     painter->setPen(Qt::NoPen);
-    painter->setBrush(QColor(0, 0, 0, 50));
+    painter->setBrush(tm.componentShadow());
     painter->drawRoundedRect(3, 3, w, h, 8, 8);
     
     // Main container background
-    painter->setPen(QPen(QColor(55, 60, 70), 1.5));
-    painter->setBrush(QColor(28, 30, 38));
+    painter->setPen(QPen(tm.componentBorder(), 1.5));
+    painter->setBrush(tm.componentBackground());
     painter->drawRoundedRect(0, 0, w, h, 8, 8);
     
     // Header background with component color
@@ -173,8 +176,13 @@ void Component::paintContainer(QPainter* painter)
     headerPath.addRect(0, HEADER_HEIGHT - 8, w, 8);
     
     QLinearGradient headerGrad(0, 0, w, 0);
-    headerGrad.setColorAt(0, m_color.darker(180));
-    headerGrad.setColorAt(1, m_color.darker(220));
+    if (tm.isDark()) {
+        headerGrad.setColorAt(0, m_color.darker(180));
+        headerGrad.setColorAt(1, m_color.darker(220));
+    } else {
+        headerGrad.setColorAt(0, m_color.lighter(160));
+        headerGrad.setColorAt(1, m_color.lighter(140));
+    }
     
     painter->setPen(Qt::NoPen);
     painter->setClipPath(headerPath);
@@ -187,6 +195,10 @@ void Component::paintContainer(QPainter* painter)
     painter->setBrush(m_color);
     painter->drawRoundedRect(0, 0, w, 3, 2, 2);
     
+    // Text colours for component header
+    QColor headerTextPrimary = tm.isDark() ? QColor(230, 232, 237) : QColor(30, 35, 45);
+    QColor headerTextSecondary = tm.isDark() ? m_color.lighter(150) : m_color.darker(140);
+    
     // Component icon/thumbnail in header
     if (m_hasImage && !m_image.isNull()) {
         qreal imgSize = HEADER_HEIGHT - 10;
@@ -198,13 +210,13 @@ void Component::paintContainer(QPainter* painter)
         painter->setClipping(false);
         
         // Component name next to image
-        painter->setPen(QColor(230, 232, 237));
+        painter->setPen(headerTextPrimary);
         painter->setFont(QFont("Segoe UI", 9, QFont::Bold));
         QRectF nameRect(6 + imgSize + 6, 2, w - imgSize - 18, HEADER_HEIGHT / 2);
         painter->drawText(nameRect, Qt::AlignVCenter | Qt::AlignLeft, getDisplayName());
         
         // Label/type ID below name
-        painter->setPen(QColor(m_color.lighter(150)));
+        painter->setPen(headerTextSecondary);
         painter->setFont(QFont("Segoe UI", 7, QFont::Normal));
         QRectF labelRect(6 + imgSize + 6, HEADER_HEIGHT / 2, w - imgSize - 18, HEADER_HEIGHT / 2 - 4);
         painter->drawText(labelRect, Qt::AlignVCenter | Qt::AlignLeft, getLabel());
@@ -220,13 +232,13 @@ void Component::paintContainer(QPainter* painter)
         painter->drawText(QRectF(8, 8, 24, 24), Qt::AlignCenter, getLabel());
         
         // Component name
-        painter->setPen(QColor(230, 232, 237));
+        painter->setPen(headerTextPrimary);
         painter->setFont(QFont("Segoe UI", 9, QFont::Bold));
         QRectF nameRect(38, 2, w - 44, HEADER_HEIGHT / 2);
         painter->drawText(nameRect, Qt::AlignVCenter | Qt::AlignLeft, getDisplayName());
         
         // Health percentage
-        painter->setPen(m_color.lighter(130));
+        painter->setPen(headerTextSecondary);
         painter->setFont(QFont("Segoe UI", 7, QFont::Bold));
         QRectF healthRect(38, HEADER_HEIGHT / 2, w - 44, HEADER_HEIGHT / 2 - 4);
         QString healthText = QString("Health: %1%").arg(qRound(m_size));
@@ -239,7 +251,7 @@ void Component::paintContainer(QPainter* painter)
     qreal barHeight = 3;
     
     painter->setPen(Qt::NoPen);
-    painter->setBrush(QColor(20, 22, 28));
+    painter->setBrush(tm.healthBarBackground());
     painter->drawRect(0, barY, barWidth, barHeight);
     
     qreal healthFraction = qBound(0.0, m_size / 100.0, 1.0);
@@ -248,7 +260,7 @@ void Component::paintContainer(QPainter* painter)
     
     // Sub-components section label (if there are sub-components)
     if (!m_subComponents.isEmpty()) {
-        painter->setPen(QColor(120, 125, 135));
+        painter->setPen(tm.componentTextSecondary());
         painter->setFont(QFont("Segoe UI", 6, QFont::Bold));
         QRectF subLabelRect(PADDING, HEADER_HEIGHT + 1, w - PADDING * 2, PADDING - 1);
         painter->drawText(subLabelRect, Qt::AlignVCenter | Qt::AlignLeft, 

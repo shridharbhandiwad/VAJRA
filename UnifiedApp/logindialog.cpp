@@ -1,4 +1,5 @@
 #include "logindialog.h"
+#include "thememanager.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFormLayout>
@@ -21,6 +22,7 @@ LoginDialog::LoginDialog(QWidget* parent)
     , m_loginButton(nullptr)
     , m_cancelButton(nullptr)
     , m_togglePasswordBtn(nullptr)
+    , m_themeToggleBtn(nullptr)
     , m_errorLabel(nullptr)
     , m_successLabel(nullptr)
     , m_titleLabel(nullptr)
@@ -36,17 +38,20 @@ LoginDialog::LoginDialog(QWidget* parent)
     , m_loginAttempts(0)
 {
     setupUI();
-    loadStyleSheet();
     setupAnimations();
     
     setWindowTitle("Radar System - Access Control");
     setModal(true);
-    setFixedSize(480, 620);
+    setFixedSize(480, 650);
     setObjectName("LoginDialog");
     
     // Standard window frame for professional look
     setWindowFlags(Qt::Dialog);
     setAttribute(Qt::WA_DeleteOnClose, false);
+    
+    // Listen for theme changes
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged,
+            this, &LoginDialog::onThemeChanged);
 }
 
 void LoginDialog::setupUI()
@@ -54,6 +59,19 @@ void LoginDialog::setupUI()
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(28, 20, 28, 16);
     mainLayout->setSpacing(10);
+    
+    // ========== THEME TOGGLE (top right) ==========
+    QHBoxLayout* topBarLayout = new QHBoxLayout();
+    topBarLayout->addStretch();
+    
+    m_themeToggleBtn = new QPushButton(this);
+    m_themeToggleBtn->setObjectName("themeToggleLogin");
+    m_themeToggleBtn->setCursor(Qt::PointingHandCursor);
+    m_themeToggleBtn->setToolTip("Switch between Dark and Light themes");
+    updateThemeButtonText();
+    connect(m_themeToggleBtn, &QPushButton::clicked, this, &LoginDialog::onThemeToggle);
+    
+    topBarLayout->addWidget(m_themeToggleBtn);
     
     // ========== HEADER SECTION ==========
     QVBoxLayout* headerLayout = new QVBoxLayout();
@@ -190,11 +208,12 @@ void LoginDialog::setupUI()
     infoPanelLayout->addWidget(infoPanelText);
     
     // ========== FOOTER ==========
-    QLabel* footerLabel = new QLabel("RADAR MONITORING SYSTEM v2.1 | AUTHORIZED ACCESS ONLY", this);
+    QLabel* footerLabel = new QLabel("RADAR MONITORING SYSTEM v3.0 | AUTHORIZED ACCESS ONLY", this);
     footerLabel->setObjectName("footerLabel");
     footerLabel->setAlignment(Qt::AlignCenter);
     
     // ========== ASSEMBLE MAIN LAYOUT ==========
+    mainLayout->addLayout(topBarLayout);
     mainLayout->addLayout(headerLayout);
     mainLayout->addSpacing(6);
     mainLayout->addWidget(inputFrame);
@@ -219,22 +238,6 @@ void LoginDialog::setupUI()
     
     // Set initial focus
     m_usernameEdit->setFocus();
-}
-
-void LoginDialog::loadStyleSheet()
-{
-    QFile styleFile(":/styles/styles.qss");
-    if (!styleFile.open(QFile::ReadOnly)) {
-        // Try relative path
-        styleFile.setFileName("styles.qss");
-        if (!styleFile.open(QFile::ReadOnly)) {
-            qWarning("Could not load stylesheet");
-            return;
-        }
-    }
-    
-    QString styleSheet = QLatin1String(styleFile.readAll());
-    setStyleSheet(styleSheet);
 }
 
 void LoginDialog::setupAnimations()
@@ -413,4 +416,29 @@ void LoginDialog::animateSuccess()
     pulseAnim->setEndValue(1.0);
     pulseAnim->setEasingCurve(QEasingCurve::OutCubic);
     pulseAnim->start(QAbstractAnimation::DeleteWhenStopped);
+}
+
+// ── Theme handling ─────────────────────────────────────────────
+
+void LoginDialog::onThemeToggle()
+{
+    ThemeManager::instance().toggleTheme();
+}
+
+void LoginDialog::onThemeChanged(AppTheme theme)
+{
+    Q_UNUSED(theme);
+    updateThemeButtonText();
+}
+
+void LoginDialog::updateThemeButtonText()
+{
+    if (!m_themeToggleBtn) return;
+    
+    ThemeManager& tm = ThemeManager::instance();
+    if (tm.isDark()) {
+        m_themeToggleBtn->setText("LIGHT MODE");
+    } else {
+        m_themeToggleBtn->setText("DARK MODE");
+    }
 }
