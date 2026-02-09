@@ -23,6 +23,8 @@ MainWindow::MainWindow(UserRole userRole, const QString& username, QWidget* pare
     , m_statusLabel(nullptr)
     , m_userLabel(nullptr)
     , m_connectedClients(0)
+    , m_voiceAlertManager(nullptr)
+    , m_voiceToggleBtn(nullptr)
 {
     setupUI();
     
@@ -211,11 +213,30 @@ void MainWindow::setupRuntimeMode()
     m_statusLabel = new QLabel("STATUS: INITIALIZING", this);
     m_statusLabel->setObjectName("statusLabel");
     
+    // Voice alert mute/unmute toggle button
+    m_voiceToggleBtn = new QPushButton("VOICE ALERTS: ON", this);
+    m_voiceToggleBtn->setObjectName("voiceToggleBtn");
+    m_voiceToggleBtn->setToolTip("Toggle voice-based health status alerts");
+    m_voiceToggleBtn->setCheckable(true);
+    m_voiceToggleBtn->setChecked(true);
+    m_voiceToggleBtn->setStyleSheet(
+        "QPushButton { background: #1b5e20; color: #a5d6a7; border: 1px solid #2e7d32; "
+        "border-radius: 4px; padding: 4px 12px; font-size: 10px; font-weight: bold; }"
+        "QPushButton:hover { background: #2e7d32; }"
+        "QPushButton:checked { background: #1b5e20; color: #a5d6a7; }"
+        "QPushButton:!checked { background: #b71c1c; color: #ef9a9a; border-color: #c62828; }");
+    connect(m_voiceToggleBtn, &QPushButton::clicked, this, &MainWindow::toggleVoiceAlerts);
+    
     toolbar->addWidget(loadBtn);
     toolbar->addSeparator();
     toolbar->addWidget(m_statusLabel);
+    toolbar->addSeparator();
+    toolbar->addWidget(m_voiceToggleBtn);
     
     connect(loadBtn, &QPushButton::clicked, this, &MainWindow::loadDesign);
+    
+    // Initialize voice alert manager
+    m_voiceAlertManager = new VoiceAlertManager(this);
     
     // Start message server
     m_messageServer = new MessageServer(this);
@@ -439,6 +460,15 @@ void MainWindow::onMessageReceived(const QString& componentId, const QString& co
     }
     
     m_analytics->recordMessage(componentId, color, size);
+    
+    // Trigger voice alert for critical/degraded health states
+    if (m_voiceAlertManager) {
+        QString componentName = componentId;
+        if (comp) {
+            componentName = comp->getDisplayName();
+        }
+        m_voiceAlertManager->processHealthUpdate(componentId, componentName, color, size);
+    }
 }
 
 void MainWindow::onComponentLoaded(const QString& id, const QString& typeId)
@@ -468,4 +498,13 @@ void MainWindow::onClientDisconnected()
         m_statusLabel->setText(QString("STATUS: ACTIVE  |  PORT: 12345  |  CLIENTS: %1")
             .arg(m_connectedClients));
     }
+}
+
+void MainWindow::toggleVoiceAlerts()
+{
+    if (!m_voiceAlertManager || !m_voiceToggleBtn) return;
+    
+    bool isOn = m_voiceToggleBtn->isChecked();
+    m_voiceAlertManager->setMuted(!isOn);
+    m_voiceToggleBtn->setText(isOn ? "VOICE ALERTS: ON" : "VOICE ALERTS: OFF");
 }

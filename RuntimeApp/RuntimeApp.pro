@@ -13,14 +13,16 @@ SOURCES += \
     component.cpp \
     canvas.cpp \
     analytics.cpp \
-    messageserver.cpp
+    messageserver.cpp \
+    voicealertmanager.cpp
 
 HEADERS += \
     mainwindow.h \
     component.h \
     canvas.h \
     analytics.h \
-    messageserver.h
+    messageserver.h \
+    voicealertmanager.h
 
 RESOURCES += \
     resources.qrc

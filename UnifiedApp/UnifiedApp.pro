@@ -17,7 +17,8 @@ SOURCES += \
     analytics.cpp \
     messageserver.cpp \
     componentregistry.cpp \
-    addcomponentdialog.cpp
+    addcomponentdialog.cpp \
+    voicealertmanager.cpp
 
 HEADERS += \
     logindialog.h \
@@ -28,7 +29,8 @@ HEADERS += \
     analytics.h \
     messageserver.h \
     componentregistry.h \
-    addcomponentdialog.h
+    addcomponentdialog.h \
+    voicealertmanager.h
 
 RESOURCES += \
     resources.qrc
