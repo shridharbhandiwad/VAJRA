@@ -1,11 +1,11 @@
 # External Radar Subsystem Health Monitors
 
-Python scripts that simulate external radar subsystems sending periodic health status updates to the Runtime Application.
+Python scripts that simulate external radar subsystems sending periodic health status updates to the UnifiedApp.
 
 ## Overview
 
 These health monitors simulate real-world radar subsystems that report their operational status periodically. Each monitor:
-- Connects to the Runtime Application via TCP (port 12345)
+- Connects to the UnifiedApp via TCP (port 12345)
 - Sends JSON health update messages
 - Simulates realistic health degradation and recovery
 - Generates random events (failures, recoveries)
@@ -138,14 +138,14 @@ For clarity, you can use descriptive names:
 
 ## Workflow
 
-### Step 1: Start Runtime Application
+### Step 1: Start the UnifiedApp
 ```bash
-./RuntimeApp/RuntimeApp
-# Load a design file
+./UnifiedApp/UnifiedApp
+# Login with User/user for runtime mode, then load a design file
 ```
 
 ### Step 2: Match Subsystem IDs
-Note the subsystem IDs shown in the Runtime Application (e.g., component_1, component_2)
+Note the subsystem IDs shown in the application (e.g., component_1, component_2)
 
 ### Step 3: Start Health Monitors
 ```bash
@@ -161,7 +161,7 @@ python3 external_system.py component_3 &
 ```
 
 ### Step 4: Observe Updates
-Watch the Runtime Application as subsystems change color and size based on health status.
+Watch the UnifiedApp as subsystems change color and size based on health status.
 
 ## Examples
 
@@ -297,7 +297,7 @@ while True:
 **Problem**: `[antenna_1] Connection failed: [Errno 111] Connection refused`
 
 **Solutions:**
-- Ensure Runtime Application is running
+- Ensure UnifiedApp is running
 - Verify a design has been loaded
 - Check firewall settings
 - Confirm port 12345 is not blocked
@@ -307,7 +307,7 @@ while True:
 
 **Solutions:**
 - Verify subsystem ID matches the one in the loaded design
-- Check Runtime Application console for received messages
+- Check UnifiedApp console for received messages
 - Ensure JSON format is correct
 
 ### Multiple Monitors Conflict
@@ -355,7 +355,7 @@ echo "Test completed"
 ## Requirements
 
 - Python 3.x (no external packages required)
-- Network access to Runtime Application host
+- Network access to UnifiedApp host
 - TCP port 12345 accessible (or custom port)
 
 ## Tips
@@ -370,5 +370,4 @@ echo "Test completed"
 
 - [Main README](../README.md) - Full system documentation
 - [Quick Start Guide](../QUICKSTART.md) - Get started in 5 minutes
-- Runtime Application documentation for server setup
-- Designer Application documentation for creating layouts
+- [UnifiedApp README](../UnifiedApp/README.md) - Application documentation

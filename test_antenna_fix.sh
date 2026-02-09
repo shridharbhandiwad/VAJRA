@@ -16,15 +16,6 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}Step 1: Verifying build artifacts...${NC}"
-if [ -f "/workspace/RuntimeApp/RuntimeApp" ]; then
-    echo -e "${GREEN}✓${NC} RuntimeApp binary found"
-else
-    echo -e "${RED}✗${NC} RuntimeApp binary not found - building..."
-    cd /workspace/RuntimeApp
-    make clean && make
-    echo -e "${GREEN}✓${NC} RuntimeApp built successfully"
-fi
-
 if [ -f "/workspace/UnifiedApp/UnifiedApp" ]; then
     echo -e "${GREEN}✓${NC} UnifiedApp binary found"
 else
@@ -52,30 +43,10 @@ fi
 echo ""
 echo -e "${BLUE}Step 3: Checking enhanced code features...${NC}"
 
-# Check for multi-path search
-if grep -q "searchPaths" /workspace/RuntimeApp/mainwindow.cpp; then
-    echo -e "${GREEN}✓${NC} Multi-path search implemented in RuntimeApp"
-else
-    echo -e "${RED}✗${NC} Multi-path search not found in RuntimeApp"
-fi
-
 if grep -q "searchPaths" /workspace/UnifiedApp/mainwindow.cpp; then
     echo -e "${GREEN}✓${NC} Multi-path search implemented in UnifiedApp"
 else
     echo -e "${RED}✗${NC} Multi-path search not found in UnifiedApp"
-fi
-
-# Check for enhanced logging
-if grep -q "\[Canvas\] Starting loadFromJson" /workspace/RuntimeApp/canvas.cpp; then
-    echo -e "${GREEN}✓${NC} Enhanced logging implemented in RuntimeApp/canvas.cpp"
-else
-    echo -e "${RED}✗${NC} Enhanced logging not found in RuntimeApp/canvas.cpp"
-fi
-
-if grep -q "\[MainWindow\] onMessageReceived called" /workspace/RuntimeApp/mainwindow.cpp; then
-    echo -e "${GREEN}✓${NC} Enhanced message logging in RuntimeApp/mainwindow.cpp"
-else
-    echo -e "${RED}✗${NC} Enhanced message logging not found in RuntimeApp/mainwindow.cpp"
 fi
 
 echo ""
@@ -104,9 +75,9 @@ echo "4. ✓ Working directory independence"
 echo ""
 echo -e "${BLUE}To test the fix interactively:${NC}"
 echo ""
-echo "Terminal 1 - Start RuntimeApp:"
+echo "Terminal 1 - Start UnifiedApp:"
 echo "  cd /workspace"
-echo "  ./RuntimeApp/RuntimeApp"
+echo "  ./UnifiedApp/UnifiedApp"
 echo ""
 echo "Terminal 2 - Send health updates:"
 echo "  cd /workspace/ExternalSystems"

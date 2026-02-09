@@ -1,6 +1,6 @@
 # Radar System Monitoring Application
 
-A comprehensive Qt-based application system for designing, deploying, and monitoring radar subsystems in real-time. Features a **fully modular architecture** where new component types can be added without changing any code.
+A comprehensive Qt-based application for designing, deploying, and monitoring radar subsystems in real-time. Features a **fully modular architecture** where new component types can be added without changing any code.
 
 ## Key Feature: Modular Component Architecture
 
@@ -25,24 +25,18 @@ Components are defined in `components.json` and can be added at runtime through 
 
 Or use the **"+ Add Component Type"** button in the Designer to add new types via the UI.
 
-## Available Applications
+## UnifiedApp
 
-### **UnifiedApp** (Recommended - v3.0)
 A single, unified application combining both Designer and Runtime capabilities with role-based access control:
 - Login as **Designer** (`Designer`/`designer`) for full design capabilities
 - Login as **User** (`User`/`user`) for runtime monitoring
 - **Modular component registry** - add new component types via JSON or UI
 - **Multi-protocol support** - TCP and UDP for health data
-- **Modern glass-morphism UI** with teal accent theme
+- **Dark/Light theme switching**
 - See `UnifiedApp/README.md` for details
 
-### **Separate Applications** (Legacy)
-Original standalone applications:
-1. **DesignerApp** - Visual editor for creating radar system layouts
-2. **RuntimeApp** - Real-time health monitoring display for radar subsystems
-
-### **External Subsystem Simulators**
-Python scripts that simulate subsystems sending health status updates (works with both UnifiedApp and separate apps)
+### External Subsystem Simulators
+Python scripts that simulate subsystems sending health status updates.
 
 ## System Overview
 
@@ -52,6 +46,8 @@ The Designer provides a visual interface for creating system layouts with:
 - **Component Panel** - Draggable list of all registered component types
 - **"+ Add Component Type"** - Button to define new component types at runtime
 - **Designer View** - Canvas for placing and arranging subsystems
+- **Sub-component support** - Drag-drop labels, line edits, and buttons inside components
+- **Connection drawing** - Uni-directional and bi-directional connections between components
 - **Analytics Panel** - Statistics about subsystems on the canvas
 - **Save/Load** - Export designs to `.design` files
 
@@ -68,6 +64,8 @@ The Runtime Monitor:
   - **Orange** - Degraded (40-69% health)
   - **Red** - Critical (10-39% health)
   - **Gray** - Offline (0-9% health)
+- **Voice alerts** for critical health states
+- **Enlarged component views** with health trend charts
 
 ### External Subsystem Simulators
 
@@ -115,7 +113,7 @@ Python simulators that:
 
 ## Requirements
 
-### For Qt Applications
+### For Qt Application
 - Qt 5.x or Qt 6.x
 - C++ compiler (g++, clang, or MSVC)
 - Qt development tools (qmake, Qt Creator optional)
@@ -125,7 +123,7 @@ Python simulators that:
 
 ## Building
 
-### Quick Start (Unified Application)
+### Quick Start
 
 ```bash
 cd UnifiedApp
@@ -136,7 +134,7 @@ make
 
 Login with `Designer`/`designer` for design mode or `User`/`user` for runtime mode.
 
-### Build All Applications (Including Legacy Apps)
+### Build Using Script
 
 ```bash
 chmod +x build_all.sh clean_all.sh
@@ -199,7 +197,8 @@ brew install qt@5
 1. Login with `Designer`/`designer`
 2. Drag components from the left panel to the canvas
 3. Use "+" to add custom component types if needed
-4. Save as `radar_system.design`
+4. Draw connections between components
+5. Save as `radar_system.design`
 
 **Step 2: Run Runtime Monitoring**
 
@@ -295,7 +294,7 @@ The component registry is the heart of the modular architecture:
 
 ```
 .
-├── UnifiedApp/                  # Unified Application (RECOMMENDED)
+├── UnifiedApp/                  # Unified Application
 │   ├── UnifiedApp.pro           # Qt project file
 │   ├── components.json          # Component registry (edit to add types!)
 │   ├── main.cpp                 # App entry, initializes registry
@@ -304,15 +303,20 @@ The component registry is the heart of the modular architecture:
 │   ├── logindialog.h/cpp        # Login dialog with role-based auth
 │   ├── mainwindow.h/cpp         # Main window (Designer + Runtime)
 │   ├── component.h/cpp          # Data-driven component graphics item
+│   ├── subcomponent.h/cpp       # Sub-component support
+│   ├── designsubcomponent.h/cpp # Design-mode sub-components (Label/LineEdit/Button)
+│   ├── connection.h/cpp         # Inter-component connections
 │   ├── canvas.h/cpp             # Canvas with dynamic type resolution
 │   ├── componentlist.h/cpp      # Auto-populated component list
 │   ├── analytics.h/cpp          # Dynamic analytics widget
 │   ├── messageserver.h/cpp      # Multi-protocol health server (TCP+UDP)
-│   ├── styles.qss               # Modern glass-morphism theme
+│   ├── voicealertmanager.h/cpp  # Voice alert system
+│   ├── enlargedcomponentview.h/cpp # Enlarged component views with charts
+│   ├── thememanager.h/cpp       # Dark/Light theme switching
+│   ├── styles.qss               # Default theme
+│   ├── styles_dark.qss          # Dark theme
+│   ├── styles_light.qss         # Light theme
 │   └── resources.qrc
-│
-├── DesignerApp/                 # Designer Application (Legacy)
-├── RuntimeApp/                  # Runtime Application (Legacy)
 │
 ├── ExternalSystems/             # Subsystem health simulators
 │   ├── external_system.py       # Single component monitor (TCP/UDP)
@@ -346,15 +350,10 @@ The component registry is the heart of the modular architecture:
 - WebSocket and MQTT protocol options in registry
 - Extensible protocol handler architecture
 
-### Modern UI Design
-- Glass-morphism inspired dark theme
-- Teal/cyan accent color palette
-- Rounded corners, subtle borders, gradient backgrounds
-- Rich HTML analytics display with health bars
-- Responsive card-based layout
-
 ### Designer Features
 - Drag-and-drop component placement
+- Sub-component drag-drop (Label, LineEdit, Button) with resize inside components
+- Connection drawing (uni-directional and bi-directional) between components
 - Dynamic component type list
 - "+" button to add new types without code changes
 - Save/Load system layouts
@@ -366,7 +365,14 @@ The component registry is the heart of the modular architecture:
 - Real-time component health updates
 - Multi-client support
 - Color-coded health status
+- Voice alerts for critical/degraded states
+- Enlarged component views with health trend charts
 - Comprehensive health analytics
+
+### Theme Support
+- Dark and Light themes
+- Theme switching via toolbar button
+- Persistent theme preference
 
 ## Extending the System
 

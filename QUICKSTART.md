@@ -8,46 +8,42 @@ Get up and running with the Radar System Monitoring application in 5 minutes!
 - Python 3.x installed
 - Linux/macOS (Windows also supported)
 
-## Step 1: Build the Applications (1 minute)
+## Step 1: Build the Application (1 minute)
 
 ```bash
 cd /workspace
 ./build_all.sh
 ```
 
-This builds:
-- Designer Application for creating radar system layouts
-- Runtime Application for real-time health monitoring
+This builds the UnifiedApp which combines both Designer and Runtime capabilities.
 
 ## Step 2: Design Your Radar System (1 minute)
 
 ```bash
-./DesignerApp/DesignerApp
+./UnifiedApp/UnifiedApp
 ```
 
-1. **Drag subsystems** from the left panel to the canvas:
+1. Login with `Designer`/`designer`
+2. **Drag subsystems** from the left panel to the canvas:
    - Antenna
    - Power System
    - Liquid Cooling Unit
    - Communication System
    - Radar Computer
 
-2. **Position them** to represent your radar system layout
+3. **Position them** to represent your radar system layout
 
-3. **Save the design**:
+4. **Save the design**:
    - Click "Save Design"
    - Save as `radar_system.design`
    - Note the subsystem IDs shown (e.g., antenna_1, power_1)
 
-## Step 3: Start the Monitoring Application (30 seconds)
+## Step 3: Start Runtime Monitoring (30 seconds)
 
-```bash
-./RuntimeApp/RuntimeApp
-```
-
-1. Click "Load Design"
-2. Select `radar_system.design`
-3. The server starts automatically on port 12345
+1. Login with `User`/`user` (or restart the app)
+2. Click "Load Design"
+3. Select `radar_system.design`
+4. The server starts automatically on port 12345 (TCP) and 12346 (UDP)
 
 ## Step 4: Start Health Monitors (30 seconds)
 
@@ -78,6 +74,8 @@ You should now see:
   - Current status and health levels
   - Change statistics
 
+- **Voice alerts** when health drops to critical/degraded
+
 ## Understanding the Health Simulation
 
 The external health monitors simulate realistic radar subsystem behavior:
@@ -106,7 +104,7 @@ python3 run_multiple_systems.py --components antenna_1 power_1
 
 ### Use Different Subsystem IDs
 
-In Designer App, each subsystem gets an ID like `component_1`, `component_2`, etc.
+Each subsystem gets an ID like `component_1`, `component_2`, etc.
 Match these IDs when starting health monitors:
 
 ```bash
@@ -117,25 +115,25 @@ python3 external_system.py component_2  # For second subsystem
 ## System Architecture at a Glance
 
 ```
-Designer App                Runtime Monitor            External Monitors
-    │                            │                           │
-    │ 1. Create layout           │                           │
-    │ ──────────────────>        │                           │
-    │                            │                           │
-    │ 2. Save design             │                           │
-    │ ──────────>                │                           │
-    │           design.file      │                           │
-    │                            │ 3. Load design            │
-    │                            │ <───────────              │
-    │                            │                           │
-    │                            │ 4. Start TCP:12345        │
-    │                            │ <═══════════════════════> │
-    │                            │                           │
-    │                            │ 5. Health updates         │
-    │                            │ <─────────────────────── │
-    │                            │                           │
-    │                            │ 6. Update display         │
-    │                            │ ─────────                │
+UnifiedApp (Designer Mode)         UnifiedApp (Runtime Mode)        External Monitors
+    |                                    |                               |
+    | 1. Create layout                   |                               |
+    | ─────────────────>                 |                               |
+    |                                    |                               |
+    | 2. Save design                     |                               |
+    | ──────────>                        |                               |
+    |           design.file              |                               |
+    |                                    | 3. Load design                |
+    |                                    | <───────────                  |
+    |                                    |                               |
+    |                                    | 4. Start TCP:12345            |
+    |                                    | <═══════════════════════>     |
+    |                                    |                               |
+    |                                    | 5. Health updates             |
+    |                                    | <───────────────────────     |
+    |                                    |                               |
+    |                                    | 6. Update display             |
+    |                                    | ─────────                    |
 ```
 
 ## Message Protocol
@@ -156,43 +154,33 @@ Health updates are sent as JSON via TCP:
 
 ## Troubleshooting
 
-### Applications won't build
+### Application won't build
 ```bash
 # Install Qt
 sudo apt-get install qt5-qmake qtbase5-dev qtbase5-dev-tools libqt5network5
 ```
 
 ### Health monitors can't connect
-- Make sure Runtime App is running
+- Make sure UnifiedApp is running
 - Make sure you've loaded a design
 - Check that subsystem IDs match
 
 ### No updates showing
 - Verify subsystem IDs match between design and monitors
 - Check External Systems console for error messages
-- Ensure Runtime App shows "Clients: N" where N > 0
-
-## Next Steps
-
-- **Custom layouts**: Design complex radar system architectures
-- **Custom health data**: Write your own health monitoring scripts
-- **Real integration**: Connect to actual radar subsystems
-- **Extended analytics**: Track historical health trends
+- Ensure the app shows "Clients: N" where N > 0
 
 ## Quick Commands Reference
 
 ```bash
-# Build everything
+# Build
 ./build_all.sh
 
 # Clean build artifacts
 ./clean_all.sh
 
-# Run Designer
-./DesignerApp/DesignerApp
-
-# Run Runtime Monitor
-./RuntimeApp/RuntimeApp
+# Run UnifiedApp
+./UnifiedApp/UnifiedApp
 
 # Run all health monitors
 cd ExternalSystems && python3 run_multiple_systems.py

@@ -16,7 +16,7 @@
  * Validation rules (which types are allowed) are configured per
  * component type in components.json via the "allowed_widgets" field.
  *
- *   Default allowed_widgets (matching DesignerApp):
+ *   Default allowed_widgets:
  *     Antenna:              Label, Button
  *     PowerSystem:          Label, LineEdit, Button
  *     LiquidCoolingUnit:    Label, Button

@@ -67,8 +67,8 @@ else
 fi
 echo
 
-# Build Unified Application (Recommended)
-echo "Building Unified Application (Recommended)..."
+# Build Unified Application
+echo "Building Unified Application..."
 cd UnifiedApp || exit 1
 qmake UnifiedApp.pro
 make
@@ -81,52 +81,16 @@ fi
 cd ..
 
 echo
-
-# Build Designer Application
-echo "Building Designer Application (Legacy)..."
-cd DesignerApp || exit 1
-qmake DesignerApp.pro
-make
-if [ $? -eq 0 ]; then
-    echo "✓ Designer Application built successfully"
-else
-    echo "✗ Designer Application build failed"
-    exit 1
-fi
-cd ..
-
-echo
-
-# Build Runtime Application
-echo "Building Runtime Application (Legacy)..."
-cd RuntimeApp || exit 1
-qmake RuntimeApp.pro
-make
-if [ $? -eq 0 ]; then
-    echo "✓ Runtime Application built successfully"
-else
-    echo "✗ Runtime Application build failed"
-    exit 1
-fi
-cd ..
-
-echo
 echo "======================================"
 echo "Build completed successfully!"
 echo "======================================"
 echo
-echo "Executables:"
-echo "  - UnifiedApp/UnifiedApp          (RECOMMENDED - Single app with role-based access)"
-echo "  - DesignerApp/DesignerApp         (Legacy - Separate designer)"
-echo "  - RuntimeApp/RuntimeApp           (Legacy - Separate runtime monitor)"
+echo "Executable:"
+echo "  - UnifiedApp/UnifiedApp          (Single app with role-based access)"
 echo
-echo "To run Unified Application (Recommended):"
+echo "To run:"
 echo "  ./UnifiedApp/UnifiedApp"
 echo "  Login with: Designer/designer (design mode) or User/user (runtime mode)"
-echo
-echo "To run separate applications:"
-echo "  ./DesignerApp/DesignerApp"
-echo "  ./RuntimeApp/RuntimeApp"
 echo
 echo "Voice Health Alerts:"
 echo "  Runtime mode announces 'System Status Critical/Degraded <health>%'"
