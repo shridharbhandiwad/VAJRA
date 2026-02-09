@@ -7,6 +7,10 @@ Supports multiple protocols:
 - TCP (default, port 12345) - Line-delimited JSON
 - UDP (port 12346) - JSON datagrams
 
+Extended protocol features:
+- Per-subsystem health updates (for APCU antenna and other complex components)
+- Bulk subsystem_health maps in a single message
+
 The component_id can be any string matching a component placed on the canvas.
 New component types can be added to the system via the UI or components.json
 without modifying this script.
@@ -19,12 +23,62 @@ import random
 import argparse
 import sys
 
+# ────────────────────────────────────────────────────────────────
+#  Subsystem definitions for known component types
+#  These match the subsystem names defined in components.json
+# ────────────────────────────────────────────────────────────────
+
+COMPONENT_SUBSYSTEMS = {
+    "Antenna": [
+        "APCU Controller",
+        "Temperature Monitoring",
+        "Board Data",
+        "Board Status",
+        "Quadrant 0 (CB)",
+        "Quadrant 1 (CF)",
+        "Quadrant 2 (CD)",
+        "Quadrant 3 (CE)",
+        "QTRMs",
+        "AQC",
+    ],
+    "PowerSystem": [
+        "Voltage Levels",
+        "Current Draw",
+        "Battery Status",
+        "UPS Module",
+        "Power Distribution",
+    ],
+    "LiquidCoolingUnit": [
+        "Coolant Temperature",
+        "Flow Rate",
+        "Pump Status",
+        "Heat Exchanger",
+    ],
+    "CommunicationSystem": [
+        "Signal Quality",
+        "Bandwidth",
+        "Link Status",
+        "Encryption Module",
+        "Protocol Handler",
+    ],
+    "RadarComputer": [
+        "CPU Usage",
+        "Memory",
+        "Processing Capacity",
+        "GPU Accelerator",
+        "Storage Controller",
+    ],
+}
+
+
 class ExternalSystem:
-    def __init__(self, component_id, host='localhost', port=12345, protocol='tcp'):
+    def __init__(self, component_id, host='localhost', port=12345, protocol='tcp',
+                 component_type=None):
         self.component_id = component_id
         self.host = host
         self.port = port
         self.protocol = protocol.lower()
+        self.component_type = component_type
         self.socket = None
         self.connected = False
         
@@ -40,6 +94,12 @@ class ExternalSystem:
         # Current health state (starts healthy)
         self.current_health = 95.0
         self.current_status = 'operational'
+
+        # Per-subsystem health tracking
+        self.subsystem_healths = {}
+        if self.component_type and self.component_type in COMPONENT_SUBSYSTEMS:
+            for sub in COMPONENT_SUBSYSTEMS[self.component_type]:
+                self.subsystem_healths[sub] = 95.0 + random.uniform(-5, 5)
         
     def connect(self):
         """Connect to the Runtime Application server"""
@@ -79,6 +139,12 @@ class ExternalSystem:
             "color": color,
             "size": health
         }
+
+        # Include subsystem health map if we have subsystem data
+        if self.subsystem_healths:
+            message["subsystem_health"] = {
+                name: round(h, 1) for name, h in self.subsystem_healths.items()
+            }
         
         try:
             json_data = json.dumps(message) + '\n'
@@ -91,6 +157,8 @@ class ExternalSystem:
             
             print(f"[{self.component_id}] Health Update ({self.protocol.upper()}): "
                   f"status={status}, health={health:.1f}%, color={color}")
+            if self.subsystem_healths:
+                print(f"  Subsystems: {len(self.subsystem_healths)} reported")
             return True
         except Exception as e:
             print(f"[{self.component_id}] Send failed: {e}")
@@ -130,6 +198,26 @@ class ExternalSystem:
             elif event_type == 'restore':
                 self.current_health = random.uniform(85, 100)
                 print(f"[{self.component_id}] EVENT: System restored!")
+
+        # Simulate per-subsystem health changes
+        for sub_name in list(self.subsystem_healths.keys()):
+            sub_change = random.uniform(-3.0, 2.0)
+            self.subsystem_healths[sub_name] += sub_change
+            self.subsystem_healths[sub_name] = max(0.0, min(100.0,
+                self.subsystem_healths[sub_name]))
+
+            # Subsystem random events (5% chance)
+            if random.random() < 0.05:
+                evt = random.choice(['sub_spike', 'sub_drop', 'sub_restore'])
+                if evt == 'sub_spike':
+                    self.subsystem_healths[sub_name] = min(100.0,
+                        self.subsystem_healths[sub_name] + random.uniform(8, 15))
+                elif evt == 'sub_drop':
+                    self.subsystem_healths[sub_name] = max(0.0,
+                        self.subsystem_healths[sub_name] - random.uniform(10, 25))
+                    print(f"[{self.component_id}] EVENT: {sub_name} degraded!")
+                elif evt == 'sub_restore':
+                    self.subsystem_healths[sub_name] = random.uniform(85, 100)
         
         return self.current_status, self.current_health
     
@@ -139,6 +227,9 @@ class ExternalSystem:
         print(f"[{self.component_id}] Target: {self.host}:{self.port}")
         print(f"[{self.component_id}] Update interval: {interval} seconds")
         print(f"[{self.component_id}] Initial health: {self.current_health:.1f}%")
+        if self.component_type:
+            print(f"[{self.component_id}] Component type: {self.component_type}")
+            print(f"[{self.component_id}] Subsystems: {len(self.subsystem_healths)}")
         print()
         
         if not self.connect():
@@ -175,8 +266,14 @@ Examples:
   # Monitor via UDP
   python3 external_system.py component_1 --protocol udp --port 12346
 
+  # Monitor with subsystem-level health (Antenna type)
+  python3 external_system.py antenna_1 --type Antenna
+
   # Monitor a custom component type
   python3 external_system.py gps_receiver_1 --interval 3.0
+
+Available component types with subsystem support:
+  Antenna, PowerSystem, LiquidCoolingUnit, CommunicationSystem, RadarComputer
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -190,6 +287,9 @@ Examples:
                        help='Communication protocol (default: tcp)')
     parser.add_argument('--interval', type=float, default=2.0, 
                        help='Health update interval in seconds (default: 2.0)')
+    parser.add_argument('--type', dest='component_type', default=None,
+                       choices=list(COMPONENT_SUBSYSTEMS.keys()),
+                       help='Component type for subsystem-level health reporting')
     
     args = parser.parse_args()
     
@@ -197,7 +297,8 @@ Examples:
     if args.port is None:
         args.port = 12346 if args.protocol == 'udp' else 12345
     
-    system = ExternalSystem(args.component_id, args.host, args.port, args.protocol)
+    system = ExternalSystem(args.component_id, args.host, args.port, args.protocol,
+                            args.component_type)
     system.run(args.interval)
 
 if __name__ == '__main__':
