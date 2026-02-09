@@ -140,9 +140,54 @@ void MessageServer::parseAndEmitMessage(const QByteArray& data)
     QString color = obj["color"].toString();
     qreal size = obj["size"].toDouble();
     
-    if (!componentId.isEmpty() && !color.isEmpty() && size >= 0) {
+    if (componentId.isEmpty()) {
+        qDebug() << "[MessageServer] Missing component_id in message";
+        return;
+    }
+    
+    // ── Check for subsystem-level health update ──
+    // Format: { "component_id", "subsystem", "color", "size" }
+    if (obj.contains("subsystem")) {
+        QString subsystem = obj["subsystem"].toString();
+        if (!subsystem.isEmpty() && !color.isEmpty()) {
+            qDebug() << "[MessageServer] Subsystem health:" << componentId 
+                     << "/" << subsystem << ":" << color << size;
+            emit subsystemHealthReceived(componentId, subsystem, color, size);
+        }
+        return;  // Subsystem-only message, don't emit component-level
+    }
+    
+    // ── Basic component-level health update ──
+    if (!color.isEmpty() && size >= 0) {
         qDebug() << "[MessageServer] Health update for" << componentId 
                  << ":" << color << size;
         emit messageReceived(componentId, color, size);
+    }
+    
+    // ── Check for subsystem_health map (bulk subsystem update) ──
+    // Format: { ..., "subsystem_health": { "SubName": 95.0, ... } }
+    if (obj.contains("subsystem_health")) {
+        QJsonObject subHealth = obj["subsystem_health"].toObject();
+        for (auto it = subHealth.begin(); it != subHealth.end(); ++it) {
+            QString subName = it.key();
+            qreal subHealthVal = it.value().toDouble();
+            // Determine color from health value
+            QString subColor;
+            if (subHealthVal >= 90) subColor = "#00FF00";
+            else if (subHealthVal >= 70) subColor = "#FFFF00";
+            else if (subHealthVal >= 40) subColor = "#FFA500";
+            else if (subHealthVal >= 10) subColor = "#FF0000";
+            else subColor = "#808080";
+            
+            emit subsystemHealthReceived(componentId, subName, subColor, subHealthVal);
+        }
+    }
+    
+    // ── Check for full APCU telemetry ──
+    // Format: { ..., "apcu_telemetry": { ... } }
+    if (obj.contains("apcu_telemetry")) {
+        QJsonObject telemetry = obj["apcu_telemetry"].toObject();
+        qDebug() << "[MessageServer] APCU telemetry received for" << componentId;
+        emit telemetryReceived(componentId, telemetry);
     }
 }

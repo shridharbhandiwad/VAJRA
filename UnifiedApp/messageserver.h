@@ -6,6 +6,8 @@
 #include <QTcpSocket>
 #include <QUdpSocket>
 #include <QList>
+#include <QMap>
+#include <QJsonObject>
 
 /**
  * MessageServer - Multi-protocol health message receiver.
@@ -13,6 +15,11 @@
  * Supports receiving health data via:
  * - TCP (default, line-delimited JSON)
  * - UDP (JSON datagrams)
+ * 
+ * Extended APCU Protocol:
+ * - Basic health:     { "component_id", "color", "size" }
+ * - Subsystem health: { "component_id", "subsystem", "color", "size" }
+ * - Full telemetry:   { "component_id", "color", "size", "subsystem_health": {...}, "apcu_telemetry": {...} }
  * 
  * WebSocket and MQTT can be added by extending this class.
  * The protocol is configurable per component type via the ComponentRegistry.
@@ -31,7 +38,16 @@ public:
     bool isRunning() const;
     
 signals:
+    /** Basic component-level health update. */
     void messageReceived(const QString& componentId, const QString& color, qreal size);
+    
+    /** Per-subsystem health update (from APCU extended protocol). */
+    void subsystemHealthReceived(const QString& componentId, const QString& subsystemName,
+                                 const QString& color, qreal health);
+    
+    /** Full APCU telemetry payload received. */
+    void telemetryReceived(const QString& componentId, const QJsonObject& telemetry);
+    
     void clientConnected();
     void clientDisconnected();
     
