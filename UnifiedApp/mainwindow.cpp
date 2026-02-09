@@ -344,6 +344,10 @@ void MainWindow::setupUI()
     
     connect(m_messageServer, &MessageServer::messageReceived, 
             this, &MainWindow::onMessageReceived);
+    connect(m_messageServer, &MessageServer::subsystemHealthReceived,
+            this, &MainWindow::onSubsystemHealthReceived);
+    connect(m_messageServer, &MessageServer::telemetryReceived,
+            this, &MainWindow::onTelemetryReceived);
     connect(m_messageServer, &MessageServer::clientConnected,
             this, &MainWindow::onClientConnected);
     connect(m_messageServer, &MessageServer::clientDisconnected,
@@ -603,6 +607,37 @@ void MainWindow::onMessageReceived(const QString& componentId, const QString& co
         }
         m_voiceAlertManager->processHealthUpdate(componentId, componentName, color, size);
     }
+}
+
+void MainWindow::onSubsystemHealthReceived(const QString& componentId,
+                                            const QString& subsystemName,
+                                            const QString& color, qreal health)
+{
+    // Update the sub-component within the canvas component
+    Component* comp = m_canvas->getComponentById(componentId);
+    if (comp) {
+        SubComponent* sub = comp->getSubComponent(subsystemName);
+        if (sub) {
+            sub->setHealth(health);
+            sub->setColor(QColor(color));
+        }
+    }
+    
+    // Update the enlarged view if it exists
+    if (m_enlargedViews.contains(componentId)) {
+        m_enlargedViews[componentId]->updateSubcomponentHealth(subsystemName, health, QColor(color));
+    }
+}
+
+void MainWindow::onTelemetryReceived(const QString& componentId, const QJsonObject& telemetry)
+{
+    Q_UNUSED(telemetry);
+    // Full APCU telemetry received - log for now, can be extended
+    // for detailed quadrant/channel views in the future
+    qDebug() << "[MainWindow] Full APCU telemetry received for" << componentId
+             << "- unit:" << telemetry.value("unit").toString()
+             << "- array_voltage:" << telemetry.value("array_voltage").toDouble()
+             << "- array_current:" << telemetry.value("array_current").toDouble();
 }
 
 void MainWindow::onClientConnected()
