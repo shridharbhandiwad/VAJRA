@@ -491,6 +491,8 @@ QString Canvas::saveToJson() const
         compObj["y"] = comp->pos().y();
         compObj["color"] = comp->getColor().name();
         compObj["size"] = comp->getSize();
+        compObj["userWidth"] = comp->getUserWidth();
+        compObj["userHeight"] = comp->getUserHeight();
         
         // Save sub-components (health-tracking subsystems)
         QJsonArray subArray;
@@ -586,6 +588,15 @@ void Canvas::loadFromJson(const QString& json)
         }
         
         Component* comp = Component::fromJson(id, typeId, x, y, QColor(colorStr), size);
+        
+        // Restore user-defined dimensions if present
+        if (compObj.contains("userWidth") && compObj.contains("userHeight")) {
+            qreal uw = compObj["userWidth"].toDouble();
+            qreal uh = compObj["userHeight"].toDouble();
+            if (uw > 0) comp->setUserWidth(uw);
+            if (uh > 0) comp->setUserHeight(uh);
+        }
+        
         m_scene->addItem(comp);
         m_componentMap[id] = comp;
         
