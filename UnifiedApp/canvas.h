@@ -42,6 +42,10 @@ public:
     void loadFromJson(const QString& json);
     QString saveToJson() const;
     
+    // Read-only mode (disables drag-drop, connection drawing, and component editing)
+    void setReadOnly(bool readOnly);
+    bool isReadOnly() const { return m_readOnly; }
+    
     // Connection management
     void setMode(CanvasMode mode);
     CanvasMode getMode() const { return m_mode; }
@@ -79,6 +83,7 @@ private:
     void drawPendingConnection(const QPointF& from, const QPointF& to);
     
     QGraphicsScene* m_scene;
+    bool m_readOnly;
     int m_componentCounter;
     int m_connectionCounter;
     QMap<QString, Component*> m_componentMap;

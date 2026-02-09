@@ -15,6 +15,7 @@
 #include "enlargedcomponentview.h"
 #include "thememanager.h"
 #include "designsubcomponent.h"
+#include "userrole.h"
 
 /**
  * MainWindow - Unified application window that combines Designer and Runtime
@@ -36,7 +37,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
     
 public:
-    MainWindow(const QString& username, QWidget* parent = nullptr);
+    MainWindow(const QString& username, UserRole role, QWidget* parent = nullptr);
     ~MainWindow();
     
 private slots:
@@ -65,6 +66,7 @@ private slots:
     
 private:
     void setupUI();
+    void applyRoleRestrictions();
     void autoLoadDesign();
     void createComponentTabs();
     void clearComponentTabs();
@@ -73,6 +75,7 @@ private:
     void refreshCanvasBackground();
     
     QString m_username;
+    UserRole m_role;
     
     ComponentList* m_componentList;
     Canvas* m_canvas;
@@ -91,6 +94,15 @@ private:
     
     // Theme UI
     QPushButton* m_themeToggleBtn;
+    
+    // Design toolbar buttons (hidden for User role)
+    QPushButton* m_saveBtn;
+    QPushButton* m_loadBtn;
+    QPushButton* m_clearBtn;
+    QPushButton* m_addTypeBtn;
+    
+    // Left panel (hidden for User role)
+    QWidget* m_leftPanel;
     
     // Tab widget for enlarged component views
     QTabWidget* m_tabWidget;

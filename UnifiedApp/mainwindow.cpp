@@ -14,9 +14,10 @@
 #include <QFrame>
 #include <QSplitter>
 
-MainWindow::MainWindow(const QString& username, QWidget* parent)
+MainWindow::MainWindow(const QString& username, UserRole role, QWidget* parent)
     : QMainWindow(parent)
     , m_username(username)
+    , m_role(role)
     , m_componentList(nullptr)
     , m_canvas(nullptr)
     , m_analytics(nullptr)
@@ -29,16 +30,26 @@ MainWindow::MainWindow(const QString& username, QWidget* parent)
     , m_connectBtn(nullptr)
     , m_connectionTypeCombo(nullptr)
     , m_themeToggleBtn(nullptr)
+    , m_saveBtn(nullptr)
+    , m_loadBtn(nullptr)
+    , m_clearBtn(nullptr)
+    , m_addTypeBtn(nullptr)
+    , m_leftPanel(nullptr)
     , m_tabWidget(nullptr)
 {
     setupUI();
     
-    setWindowTitle("Radar System - Unified Designer & Monitor");
+    // Set window title based on role
+    QString roleStr = (m_role == UserRole::Designer) ? "Designer" : "Monitor";
+    setWindowTitle(QString("Radar System - %1").arg(roleStr));
     resize(1400, 850);
     
     // Connect to theme changes for live updates
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged,
             this, &MainWindow::onThemeChanged);
+    
+    // Apply role-based restrictions
+    applyRoleRestrictions();
     
     // Auto-load design if available
     autoLoadDesign();
@@ -51,6 +62,43 @@ MainWindow::~MainWindow()
     }
 }
 
+// ======================================================================
+// Role-Based Access Restrictions
+// ======================================================================
+
+void MainWindow::applyRoleRestrictions()
+{
+    if (m_role == UserRole::Designer) {
+        // Designer: Full design on System Overview canvas only.
+        // Hide per-component enlarged view tabs (keep only System Overview).
+        // Component tabs are NOT created for the Designer role.
+        // (createComponentTabs / addComponentTab are gated below.)
+        
+    } else if (m_role == UserRole::User) {
+        // User: Monitor-only. No design tools, no components panel.
+        
+        // Hide the left panel (components list)
+        if (m_leftPanel) {
+            m_leftPanel->setVisible(false);
+        }
+        
+        // Hide design toolbar buttons
+        if (m_saveBtn)   m_saveBtn->setVisible(false);
+        if (m_loadBtn)   m_loadBtn->setVisible(false);
+        if (m_clearBtn)  m_clearBtn->setVisible(false);
+        if (m_addTypeBtn) m_addTypeBtn->setVisible(false);
+        
+        // Hide connection mode controls (design feature)
+        if (m_connectBtn) m_connectBtn->setVisible(false);
+        if (m_connectionTypeCombo) m_connectionTypeCombo->setVisible(false);
+        
+        // Set canvas to read-only (no drag-drop, no move, no delete)
+        if (m_canvas) {
+            m_canvas->setReadOnly(true);
+        }
+    }
+}
+
 void MainWindow::setupUI()
 {
     // ========== TOOLBAR ==========
@@ -58,34 +106,35 @@ void MainWindow::setupUI()
     toolbar->setObjectName("mainToolbar");
     toolbar->setMovable(false);
     
-    // User info label
-    m_userLabel = new QLabel(QString("  %1  |  UNIFIED  ").arg(m_username.toUpper()), this);
+    // User info label with role
+    QString roleLabel = (m_role == UserRole::Designer) ? "DESIGNER" : "USER";
+    m_userLabel = new QLabel(QString("  %1  |  %2  ").arg(m_username.toUpper(), roleLabel), this);
     m_userLabel->setObjectName("userLabel");
     toolbar->addWidget(m_userLabel);
     toolbar->addSeparator();
     
     // Design toolbar buttons
-    QPushButton* saveBtn = new QPushButton("SAVE DESIGN", this);
-    saveBtn->setObjectName("saveButton");
-    saveBtn->setToolTip("Save the current radar system design");
+    m_saveBtn = new QPushButton("SAVE DESIGN", this);
+    m_saveBtn->setObjectName("saveButton");
+    m_saveBtn->setToolTip("Save the current radar system design");
     
-    QPushButton* loadBtn = new QPushButton("LOAD DESIGN", this);
-    loadBtn->setObjectName("loadButton");
-    loadBtn->setToolTip("Load an existing radar system design");
+    m_loadBtn = new QPushButton("LOAD DESIGN", this);
+    m_loadBtn->setObjectName("loadButton");
+    m_loadBtn->setToolTip("Load an existing radar system design");
     
-    QPushButton* clearBtn = new QPushButton("CLEAR CANVAS", this);
-    clearBtn->setObjectName("clearButton");
-    clearBtn->setToolTip("Clear all components from the canvas");
+    m_clearBtn = new QPushButton("CLEAR CANVAS", this);
+    m_clearBtn->setObjectName("clearButton");
+    m_clearBtn->setToolTip("Clear all components from the canvas");
     
-    QPushButton* addTypeBtn = new QPushButton("+ ADD TYPE", this);
-    addTypeBtn->setObjectName("addTypeButton");
-    addTypeBtn->setToolTip("Add a new component type to the registry");
+    m_addTypeBtn = new QPushButton("+ ADD TYPE", this);
+    m_addTypeBtn->setObjectName("addTypeButton");
+    m_addTypeBtn->setToolTip("Add a new component type to the registry");
     
-    toolbar->addWidget(saveBtn);
-    toolbar->addWidget(loadBtn);
-    toolbar->addWidget(clearBtn);
+    toolbar->addWidget(m_saveBtn);
+    toolbar->addWidget(m_loadBtn);
+    toolbar->addWidget(m_clearBtn);
     toolbar->addSeparator();
-    toolbar->addWidget(addTypeBtn);
+    toolbar->addWidget(m_addTypeBtn);
     toolbar->addSeparator();
     
     // Connection mode controls
@@ -133,10 +182,10 @@ void MainWindow::setupUI()
     toolbar->addWidget(m_themeToggleBtn);
     
     // Connect toolbar signals
-    connect(saveBtn, &QPushButton::clicked, this, &MainWindow::saveDesign);
-    connect(loadBtn, &QPushButton::clicked, this, &MainWindow::loadDesign);
-    connect(clearBtn, &QPushButton::clicked, this, &MainWindow::clearCanvas);
-    connect(addTypeBtn, &QPushButton::clicked, this, &MainWindow::addNewComponentType);
+    connect(m_saveBtn, &QPushButton::clicked, this, &MainWindow::saveDesign);
+    connect(m_loadBtn, &QPushButton::clicked, this, &MainWindow::loadDesign);
+    connect(m_clearBtn, &QPushButton::clicked, this, &MainWindow::clearCanvas);
+    connect(m_addTypeBtn, &QPushButton::clicked, this, &MainWindow::addNewComponentType);
     connect(m_connectBtn, &QPushButton::clicked, this, &MainWindow::toggleConnectionMode);
     connect(m_connectionTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MainWindow::onConnectionTypeChanged);
@@ -152,24 +201,24 @@ void MainWindow::setupUI()
     mainLayout->setContentsMargins(12, 12, 12, 12);
     
     // ========== LEFT PANEL - Components & Sub-Components List ==========
-    QWidget* leftPanel = new QWidget(this);
-    leftPanel->setObjectName("leftPanel");
-    QVBoxLayout* leftLayout = new QVBoxLayout(leftPanel);
+    m_leftPanel = new QWidget(this);
+    m_leftPanel->setObjectName("leftPanel");
+    QVBoxLayout* leftLayout = new QVBoxLayout(m_leftPanel);
     leftLayout->setSpacing(10);
     leftLayout->setContentsMargins(14, 14, 14, 14);
     
-    QLabel* componentsLabel = new QLabel("COMPONENTS", leftPanel);
+    QLabel* componentsLabel = new QLabel("COMPONENTS", m_leftPanel);
     componentsLabel->setObjectName("componentsLabel");
     
     ComponentRegistry& registry = ComponentRegistry::instance();
     QLabel* countLabel = new QLabel(
-        QString("%1 types available").arg(registry.componentCount()), leftPanel);
+        QString("%1 types available").arg(registry.componentCount()), m_leftPanel);
     countLabel->setObjectName("countLabel");
     
-    m_componentList = new ComponentList(leftPanel);
+    m_componentList = new ComponentList(m_leftPanel);
     m_componentList->setObjectName("componentList");
     
-    QPushButton* addInlineBtn = new QPushButton("+ New Type", leftPanel);
+    QPushButton* addInlineBtn = new QPushButton("+ New Type", m_leftPanel);
     addInlineBtn->setObjectName("addInlineButton");
     addInlineBtn->setCursor(Qt::PointingHandCursor);
     connect(addInlineBtn, &QPushButton::clicked, this, &MainWindow::addNewComponentType);
@@ -180,7 +229,7 @@ void MainWindow::setupUI()
         "components as sub-widgets.\n\n"
         "Connect Mode: click source,\n"
         "drag to target.\n"
-        "Press Delete to remove selected.", leftPanel);
+        "Press Delete to remove selected.", m_leftPanel);
     helpLabel->setObjectName("connectionHelpLabel");
     helpLabel->setProperty("hint", true);
     helpLabel->setWordWrap(true);
@@ -190,9 +239,9 @@ void MainWindow::setupUI()
     leftLayout->addWidget(m_componentList);
     leftLayout->addWidget(addInlineBtn);
     leftLayout->addWidget(helpLabel);
-    leftPanel->setLayout(leftLayout);
-    leftPanel->setMaximumWidth(240);
-    leftPanel->setMinimumWidth(210);
+    m_leftPanel->setLayout(leftLayout);
+    m_leftPanel->setMaximumWidth(240);
+    m_leftPanel->setMinimumWidth(210);
     
     connect(&registry, &ComponentRegistry::registryChanged, this, [countLabel, &registry]() {
         countLabel->setText(QString("%1 types available").arg(registry.componentCount()));
@@ -261,7 +310,7 @@ void MainWindow::setupUI()
     rightPanel->setMinimumWidth(260);
     
     // ========== ASSEMBLE MAIN LAYOUT ==========
-    mainLayout->addWidget(leftPanel);
+    mainLayout->addWidget(m_leftPanel);
     mainLayout->addWidget(centerPanel, 1);
     mainLayout->addWidget(rightPanel);
     
@@ -302,6 +351,12 @@ void MainWindow::setupUI()
 
 void MainWindow::createComponentTabs()
 {
+    // Designer sees only System Overview canvas; User sees only monitor view.
+    // Neither role gets per-component enlarged tabs.
+    if (m_role == UserRole::Designer || m_role == UserRole::User) {
+        return;
+    }
+    
     clearComponentTabs();
     
     QList<Component*> components = m_canvas->getComponents();
@@ -314,6 +369,11 @@ void MainWindow::createComponentTabs()
 
 void MainWindow::addComponentTab(Component* comp)
 {
+    // No per-component tabs for Designer or User roles
+    if (m_role == UserRole::Designer || m_role == UserRole::User) {
+        return;
+    }
+    
     if (!comp || !m_tabWidget) return;
     
     QString id = comp->getId();

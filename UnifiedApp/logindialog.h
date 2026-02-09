@@ -10,6 +10,7 @@
 #include <QParallelAnimationGroup>
 #include <QCheckBox>
 #include "thememanager.h"
+#include "userrole.h"
 
 class LoginDialog : public QDialog
 {
@@ -18,6 +19,7 @@ class LoginDialog : public QDialog
 public:
     explicit LoginDialog(QWidget* parent = nullptr);
     QString getUsername() const { return m_username; }
+    UserRole getUserRole() const { return m_userRole; }
     
 protected:
     void showEvent(QShowEvent* event) override;
@@ -62,6 +64,7 @@ private:
     
     // State
     QString m_username;
+    UserRole m_userRole;
     bool m_passwordVisible;
     int m_loginAttempts;
 };

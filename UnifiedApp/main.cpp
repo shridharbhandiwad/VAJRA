@@ -42,13 +42,14 @@ int main(int argc, char *argv[])
                  << registry.getCategories().size() << "categories";
     }
     
-    // Show login dialog (unified - no role selection)
+    // Show login dialog with role-based access
     LoginDialog loginDialog;
     if (loginDialog.exec() == QDialog::Accepted) {
         QString username = loginDialog.getUsername();
+        UserRole role = loginDialog.getUserRole();
         
-        // Create unified MainWindow (no separate Designer/Runtime modes)
-        MainWindow window(username);
+        // Create MainWindow with role-based access restrictions
+        MainWindow window(username, role);
         window.show();
         
         return app.exec();

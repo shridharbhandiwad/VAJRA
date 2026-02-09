@@ -26,6 +26,7 @@ SOURCES += \
     thememanager.cpp
 
 HEADERS += \
+    userrole.h \
     logindialog.h \
     mainwindow.h \
     component.h \
