@@ -1,14 +1,19 @@
 #include "voicealertmanager.h"
 #include <QDebug>
 #include <QFileInfo>
+#include <QFile>
+#include <QDir>
 #include <QStandardPaths>
 #include <QColor>
+#include <QDateTime>
+#include <QCoreApplication>
 
 VoiceAlertManager::VoiceAlertManager(QObject* parent)
     : QObject(parent)
     , m_queueTimer(new QTimer(this))
     , m_isSpeaking(false)
     , m_ttsProcess(nullptr)
+    , m_strategy(NoStrategy)
     , m_watchdogTimer(new QTimer(this))
     , m_cooldownMs(15000)   // 15 second cooldown per component
     , m_muted(false)
@@ -17,15 +22,45 @@ VoiceAlertManager::VoiceAlertManager(QObject* parent)
     , m_alertWarning(false)  // Off by default - too noisy
     , m_alertOffline(true)
 {
-    // Locate available TTS engine on the system
+    qDebug() << "=========================================";
+    qDebug() << "[VoiceAlert] Initializing Voice Alert System";
+    qDebug() << "=========================================";
+
+    // Step 1: Find TTS engine (espeak-ng, espeak, spd-say, say)
     m_ttsEngine = findTtsEngine();
     if (m_ttsEngine.isEmpty()) {
-        qWarning() << "[VoiceAlert] No TTS engine found. Voice alerts will be logged only.";
-        qWarning() << "[VoiceAlert] Install espeak-ng or espeak for voice alerts:";
-        qWarning() << "[VoiceAlert]   sudo apt-get install espeak-ng";
+        qWarning() << "[VoiceAlert] *** NO TTS ENGINE FOUND ***";
+        qWarning() << "[VoiceAlert] Voice alerts require espeak-ng.";
+        qWarning() << "[VoiceAlert] Install with: sudo apt-get install espeak-ng alsa-utils";
     } else {
-        qDebug() << "[VoiceAlert] Using TTS engine:" << m_ttsEngine;
+        qDebug() << "[VoiceAlert] TTS engine:" << m_ttsEngine;
     }
+
+    // Step 2: Find audio player (aplay, paplay, play)
+    m_audioPlayer = findAudioPlayer();
+    if (m_audioPlayer.isEmpty()) {
+        qDebug() << "[VoiceAlert] No separate audio player found.";
+        qDebug() << "[VoiceAlert] Install alsa-utils for best results: sudo apt-get install alsa-utils";
+    } else {
+        qDebug() << "[VoiceAlert] Audio player:" << m_audioPlayer;
+    }
+
+    // Step 3: Select the best available strategy
+    m_strategy = detectBestStrategy();
+    qDebug() << "[VoiceAlert] Selected strategy:" << strategyName();
+
+    // Step 4: Log audio diagnostics
+    logAudioDiagnostics();
+
+    if (m_strategy == NoStrategy) {
+        qWarning() << "[VoiceAlert] Voice alerts DISABLED - no TTS engine available.";
+        qWarning() << "[VoiceAlert] Run: sudo apt-get install espeak-ng alsa-utils";
+    } else {
+        qDebug() << "[VoiceAlert] Voice alerts READY";
+    }
+
+    qDebug() << "[VoiceAlert] Diagnostic:" << diagnosticInfo();
+    qDebug() << "=========================================";
 
     // Queue timer processes pending alerts at a steady rate
     m_queueTimer->setInterval(500);
@@ -36,11 +71,15 @@ VoiceAlertManager::VoiceAlertManager(QObject* parent)
     m_watchdogTimer->setSingleShot(true);
     m_watchdogTimer->setInterval(WATCHDOG_TIMEOUT_MS);
     connect(m_watchdogTimer, &QTimer::timeout, this, &VoiceAlertManager::onSpeechWatchdogTimeout);
+
+    emit ttsStatusChanged(m_strategy != NoStrategy,
+        m_strategy != NoStrategy ? m_ttsEngine : "Not available");
 }
 
 VoiceAlertManager::~VoiceAlertManager()
 {
     m_watchdogTimer->stop();
+    m_queueTimer->stop();
 
     if (m_ttsProcess) {
         m_ttsProcess->kill();
@@ -48,7 +87,7 @@ VoiceAlertManager::~VoiceAlertManager()
         delete m_ttsProcess;
     }
 
-    // Clean up elapsed timers
+    cleanupWavFile();
     qDeleteAll(m_lastAlertTime);
     m_lastAlertTime.clear();
 }
@@ -144,6 +183,68 @@ void VoiceAlertManager::setAlertOnDegraded(bool enabled) { m_alertDegraded = ena
 void VoiceAlertManager::setAlertOnWarning(bool enabled)  { m_alertWarning = enabled; }
 void VoiceAlertManager::setAlertOnOffline(bool enabled)  { m_alertOffline = enabled; }
 
+void VoiceAlertManager::testVoice()
+{
+    qDebug() << "[VoiceAlert] === Voice Test Requested ===";
+    qDebug() << "[VoiceAlert] Strategy:" << strategyName();
+    qDebug() << "[VoiceAlert] TTS Engine:" << (m_ttsEngine.isEmpty() ? "NONE" : m_ttsEngine);
+    qDebug() << "[VoiceAlert] Audio Player:" << (m_audioPlayer.isEmpty() ? "NONE" : m_audioPlayer);
+
+    // Re-detect TTS in case it was installed after startup
+    if (m_strategy == NoStrategy) {
+        qDebug() << "[VoiceAlert] Re-scanning for TTS engines...";
+        m_ttsEngine = findTtsEngine();
+        m_audioPlayer = findAudioPlayer();
+        m_strategy = detectBestStrategy();
+        qDebug() << "[VoiceAlert] Re-detected strategy:" << strategyName();
+    }
+
+    if (m_strategy == NoStrategy) {
+        qWarning() << "[VoiceAlert] Cannot test - no TTS engine available.";
+        qWarning() << "[VoiceAlert] Install with: sudo apt-get install espeak-ng alsa-utils";
+        return;
+    }
+
+    // Force unmute for test
+    bool wasMuted = m_muted;
+    m_muted = false;
+
+    speak("Voice alert system test. Audio is working correctly.");
+
+    // Restore mute state after a delay (the speech will be in progress)
+    if (wasMuted) {
+        QTimer::singleShot(5000, this, [this, wasMuted]() {
+            m_muted = wasMuted;
+        });
+    }
+}
+
+bool VoiceAlertManager::isTtsAvailable() const
+{
+    return m_strategy != NoStrategy;
+}
+
+QString VoiceAlertManager::diagnosticInfo() const
+{
+    QStringList info;
+    info << QString("Engine: %1").arg(m_ttsEngine.isEmpty() ? "NONE" : m_ttsEngine);
+    info << QString("Player: %1").arg(m_audioPlayer.isEmpty() ? "NONE" : m_audioPlayer);
+    info << QString("Strategy: %1").arg(strategyName());
+    info << QString("Muted: %1").arg(m_muted ? "Yes" : "No");
+    return info.join(" | ");
+}
+
+QString VoiceAlertManager::strategyName() const
+{
+    switch (m_strategy) {
+        case ShellPipeline:   return "Pipeline (espeak|aplay)";
+        case WavFilePlayback: return "WAV file + audio player";
+        case DirectTTS:       return "Direct TTS";
+        case NoStrategy:      return "None (disabled)";
+    }
+    return "Unknown";
+}
+
 // ---------------------------------------------------------------------------
 // Private slots
 // ---------------------------------------------------------------------------
@@ -156,7 +257,6 @@ void VoiceAlertManager::processQueue()
 
     AlertEntry entry = m_alertQueue.takeFirst();
 
-    // Build the spoken text: "System Status Critical 45%"
     int healthRounded = qRound(entry.healthPercent);
     QString spokenText = QString("%1, System Status %2, %3 percent")
                              .arg(entry.componentName)
@@ -181,12 +281,19 @@ void VoiceAlertManager::onSpeechFinished(int exitCode, QProcess::ExitStatus exit
         qWarning() << "[VoiceAlert] TTS process exited with code:" << exitCode;
         if (m_ttsProcess) {
             QString stdErr = QString::fromUtf8(m_ttsProcess->readAllStandardError()).trimmed();
+            QString stdOut = QString::fromUtf8(m_ttsProcess->readAllStandardOutput()).trimmed();
             if (!stdErr.isEmpty()) {
-                qWarning() << "[VoiceAlert] TTS stderr:" << stdErr;
+                qWarning() << "[VoiceAlert] stderr:" << stdErr;
+            }
+            if (!stdOut.isEmpty()) {
+                qDebug() << "[VoiceAlert] stdout:" << stdOut;
             }
         }
+    } else {
+        qDebug() << "[VoiceAlert] Speech completed successfully";
     }
 
+    cleanupWavFile();
     resetSpeakingState();
 }
 
@@ -197,22 +304,188 @@ void VoiceAlertManager::onSpeechError(QProcess::ProcessError error)
     m_watchdogTimer->stop();
 
     if (m_ttsProcess) {
-        qWarning() << "[VoiceAlert] TTS error string:" << m_ttsProcess->errorString();
+        qWarning() << "[VoiceAlert] Error string:" << m_ttsProcess->errorString();
     }
 
+    cleanupWavFile();
     resetSpeakingState();
 }
 
 void VoiceAlertManager::onSpeechWatchdogTimeout()
 {
-    qWarning() << "[VoiceAlert] TTS process watchdog timeout - killing hung process";
+    qWarning() << "[VoiceAlert] Watchdog timeout - killing hung process";
 
     if (m_ttsProcess) {
         m_ttsProcess->kill();
         m_ttsProcess->waitForFinished(1000);
     }
 
+    cleanupWavFile();
     resetSpeakingState();
+}
+
+// ---------------------------------------------------------------------------
+// Speech output strategies
+// ---------------------------------------------------------------------------
+
+void VoiceAlertManager::speak(const QString& text)
+{
+    if (m_strategy == NoStrategy) {
+        qDebug() << "[VoiceAlert] (no TTS) Would say:" << text;
+        return;
+    }
+
+    // Clean up any previous process
+    if (m_ttsProcess) {
+        m_watchdogTimer->stop();
+        m_ttsProcess->disconnect(this);
+        m_ttsProcess->kill();
+        m_ttsProcess->waitForFinished(500);
+        m_ttsProcess->deleteLater();
+        m_ttsProcess = nullptr;
+    }
+    cleanupWavFile();
+
+    m_isSpeaking = true;
+    m_ttsProcess = new QProcess(this);
+
+    // Connect both finished and error signals for robust state management
+    connect(m_ttsProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &VoiceAlertManager::onSpeechFinished);
+    connect(m_ttsProcess, &QProcess::errorOccurred,
+            this, &VoiceAlertManager::onSpeechError);
+
+    // Start the watchdog timer before launching the process
+    m_watchdogTimer->start();
+
+    // Execute the selected strategy
+    switch (m_strategy) {
+        case ShellPipeline:
+            speakWithShellPipeline(text);
+            break;
+        case WavFilePlayback:
+            speakWithWavFile(text);
+            break;
+        case DirectTTS:
+            speakDirect(text);
+            break;
+        default:
+            qWarning() << "[VoiceAlert] No strategy available";
+            m_watchdogTimer->stop();
+            resetSpeakingState();
+            return;
+    }
+
+    if (!m_ttsProcess->waitForStarted(5000)) {
+        qWarning() << "[VoiceAlert] Failed to start TTS process:" << m_ttsProcess->errorString();
+        qWarning() << "[VoiceAlert] Strategy was:" << strategyName();
+        m_watchdogTimer->stop();
+        resetSpeakingState();
+    }
+}
+
+void VoiceAlertManager::speakWithShellPipeline(const QString& text)
+{
+    // Most reliable on Linux: generate WAV to stdout and pipe to audio player
+    // This bypasses PulseAudio integration issues in espeak
+    QString escaped = shellEscape(text);
+    QString engine = QFileInfo(m_ttsEngine).fileName();
+    QString player = QFileInfo(m_audioPlayer).fileName();
+
+    QString cmd;
+    if (engine == "espeak-ng" || engine == "espeak") {
+        if (player == "aplay") {
+            // aplay reads WAV from stdin natively
+            cmd = QString("%1 --stdout -v en -s 160 -p 50 -a 200 '%2' 2>/dev/null | %3 -q 2>/dev/null")
+                .arg(m_ttsEngine).arg(escaped).arg(m_audioPlayer);
+        } else if (player == "paplay") {
+            // paplay can also read WAV from stdin
+            cmd = QString("%1 --stdout -v en -s 160 -p 50 -a 200 '%2' 2>/dev/null | %3 2>/dev/null")
+                .arg(m_ttsEngine).arg(escaped).arg(m_audioPlayer);
+        } else if (player == "play") {
+            // SoX play needs -t wav - for stdin
+            cmd = QString("%1 --stdout -v en -s 160 -p 50 -a 200 '%2' 2>/dev/null | %3 -q -t wav - 2>/dev/null")
+                .arg(m_ttsEngine).arg(escaped).arg(m_audioPlayer);
+        } else {
+            cmd = QString("%1 --stdout -v en -s 160 -p 50 -a 200 '%2' 2>/dev/null | %3 2>/dev/null")
+                .arg(m_ttsEngine).arg(escaped).arg(m_audioPlayer);
+        }
+    } else {
+        // Generic pipeline
+        cmd = QString("%1 --stdout '%2' 2>/dev/null | %3 2>/dev/null")
+            .arg(m_ttsEngine).arg(escaped).arg(m_audioPlayer);
+    }
+
+    qDebug() << "[VoiceAlert] Pipeline cmd:" << cmd;
+    m_ttsProcess->start("sh", QStringList() << "-c" << cmd);
+}
+
+void VoiceAlertManager::speakWithWavFile(const QString& text)
+{
+    // Generate a WAV file with espeak, then play it with a separate player
+    m_currentWavFile = QString("/tmp/voice_alert_%1.wav")
+        .arg(QDateTime::currentMSecsSinceEpoch());
+
+    QString escaped = shellEscape(text);
+    QString engine = QFileInfo(m_ttsEngine).fileName();
+    QString player = QFileInfo(m_audioPlayer).fileName();
+
+    QString genArgs;
+    if (engine == "espeak-ng" || engine == "espeak") {
+        genArgs = QString("-v en -s 160 -p 50 -a 200 -w '%1' '%2'")
+            .arg(m_currentWavFile).arg(escaped);
+    } else {
+        genArgs = QString("-w '%1' '%2'")
+            .arg(m_currentWavFile).arg(escaped);
+    }
+
+    QString playArgs;
+    if (player == "aplay") {
+        playArgs = QString("-q '%1'").arg(m_currentWavFile);
+    } else if (player == "play") {
+        playArgs = QString("-q '%1'").arg(m_currentWavFile);
+    } else {
+        playArgs = QString("'%1'").arg(m_currentWavFile);
+    }
+
+    // Chain: generate WAV, play it, clean up temp file
+    QString cmd = QString("%1 %2 2>/dev/null && %3 %4 2>/dev/null; rm -f '%5'")
+        .arg(m_ttsEngine).arg(genArgs)
+        .arg(m_audioPlayer).arg(playArgs)
+        .arg(m_currentWavFile);
+
+    qDebug() << "[VoiceAlert] WAV+Play cmd:" << cmd;
+    m_ttsProcess->start("sh", QStringList() << "-c" << cmd);
+}
+
+void VoiceAlertManager::speakDirect(const QString& text)
+{
+    // Simplest approach: let espeak handle audio output directly
+    QStringList args;
+    QString engine = QFileInfo(m_ttsEngine).fileName();
+
+    if (engine == "espeak-ng" || engine == "espeak") {
+        args << "-v" << "en"         // English voice
+             << "-s" << "160"        // Speed (words per minute)
+             << "-p" << "50"         // Pitch (0-99)
+             << "-a" << "200"        // Amplitude (0-200) - maximum volume
+             << text;
+    } else if (engine == "say") {
+        // macOS 'say' command
+        args << "-v" << "Samantha"
+             << "-r" << "180"
+             << text;
+    } else if (engine == "spd-say") {
+        // speech-dispatcher
+        args << "-w"                 // Wait for speech to finish
+             << "-r" << "10"
+             << text;
+    } else {
+        args << text;
+    }
+
+    qDebug() << "[VoiceAlert] Direct cmd:" << m_ttsEngine << args;
+    m_ttsProcess->start(m_ttsEngine, args);
 }
 
 // ---------------------------------------------------------------------------
@@ -229,13 +502,71 @@ void VoiceAlertManager::resetSpeakingState()
     }
 }
 
+void VoiceAlertManager::cleanupWavFile()
+{
+    if (!m_currentWavFile.isEmpty()) {
+        QFile::remove(m_currentWavFile);
+        m_currentWavFile.clear();
+    }
+}
+
+QString VoiceAlertManager::shellEscape(const QString& text) const
+{
+    // Escape single quotes for use inside single-quoted shell strings
+    QString escaped = text;
+    escaped.replace("'", "'\\''");
+    return escaped;
+}
+
+void VoiceAlertManager::logAudioDiagnostics() const
+{
+    // List available sound devices using aplay -l
+    QProcess deviceCheck;
+    deviceCheck.start("sh", QStringList() << "-c" << "aplay -l 2>/dev/null || echo 'aplay not available'");
+    deviceCheck.waitForFinished(3000);
+    if (deviceCheck.exitCode() == 0) {
+        QString output = QString::fromUtf8(deviceCheck.readAllStandardOutput()).trimmed();
+        if (output.contains("card")) {
+            qDebug() << "[VoiceAlert] Audio devices detected (aplay -l shows cards)";
+        } else if (output.contains("not available")) {
+            qDebug() << "[VoiceAlert] aplay not available - install alsa-utils";
+        } else {
+            qWarning() << "[VoiceAlert] No audio cards detected by ALSA";
+            qWarning() << "[VoiceAlert] aplay -l output:" << output;
+        }
+    }
+
+    // Check PulseAudio status
+    QProcess pulseCheck;
+    pulseCheck.start("sh", QStringList() << "-c" << "pactl info 2>/dev/null | head -3 || echo 'PulseAudio not available'");
+    pulseCheck.waitForFinished(3000);
+    if (pulseCheck.exitCode() == 0) {
+        QString output = QString::fromUtf8(pulseCheck.readAllStandardOutput()).trimmed();
+        if (output.contains("Server Name")) {
+            qDebug() << "[VoiceAlert] PulseAudio is running";
+        } else {
+            qDebug() << "[VoiceAlert] PulseAudio status:" << output.left(100);
+        }
+    }
+
+    // Quick TTS engine version check
+    if (!m_ttsEngine.isEmpty()) {
+        QProcess versionCheck;
+        versionCheck.start(m_ttsEngine, QStringList() << "--version");
+        versionCheck.waitForFinished(2000);
+        if (versionCheck.exitCode() == 0) {
+            QString version = QString::fromUtf8(versionCheck.readAllStandardOutput()).trimmed();
+            if (!version.isEmpty()) {
+                qDebug() << "[VoiceAlert] TTS version:" << version.left(80);
+            }
+        }
+    }
+}
+
 QString VoiceAlertManager::resolveHealthStatus(const QString& color) const
 {
     // Normalize the color: use QColor to parse any valid color format,
-    // then compare by the resolved RGB values. This handles:
-    //   - "#00FF00", "#00ff00", "#0f0" (hex variants)
-    //   - "red", "green", "yellow" (named colors)
-    //   - "rgb(255,0,0)" (CSS-like, if QColor supports it)
+    // then compare by the resolved RGB values.
     QColor qc(color);
 
     if (!qc.isValid()) {
@@ -250,7 +581,7 @@ QString VoiceAlertManager::resolveHealthStatus(const QString& color) const
         return "Unknown";
     }
 
-    // Compare using RGB values (ignores alpha, case, and hex formatting differences)
+    // Compare using RGB values (ignores alpha, case, and hex formatting)
     int r = qc.red();
     int g = qc.green();
     int b = qc.blue();
@@ -308,86 +639,44 @@ bool VoiceAlertManager::shouldAlert(const QString& status) const
     return false; // Operational and Unknown don't trigger alerts
 }
 
-void VoiceAlertManager::speak(const QString& text)
+VoiceAlertManager::SpeakStrategy VoiceAlertManager::detectBestStrategy() const
 {
     if (m_ttsEngine.isEmpty()) {
-        // No TTS engine - log the alert text to console
-        qDebug() << "[VoiceAlert] (no TTS engine) Would say:" << text;
-        return;
+        return NoStrategy;
     }
 
-    // Clean up any previous process
-    if (m_ttsProcess) {
-        m_watchdogTimer->stop();
-        m_ttsProcess->disconnect(this); // Disconnect all signals to avoid stale callbacks
-        m_ttsProcess->kill();
-        m_ttsProcess->waitForFinished(500);
-        m_ttsProcess->deleteLater();
-        m_ttsProcess = nullptr;
-    }
-
-    m_isSpeaking = true;
-    m_ttsProcess = new QProcess(this);
-
-    // Connect both finished and error signals for robust state management
-    connect(m_ttsProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            this, &VoiceAlertManager::onSpeechFinished);
-    connect(m_ttsProcess, &QProcess::errorOccurred,
-            this, &VoiceAlertManager::onSpeechError);
-
-    // Build arguments based on the TTS engine
-    QStringList args;
     QString engine = QFileInfo(m_ttsEngine).fileName();
+    bool isEspeak = (engine == "espeak-ng" || engine == "espeak");
 
-    if (engine == "espeak-ng" || engine == "espeak") {
-        // Modern espeak-ng / espeak with a clear voice
-        args << "-v" << "en"         // English voice
-             << "-s" << "160"        // Speed (words per minute) - clear pace
-             << "-p" << "50"         // Pitch (0-99) - natural mid-range
-             << "-a" << "200"        // Amplitude (0-200) - maximum volume
-             << "--stdout"           // Output audio to stdout (forces audio processing)
-             << text;
-
-        // Use espeak with direct audio output instead of --stdout
-        // Remove --stdout and let espeak output to default audio device
-        args.clear();
-        args << "-v" << "en"
-             << "-s" << "160"
-             << "-p" << "50"
-             << "-a" << "200"
-             << text;
-    } else if (engine == "say") {
-        // macOS 'say' command
-        args << "-v" << "Samantha"   // Modern macOS voice
-             << "-r" << "180"        // Rate
-             << text;
-    } else if (engine == "spd-say") {
-        // speech-dispatcher
-        args << "-w"                 // Wait for speech to finish
-             << "-r" << "10"         // Rate (-100 to +100)
-             << text;
-    } else {
-        args << text;
+    // Strategy 1: Pipeline - most reliable, bypasses PulseAudio issues
+    // Requires espeak + an audio player that can read WAV from stdin
+    if (isEspeak && !m_audioPlayer.isEmpty()) {
+        QString player = QFileInfo(m_audioPlayer).fileName();
+        // aplay and paplay support reading WAV from stdin
+        if (player == "aplay" || player == "paplay" || player == "play") {
+            qDebug() << "[VoiceAlert] Strategy: ShellPipeline"
+                     << "(" << m_ttsEngine << "--stdout |" << m_audioPlayer << ")";
+            return ShellPipeline;
+        }
     }
 
-    qDebug() << "[VoiceAlert] Speaking:" << m_ttsEngine << args;
-
-    // Start the watchdog timer before launching the process
-    m_watchdogTimer->start();
-
-    m_ttsProcess->start(m_ttsEngine, args);
-
-    if (!m_ttsProcess->waitForStarted(3000)) {
-        qWarning() << "[VoiceAlert] Failed to start TTS process:" << m_ttsProcess->errorString();
-        qWarning() << "[VoiceAlert] TTS engine path:" << m_ttsEngine;
-        m_watchdogTimer->stop();
-        resetSpeakingState();
+    // Strategy 2: WAV file + audio player
+    // Requires espeak + any audio player
+    if (isEspeak && !m_audioPlayer.isEmpty()) {
+        qDebug() << "[VoiceAlert] Strategy: WavFilePlayback"
+                 << "(" << m_ttsEngine << "-w file.wav &&" << m_audioPlayer << "file.wav)";
+        return WavFilePlayback;
     }
+
+    // Strategy 3: Direct TTS
+    // espeak handles audio output itself (may fail with PulseAudio issues)
+    qDebug() << "[VoiceAlert] Strategy: DirectTTS (" << m_ttsEngine << "directly)";
+    return DirectTTS;
 }
 
 QString VoiceAlertManager::findTtsEngine() const
 {
-    // Method 1: Use Qt's built-in executable finder (searches PATH reliably)
+    // Method 1: Qt's built-in executable finder (searches PATH reliably)
     QStringList candidates;
     candidates << "espeak-ng"    // Modern, widely available
                << "espeak"       // Classic fallback
@@ -402,8 +691,7 @@ QString VoiceAlertManager::findTtsEngine() const
         }
     }
 
-    // Method 2: Check common absolute paths directly (handles cases where
-    // the app's PATH doesn't include /usr/bin, /usr/local/bin, etc.)
+    // Method 2: Check common absolute paths directly
     QStringList absolutePaths;
     absolutePaths << "/usr/bin/espeak-ng"
                   << "/usr/local/bin/espeak-ng"
@@ -422,7 +710,7 @@ QString VoiceAlertManager::findTtsEngine() const
         }
     }
 
-    // Method 3: Legacy fallback using 'which' command (last resort)
+    // Method 3: Legacy fallback using 'which' command
     for (const QString& cmd : candidates) {
         QProcess testProc;
         testProc.start("which", QStringList() << cmd);
@@ -432,6 +720,61 @@ QString VoiceAlertManager::findTtsEngine() const
             QString path = QString::fromUtf8(testProc.readAllStandardOutput()).trimmed();
             if (!path.isEmpty()) {
                 qDebug() << "[VoiceAlert] Found TTS engine via 'which':" << path;
+                return path;
+            }
+        }
+    }
+
+    return QString();
+}
+
+QString VoiceAlertManager::findAudioPlayer() const
+{
+    // Search for audio players in order of preference:
+    // aplay (ALSA) - most reliable on Linux, bypasses PulseAudio
+    // paplay (PulseAudio) - works when PulseAudio is running
+    // play (SoX) - versatile but less common
+    QStringList candidates;
+    candidates << "aplay"      // ALSA player (alsa-utils package)
+               << "paplay"     // PulseAudio player
+               << "play";      // SoX player
+
+    // Method 1: QStandardPaths
+    for (const QString& cmd : candidates) {
+        QString path = QStandardPaths::findExecutable(cmd);
+        if (!path.isEmpty()) {
+            qDebug() << "[VoiceAlert] Found audio player via QStandardPaths:" << path;
+            return path;
+        }
+    }
+
+    // Method 2: Common absolute paths
+    QStringList absolutePaths;
+    absolutePaths << "/usr/bin/aplay"
+                  << "/usr/local/bin/aplay"
+                  << "/usr/bin/paplay"
+                  << "/usr/local/bin/paplay"
+                  << "/usr/bin/play"
+                  << "/usr/local/bin/play";
+
+    for (const QString& absPath : absolutePaths) {
+        QFileInfo fi(absPath);
+        if (fi.exists() && fi.isExecutable()) {
+            qDebug() << "[VoiceAlert] Found audio player via absolute path:" << absPath;
+            return absPath;
+        }
+    }
+
+    // Method 3: Legacy 'which' fallback
+    for (const QString& cmd : candidates) {
+        QProcess testProc;
+        testProc.start("which", QStringList() << cmd);
+        testProc.waitForFinished(2000);
+
+        if (testProc.exitCode() == 0) {
+            QString path = QString::fromUtf8(testProc.readAllStandardOutput()).trimmed();
+            if (!path.isEmpty()) {
+                qDebug() << "[VoiceAlert] Found audio player via 'which':" << path;
                 return path;
             }
         }

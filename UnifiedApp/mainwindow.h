@@ -30,6 +30,7 @@ private slots:
     void onClientConnected();
     void onClientDisconnected();
     void toggleVoiceAlerts();
+    void testVoice();
     
 private:
     void setupUI();
