@@ -266,17 +266,24 @@ void MainWindow::setupUI()
     overviewLayout->setSpacing(8);
     overviewLayout->setContentsMargins(8, 8, 8, 8);
     
-    QLabel* canvasLabel = new QLabel("DESIGN & MONITOR", overviewTab);
+    QString canvasTitle = (m_role == UserRole::User) ? "SYSTEM MONITOR" : "DESIGN & MONITOR";
+    QLabel* canvasLabel = new QLabel(canvasTitle, overviewTab);
     canvasLabel->setProperty("heading", true);
     
     m_canvas = new Canvas(overviewTab);
     m_canvas->setObjectName("mainCanvas");
     
-    QLabel* hintLabel = new QLabel(
-        "Drag components from the left panel onto the canvas. "
-        "Drop Label/LineEdit/Button sub-components inside parent components. "
-        "Use Connect Mode to draw relations. "
-        "Health updates appear in real-time when external systems connect.", overviewTab);
+    QString hintText;
+    if (m_role == UserRole::User) {
+        hintText = "Monitoring mode - health updates appear in real-time when external systems connect. "
+                   "Components are read-only in this view.";
+    } else {
+        hintText = "Drag components from the left panel onto the canvas. "
+                   "Drop Label/LineEdit/Button sub-components inside parent components. "
+                   "Use Connect Mode to draw relations. "
+                   "Health updates appear in real-time when external systems connect.";
+    }
+    QLabel* hintLabel = new QLabel(hintText, overviewTab);
     hintLabel->setProperty("hint", true);
     hintLabel->setAlignment(Qt::AlignCenter);
     hintLabel->setWordWrap(true);
