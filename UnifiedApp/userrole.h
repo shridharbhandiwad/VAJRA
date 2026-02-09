@@ -10,7 +10,7 @@
  *
  * User:      Monitor-only access. Can view the System Overview canvas and
  *            analytics in real-time, but cannot design or see the Components
- *            panel. No per-component tabs either.
+ *            panel. Has per-component enlarged view tabs with data analytics.
  */
 enum class UserRole {
     Designer,   // Design + monitor on System Overview canvas only
