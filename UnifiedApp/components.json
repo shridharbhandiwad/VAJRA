@@ -1,0 +1,91 @@
+{
+  "version": "2.0",
+  "description": "Modular component registry - add new components here without changing code",
+  "components": [
+    {
+      "type_id": "Antenna",
+      "display_name": "Antenna",
+      "label": "ANT",
+      "description": "Primary radar signal transmission and reception",
+      "image_dir": "antenna",
+      "icon_color": "#4CAF50",
+      "subsystems": [
+        "Signal Strength",
+        "Alignment",
+        "Mechanical Status"
+      ],
+      "protocol": "TCP",
+      "port": 12345,
+      "category": "Sensor",
+      "shape": "ellipse"
+    },
+    {
+      "type_id": "PowerSystem",
+      "display_name": "Power System",
+      "label": "PWR",
+      "description": "Provides power to all radar components",
+      "image_dir": "power_system",
+      "icon_color": "#FF9800",
+      "subsystems": [
+        "Voltage Levels",
+        "Current Draw",
+        "Battery Status"
+      ],
+      "protocol": "TCP",
+      "port": 12345,
+      "category": "Infrastructure",
+      "shape": "rect"
+    },
+    {
+      "type_id": "LiquidCoolingUnit",
+      "display_name": "Liquid Cooling Unit",
+      "label": "COOL",
+      "description": "Maintains optimal temperature for radar components",
+      "image_dir": "liquid_cooling_unit",
+      "icon_color": "#03A9F4",
+      "subsystems": [
+        "Coolant Temperature",
+        "Flow Rate",
+        "Pump Status"
+      ],
+      "protocol": "TCP",
+      "port": 12345,
+      "category": "Infrastructure",
+      "shape": "ellipse"
+    },
+    {
+      "type_id": "CommunicationSystem",
+      "display_name": "Communication System",
+      "label": "COMM",
+      "description": "Handles data transmission and network connectivity",
+      "image_dir": "communication_system",
+      "icon_color": "#9C27B0",
+      "subsystems": [
+        "Signal Quality",
+        "Bandwidth",
+        "Link Status"
+      ],
+      "protocol": "TCP",
+      "port": 12345,
+      "category": "Network",
+      "shape": "rect"
+    },
+    {
+      "type_id": "RadarComputer",
+      "display_name": "Radar Computer",
+      "label": "CPU",
+      "description": "Processes radar data and controls system operations",
+      "image_dir": "radar_computer",
+      "icon_color": "#F44336",
+      "subsystems": [
+        "CPU Usage",
+        "Memory",
+        "Processing Capacity"
+      ],
+      "protocol": "TCP",
+      "port": 12345,
+      "category": "Processing",
+      "shape": "rect"
+    }
+  ]
+}
