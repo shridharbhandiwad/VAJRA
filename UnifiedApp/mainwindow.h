@@ -7,7 +7,6 @@
 #include <QComboBox>
 #include <QTabWidget>
 #include <QMap>
-#include <QStackedWidget>
 #include "componentlist.h"
 #include "canvas.h"
 #include "analytics.h"
@@ -65,9 +64,6 @@ private slots:
     void onConnectionTypeChanged(int index);
     void onModeChanged(CanvasMode mode);
     
-    // Tab change slot
-    void onTabChanged(int index);
-
     // Theme slots
     void onThemeToggle();
     void onThemeChanged(AppTheme theme);
@@ -115,11 +111,6 @@ private:
     // Tab widget for enlarged component views
     QTabWidget* m_tabWidget;
     QMap<QString, EnlargedComponentView*> m_enlargedViews;
-
-    // Right panel stacked widget (Analytics vs Data Analytics)
-    QStackedWidget* m_rightStack;
-    QMap<QString, QWidget*> m_dataAnalyticsPanels;
-    QMap<QString, int> m_dataAnalyticsStackIndices;
 };
 
 #endif // MAINWINDOW_H

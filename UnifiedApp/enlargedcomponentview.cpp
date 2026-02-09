@@ -285,10 +285,10 @@ void EnlargedComponentView::setupUI()
 {
     ThemeManager& tm = ThemeManager::instance();
 
-    // ── Single-panel layout: component + subsystems extending to bottom ──
-    QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(10);
-    mainLayout->setContentsMargins(16, 16, 16, 16);
+    // ── Main horizontal layout: left panel + right panel ──
+    QHBoxLayout* mainLayout = new QHBoxLayout(this);
+    mainLayout->setSpacing(12);
+    mainLayout->setContentsMargins(10, 10, 10, 10);
 
     // Get display name from registry
     ComponentRegistry& registry = ComponentRegistry::instance();
@@ -297,16 +297,25 @@ void EnlargedComponentView::setupUI()
         displayName = registry.getComponent(m_typeId).displayName;
     }
 
+    // ════════════════════════════════════════════════════════
+    //  LEFT PANEL – Component enlarged + subsystems
+    // ════════════════════════════════════════════════════════
+    QWidget* leftPanel = new QWidget(this);
+    leftPanel->setObjectName("enlargedLeftPanel");
+    QVBoxLayout* leftLayout = new QVBoxLayout(leftPanel);
+    leftLayout->setSpacing(10);
+    leftLayout->setContentsMargins(16, 16, 16, 16);
+
     // Title
-    QLabel* title = new QLabel(displayName.toUpper() + "  —  ENLARGED VIEW", this);
-    title->setObjectName("enlargedTitle");
+    QLabel* leftTitle = new QLabel(displayName.toUpper() + "  —  ENLARGED VIEW", leftPanel);
+    leftTitle->setObjectName("enlargedTitle");
 
     // Component ID subtitle
-    QLabel* idLabel = new QLabel("ID: " + m_componentId, this);
+    QLabel* idLabel = new QLabel("ID: " + m_componentId, leftPanel);
     idLabel->setObjectName("enlargedIdLabel");
 
     // Health status row
-    QWidget* statusRow = new QWidget(this);
+    QWidget* statusRow = new QWidget(leftPanel);
     statusRow->setObjectName("statusRow");
     QHBoxLayout* statusLayout = new QHBoxLayout(statusRow);
     statusLayout->setContentsMargins(0, 0, 0, 0);
@@ -330,7 +339,7 @@ void EnlargedComponentView::setupUI()
     m_displayComponent->setPos(120, 30);
     m_componentScene->addItem(m_displayComponent);
 
-    m_componentView = new QGraphicsView(m_componentScene, this);
+    m_componentView = new QGraphicsView(m_componentScene, leftPanel);
     m_componentView->setRenderHint(QPainter::Antialiasing);
     m_componentView->setBackgroundBrush(QBrush(tm.canvasBackground()));
     m_componentView->setMinimumHeight(220);
@@ -338,11 +347,12 @@ void EnlargedComponentView::setupUI()
     m_componentView->setFrameShape(QFrame::NoFrame);
     m_componentView->setObjectName("mainCanvas");
 
-    // Subsystems section – extends to the bottom
-    QLabel* subsysTitle = new QLabel("SUBSYSTEMS", this);
+    // Subsystems section
+    QLabel* subsysTitle = new QLabel("SUBSYSTEMS", leftPanel);
     subsysTitle->setObjectName("subsysTitle");
 
-    QScrollArea* scrollArea = new QScrollArea(this);
+    // Subsystem list with scroll area
+    QScrollArea* scrollArea = new QScrollArea(leftPanel);
     scrollArea->setObjectName("subsysScrollArea");
     scrollArea->setWidgetResizable(true);
     scrollArea->setFrameShape(QFrame::NoFrame);
@@ -361,44 +371,37 @@ void EnlargedComponentView::setupUI()
     subsysLayout->addStretch();
     scrollArea->setWidget(subsysContainer);
 
-    mainLayout->addWidget(title);
-    mainLayout->addWidget(idLabel);
-    mainLayout->addWidget(statusRow);
-    mainLayout->addWidget(m_componentView, 2);
-    mainLayout->addWidget(subsysTitle);
-    mainLayout->addWidget(scrollArea, 3);  // Higher stretch to fill remaining space
+    leftLayout->addWidget(leftTitle);
+    leftLayout->addWidget(idLabel);
+    leftLayout->addWidget(statusRow);
+    leftLayout->addWidget(m_componentView, 2);
+    leftLayout->addWidget(subsysTitle);
+    leftLayout->addWidget(scrollArea, 1);
 
-    // Data analytics widgets are created lazily via createDataAnalyticsWidget()
-    m_trendChart = nullptr;
-    m_updateCountLabel = nullptr;
-    m_statusChangesLabel = nullptr;
-    m_analyticsStatusLabel = nullptr;
-    m_avgHealthLabel = nullptr;
-}
+    // ════════════════════════════════════════════════════════
+    //  RIGHT PANEL – Data Analytics
+    // ════════════════════════════════════════════════════════
+    QWidget* rightPanel = new QWidget(this);
+    rightPanel->setObjectName("enlargedRightPanel");
+    QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
+    rightLayout->setSpacing(12);
+    rightLayout->setContentsMargins(16, 16, 16, 16);
 
-QWidget* EnlargedComponentView::createDataAnalyticsWidget(QWidget* parent)
-{
-    QWidget* panel = new QWidget(parent);
-    panel->setObjectName("enlargedRightPanel");
-    QVBoxLayout* layout = new QVBoxLayout(panel);
-    layout->setSpacing(12);
-    layout->setContentsMargins(14, 14, 14, 14);
-
-    QLabel* rightTitle = new QLabel("DATA ANALYTICS", panel);
+    QLabel* rightTitle = new QLabel("DATA ANALYTICS", rightPanel);
     rightTitle->setObjectName("enlargedTitle");
 
     // Health trend chart
-    QLabel* chartLabel = new QLabel("HEALTH TREND", panel);
+    QLabel* chartLabel = new QLabel("HEALTH TREND", rightPanel);
     chartLabel->setObjectName("chartLabel");
 
-    m_trendChart = new HealthTrendChart(panel);
+    m_trendChart = new HealthTrendChart(rightPanel);
 
     // Stats cards
-    QLabel* statsLabel = new QLabel("STATISTICS", panel);
+    QLabel* statsLabel = new QLabel("STATISTICS", rightPanel);
     statsLabel->setObjectName("statsLabel");
 
-    QWidget* statsContainer = new QWidget(panel);
-    statsContainer->setObjectName("statusRow");
+    QWidget* statsContainer = new QWidget(rightPanel);
+    statsContainer->setObjectName("statusRow"); // transparent bg
     QGridLayout* statsGrid = new QGridLayout(statsContainer);
     statsGrid->setSpacing(8);
     statsGrid->setContentsMargins(0, 0, 0, 0);
@@ -427,14 +430,63 @@ QWidget* EnlargedComponentView::createDataAnalyticsWidget(QWidget* parent)
     m_analyticsStatusLabel = createStatCard("CURRENT STATUS", "--", 1, 0);
     m_avgHealthLabel = createStatCard("AVG HEALTH", "--", 1, 1);
 
-    layout->addWidget(rightTitle);
-    layout->addWidget(chartLabel);
-    layout->addWidget(m_trendChart, 2);
-    layout->addWidget(statsLabel);
-    layout->addWidget(statsContainer);
-    layout->addStretch();
+    // Subsystem overview section on the analytics side
+    QLabel* subOverviewLabel = new QLabel("SUBSYSTEM OVERVIEW", rightPanel);
+    subOverviewLabel->setObjectName("subOverviewLabel");
 
-    return panel;
+    QScrollArea* subOverviewScroll = new QScrollArea(rightPanel);
+    subOverviewScroll->setObjectName("subOverviewScroll");
+    subOverviewScroll->setWidgetResizable(true);
+    subOverviewScroll->setFrameShape(QFrame::NoFrame);
+
+    QWidget* subOverviewContainer = new QWidget();
+    subOverviewContainer->setObjectName("subOverviewContainer");
+    QVBoxLayout* subOverviewLayout = new QVBoxLayout(subOverviewContainer);
+    subOverviewLayout->setSpacing(3);
+    subOverviewLayout->setContentsMargins(0, 0, 0, 0);
+
+    for (const QString& subName : m_subcomponentNames) {
+        QWidget* row = new QWidget(subOverviewContainer);
+        row->setObjectName("subOverviewRow");
+        QHBoxLayout* rowLayout = new QHBoxLayout(row);
+        rowLayout->setContentsMargins(8, 3, 8, 3);
+        rowLayout->setSpacing(8);
+
+        // Colour dot
+        QLabel* dot = new QLabel(row);
+        dot->setFixedSize(8, 8);
+        dot->setObjectName("dot_" + subName);
+        dot->setStyleSheet(
+            QString("background: #4CAF50; border-radius: 4px; border: none;"));
+
+        QLabel* name = new QLabel(subName, row);
+        name->setObjectName("subNameLabel");
+
+        QLabel* pct = new QLabel("100%", row);
+        pct->setObjectName("pct_" + subName);
+        pct->setStyleSheet(
+            "color: #4CAF50; font-size: 10px; font-weight: 700;"
+            "background: transparent; border: none;");
+
+        rowLayout->addWidget(dot);
+        rowLayout->addWidget(name, 1);
+        rowLayout->addWidget(pct);
+        subOverviewLayout->addWidget(row);
+    }
+    subOverviewLayout->addStretch();
+    subOverviewScroll->setWidget(subOverviewContainer);
+
+    rightLayout->addWidget(rightTitle);
+    rightLayout->addWidget(chartLabel);
+    rightLayout->addWidget(m_trendChart, 2);
+    rightLayout->addWidget(statsLabel);
+    rightLayout->addWidget(statsContainer);
+    rightLayout->addWidget(subOverviewLabel);
+    rightLayout->addWidget(subOverviewScroll, 1);
+
+    // ── Add panels to main layout ──
+    mainLayout->addWidget(leftPanel, 3);  // 60%
+    mainLayout->addWidget(rightPanel, 2); // 40%
 }
 
 void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal size)
@@ -502,28 +554,19 @@ void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal siz
     }
     m_lastColor = color.name();
 
-    // Update analytics (widgets created via createDataAnalyticsWidget)
-    if (m_trendChart) {
-        m_trendChart->addDataPoint(size, color);
-    }
-    if (m_updateCountLabel) {
-        m_updateCountLabel->setText(QString::number(m_updateCount));
-    }
-    if (m_statusChangesLabel) {
-        m_statusChangesLabel->setText(QString::number(m_statusChanges));
-    }
-    if (m_analyticsStatusLabel) {
-        m_analyticsStatusLabel->setText(statusText);
-        // Colour the analytics status label
-        m_analyticsStatusLabel->setStyleSheet(
-            QString("color: %1; font-size: 18px; font-weight: 700;"
-                    "background: transparent; border: none;").arg(color.name()));
-    }
+    // Update analytics
+    m_trendChart->addDataPoint(size, color);
+    m_updateCountLabel->setText(QString::number(m_updateCount));
+    m_statusChangesLabel->setText(QString::number(m_statusChanges));
+    m_analyticsStatusLabel->setText(statusText);
 
     qreal avg = m_healthSum / m_updateCount;
-    if (m_avgHealthLabel) {
-        m_avgHealthLabel->setText(QString("%1%").arg(qRound(avg)));
-    }
+    m_avgHealthLabel->setText(QString("%1%").arg(qRound(avg)));
+
+    // Colour the analytics status label
+    m_analyticsStatusLabel->setStyleSheet(
+        QString("color: %1; font-size: 18px; font-weight: 700;"
+                "background: transparent; border: none;").arg(color.name()));
 
     // Update subsystem bars with distributed health
     for (SubComponent* sub : m_displayComponent->getSubComponents()) {
@@ -533,6 +576,20 @@ void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal siz
 
         if (m_subsystemBars.contains(subName)) {
             m_subsystemBars[subName]->updateHealth(subHealth, subColor);
+        }
+
+        // Update the overview dots/percentages
+        QLabel* dot = findChild<QLabel*>("dot_" + subName);
+        QLabel* pct = findChild<QLabel*>("pct_" + subName);
+        if (dot) {
+            dot->setStyleSheet(
+                QString("background: %1; border-radius: 4px; border: none;").arg(subColor.name()));
+        }
+        if (pct) {
+            pct->setText(QString("%1%").arg(qRound(subHealth)));
+            pct->setStyleSheet(
+                QString("color: %1; font-size: 10px; font-weight: 700;"
+                        "background: transparent; border: none;").arg(subColor.name()));
         }
     }
 }
