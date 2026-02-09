@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "logindialog.h"
 #include "componentregistry.h"
+#include "thememanager.h"
 #include <QApplication>
 #include <QFont>
 #include <QFontDatabase>
@@ -25,6 +26,10 @@ int main(int argc, char *argv[])
     
     // Set modern Fusion style
     app.setStyle("Fusion");
+    
+    // Initialize theme manager (loads saved preference) and apply theme
+    ThemeManager& theme = ThemeManager::instance();
+    theme.applyTheme();
     
     // Initialize the component registry from JSON config
     // This is the core of the modular architecture - components are defined

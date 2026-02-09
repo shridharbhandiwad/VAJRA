@@ -14,6 +14,7 @@
 #include "messageserver.h"
 #include "voicealertmanager.h"
 #include "enlargedcomponentview.h"
+#include "thememanager.h"
 
 class MainWindow : public QMainWindow
 {
@@ -41,6 +42,10 @@ private slots:
     void onConnectionTypeChanged(int index);
     void onModeChanged(CanvasMode mode);
     
+    // Theme slots
+    void onThemeToggle();
+    void onThemeChanged(AppTheme theme);
+    
 private:
     void setupUI();
     void setupDesignerMode();
@@ -48,6 +53,8 @@ private:
     void autoLoadDesign();
     void createComponentTabs();
     void clearComponentTabs();
+    void updateThemeButtonText();
+    void refreshCanvasBackground();
     
     UserRole m_userRole;
     QString m_username;
@@ -66,6 +73,9 @@ private:
     // Connection UI
     QPushButton* m_connectBtn;
     QComboBox* m_connectionTypeCombo;
+    
+    // Theme UI
+    QPushButton* m_themeToggleBtn;
     
     // Tab widget for enlarged component views (Runtime mode)
     QTabWidget* m_tabWidget;

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "componentregistry.h"
 #include "addcomponentdialog.h"
+#include "thememanager.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -27,6 +28,7 @@ MainWindow::MainWindow(UserRole userRole, const QString& username, QWidget* pare
     , m_voiceToggleBtn(nullptr)
     , m_connectBtn(nullptr)
     , m_connectionTypeCombo(nullptr)
+    , m_themeToggleBtn(nullptr)
     , m_tabWidget(nullptr)
 {
     setupUI();
@@ -38,6 +40,10 @@ MainWindow::MainWindow(UserRole userRole, const QString& username, QWidget* pare
     }
     
     resize(1400, 850);
+    
+    // Connect to theme changes for live updates
+    connect(&ThemeManager::instance(), &ThemeManager::themeChanged,
+            this, &MainWindow::onThemeChanged);
 }
 
 MainWindow::~MainWindow()
@@ -102,31 +108,24 @@ void MainWindow::setupDesignerMode()
     m_connectBtn->setObjectName("connectButton");
     m_connectBtn->setCheckable(true);
     m_connectBtn->setToolTip("Toggle connection drawing mode. Click a source component, then drag to target.");
-    m_connectBtn->setStyleSheet(
-        "QPushButton { background: rgba(100, 180, 220, 0.15); color: #64B4DC; "
-        "border: 1px solid rgba(100, 180, 220, 0.3); border-radius: 6px; "
-        "padding: 7px 18px; font-size: 10px; font-weight: 600; "
-        "text-transform: uppercase; letter-spacing: 1px; min-height: 28px; }"
-        "QPushButton:hover { background: rgba(100, 180, 220, 0.25); }"
-        "QPushButton:checked { background: rgba(100, 180, 220, 0.35); "
-        "border: 1px solid #64B4DC; color: #fff; }");
     
     m_connectionTypeCombo = new QComboBox(this);
     m_connectionTypeCombo->setObjectName("connectionTypeCombo");
     m_connectionTypeCombo->addItem("Uni-directional", static_cast<int>(ConnectionType::Unidirectional));
     m_connectionTypeCombo->addItem("Bi-directional", static_cast<int>(ConnectionType::Bidirectional));
     m_connectionTypeCombo->setToolTip("Select connection direction type");
-    m_connectionTypeCombo->setStyleSheet(
-        "QComboBox { background: rgba(36, 39, 46, 0.9); color: #c4c7cc; "
-        "border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; "
-        "padding: 5px 12px; font-size: 10px; min-height: 28px; }"
-        "QComboBox:hover { border: 1px solid rgba(100, 180, 220, 0.3); }"
-        "QComboBox::drop-down { border: none; }"
-        "QComboBox QAbstractItemView { background: #24272e; color: #c4c7cc; "
-        "border: 1px solid rgba(255, 255, 255, 0.08); selection-background-color: rgba(100, 180, 220, 0.3); }");
     
     toolbar->addWidget(m_connectBtn);
     toolbar->addWidget(m_connectionTypeCombo);
+    toolbar->addSeparator();
+    
+    // Theme toggle button
+    m_themeToggleBtn = new QPushButton(this);
+    m_themeToggleBtn->setObjectName("themeToggleBtn");
+    m_themeToggleBtn->setCursor(Qt::PointingHandCursor);
+    m_themeToggleBtn->setToolTip("Switch between Dark and Light themes");
+    updateThemeButtonText();
+    toolbar->addWidget(m_themeToggleBtn);
     
     connect(saveBtn, &QPushButton::clicked, this, &MainWindow::saveDesign);
     connect(loadBtn, &QPushButton::clicked, this, &MainWindow::loadDesign);
@@ -135,6 +134,7 @@ void MainWindow::setupDesignerMode()
     connect(m_connectBtn, &QPushButton::clicked, this, &MainWindow::toggleConnectionMode);
     connect(m_connectionTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MainWindow::onConnectionTypeChanged);
+    connect(m_themeToggleBtn, &QPushButton::clicked, this, &MainWindow::onThemeToggle);
     
     // Create main widget and layout
     QWidget* centralWidget = new QWidget(this);
@@ -176,12 +176,9 @@ void MainWindow::setupDesignerMode()
         "3. Click source, drag to target\n"
         "4. Enter optional label\n"
         "Press Escape to cancel", leftPanel);
+    connectionHelpLabel->setObjectName("connectionHelpLabel");
     connectionHelpLabel->setProperty("hint", true);
     connectionHelpLabel->setWordWrap(true);
-    connectionHelpLabel->setStyleSheet(
-        "color: #5f6368; font-size: 9px; padding: 8px; "
-        "background: rgba(100, 180, 220, 0.05); "
-        "border-radius: 6px; border-left: 2px solid rgba(100, 180, 220, 0.3);");
     
     leftLayout->addWidget(componentsLabel);
     leftLayout->addWidget(countLabel);
@@ -275,22 +272,12 @@ void MainWindow::setupRuntimeMode()
     m_voiceToggleBtn->setToolTip("Toggle voice-based health status alerts");
     m_voiceToggleBtn->setCheckable(true);
     m_voiceToggleBtn->setChecked(true);
-    m_voiceToggleBtn->setStyleSheet(
-        "QPushButton { background: #1b5e20; color: #a5d6a7; border: 1px solid #2e7d32; "
-        "border-radius: 4px; padding: 4px 12px; font-size: 10px; font-weight: bold; }"
-        "QPushButton:hover { background: #2e7d32; }"
-        "QPushButton:checked { background: #1b5e20; color: #a5d6a7; }"
-        "QPushButton:!checked { background: #b71c1c; color: #ef9a9a; border-color: #c62828; }");
     connect(m_voiceToggleBtn, &QPushButton::clicked, this, &MainWindow::toggleVoiceAlerts);
     
     // Test voice button to verify audio output
     QPushButton* testVoiceBtn = new QPushButton("TEST VOICE", this);
     testVoiceBtn->setObjectName("testVoiceBtn");
     testVoiceBtn->setToolTip("Test voice output - plays a brief test message");
-    testVoiceBtn->setStyleSheet(
-        "QPushButton { background: #0d47a1; color: #90caf9; border: 1px solid #1565c0; "
-        "border-radius: 4px; padding: 4px 12px; font-size: 10px; font-weight: bold; }"
-        "QPushButton:hover { background: #1565c0; }");
     connect(testVoiceBtn, &QPushButton::clicked, this, &MainWindow::testVoice);
     
     toolbar->addWidget(loadBtn);
@@ -299,8 +286,18 @@ void MainWindow::setupRuntimeMode()
     toolbar->addSeparator();
     toolbar->addWidget(m_voiceToggleBtn);
     toolbar->addWidget(testVoiceBtn);
+    toolbar->addSeparator();
+    
+    // Theme toggle button
+    m_themeToggleBtn = new QPushButton(this);
+    m_themeToggleBtn->setObjectName("themeToggleBtn");
+    m_themeToggleBtn->setCursor(Qt::PointingHandCursor);
+    m_themeToggleBtn->setToolTip("Switch between Dark and Light themes");
+    updateThemeButtonText();
+    toolbar->addWidget(m_themeToggleBtn);
     
     connect(loadBtn, &QPushButton::clicked, this, &MainWindow::loadDesign);
+    connect(m_themeToggleBtn, &QPushButton::clicked, this, &MainWindow::onThemeToggle);
     
     // Initialize voice alert manager
     m_voiceAlertManager = new VoiceAlertManager(this);
@@ -689,4 +686,49 @@ void MainWindow::testVoice()
     }
     
     m_voiceAlertManager->testVoice();
+}
+
+// ── Theme handling ─────────────────────────────────────────────
+
+void MainWindow::onThemeToggle()
+{
+    ThemeManager::instance().toggleTheme();
+}
+
+void MainWindow::onThemeChanged(AppTheme theme)
+{
+    Q_UNUSED(theme);
+    updateThemeButtonText();
+    refreshCanvasBackground();
+    
+    // Force analytics to redraw with new theme colours
+    if (m_analytics) {
+        m_analytics->updateDisplay();
+    }
+}
+
+void MainWindow::updateThemeButtonText()
+{
+    if (!m_themeToggleBtn) return;
+    
+    ThemeManager& tm = ThemeManager::instance();
+    if (tm.isDark()) {
+        m_themeToggleBtn->setText("LIGHT MODE");
+    } else {
+        m_themeToggleBtn->setText("DARK MODE");
+    }
+}
+
+void MainWindow::refreshCanvasBackground()
+{
+    if (!m_canvas) return;
+    
+    ThemeManager& tm = ThemeManager::instance();
+    m_canvas->setBackgroundBrush(QBrush(tm.canvasBackground()));
+    m_canvas->viewport()->update();
+    
+    // Force repaint of all scene items (Components, SubComponents, Connections)
+    if (m_canvas->scene()) {
+        m_canvas->scene()->update();
+    }
 }

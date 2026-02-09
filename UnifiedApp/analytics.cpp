@@ -1,4 +1,5 @@
 #include "analytics.h"
+#include "thememanager.h"
 #include <QVBoxLayout>
 #include <QLabel>
 
@@ -84,21 +85,10 @@ QString Analytics::getHealthBar(qreal health) const
 
 void Analytics::updateDisplay()
 {
+    ThemeManager& tm = ThemeManager::instance();
+    
     QString html;
-    html += "<style>"
-            "body { color: #c4c7cc; font-family: 'Consolas', 'Monaco', monospace; font-size: 11px; }"
-            ".header { color: #00BCD4; font-size: 12px; font-weight: bold; letter-spacing: 2px; }"
-            ".subheader { color: #9aa0a6; font-size: 10px; margin-top: 4px; }"
-            ".component { margin: 8px 0; padding: 8px; background: #1c1e26; border-radius: 4px; border-left: 3px solid #3a3f4b; }"
-            ".component-name { color: #e8eaed; font-weight: bold; }"
-            ".stat { color: #9aa0a6; font-size: 10px; }"
-            ".operational { color: #4CAF50; }"
-            ".warning { color: #FFC107; }"
-            ".degraded { color: #FF9800; }"
-            ".critical { color: #F44336; }"
-            ".offline { color: #9E9E9E; }"
-            ".count { color: #00BCD4; font-weight: bold; }"
-            "</style>";
+    html += tm.analyticsStyleBlock();
     
     if (m_stats.isEmpty()) {
         html += "<div class='header'>SYSTEM STATUS</div>";

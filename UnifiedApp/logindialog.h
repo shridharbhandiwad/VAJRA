@@ -9,6 +9,7 @@
 #include <QGraphicsOpacityEffect>
 #include <QParallelAnimationGroup>
 #include <QCheckBox>
+#include "thememanager.h"
 
 enum class UserRole {
     Designer,
@@ -35,13 +36,15 @@ private slots:
     void togglePasswordVisibility();
     void animateError();
     void animateSuccess();
+    void onThemeToggle();
+    void onThemeChanged(AppTheme theme);
     
 private:
     void setupUI();
-    void loadStyleSheet();
     void setupAnimations();
     void applyEntranceAnimation();
     void validateInputs();
+    void updateThemeButtonText();
     
     // UI Elements
     QLineEdit* m_usernameEdit;
@@ -49,6 +52,7 @@ private:
     QPushButton* m_loginButton;
     QPushButton* m_cancelButton;
     QPushButton* m_togglePasswordBtn;
+    QPushButton* m_themeToggleBtn;
     QLabel* m_errorLabel;
     QLabel* m_successLabel;
     QLabel* m_titleLabel;
