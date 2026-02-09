@@ -17,6 +17,7 @@ constexpr qreal Component::FOOTER_HEIGHT;
 constexpr qreal Component::DESIGN_CONTAINER_HEADER;
 constexpr qreal Component::DESIGN_CONTAINER_MIN_HEIGHT;
 constexpr qreal Component::DESIGN_CONTAINER_FULL_HEIGHT;
+constexpr qreal Component::RESIZE_HANDLE_SIZE;
 
 Component::Component(const QString& typeId, const QString& id, QGraphicsItem* parent)
     : QGraphicsItem(parent)
@@ -25,10 +26,15 @@ Component::Component(const QString& typeId, const QString& id, QGraphicsItem* pa
     , m_color(Qt::blue)
     , m_size(50)
     , m_hasImage(false)
+    , m_userWidth(0)
+    , m_userHeight(0)
+    , m_activeHandle(HandleNone)
+    , m_resizing(false)
 {
     setFlag(QGraphicsItem::ItemIsMovable);
     setFlag(QGraphicsItem::ItemIsSelectable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges);
+    setAcceptHoverEvents(true);
     setCursor(Qt::OpenHandCursor);
     
     // Set initial color from registry definition
@@ -108,7 +114,12 @@ QRectF Component::designContainerRect() const
     y += 4; // gap between subsystem area and design container
     
     qreal w = containerWidth();
-    qreal h = m_designSubComponents.isEmpty() ? DESIGN_CONTAINER_MIN_HEIGHT : DESIGN_CONTAINER_FULL_HEIGHT;
+    qreal defaultH = m_designSubComponents.isEmpty() ? DESIGN_CONTAINER_MIN_HEIGHT : DESIGN_CONTAINER_FULL_HEIGHT;
+    
+    // If the user resized the component, the design container gets all extra space
+    qreal totalHeight = containerHeight();
+    qreal availableH = totalHeight - y - FOOTER_HEIGHT;
+    qreal h = qMax(defaultH, availableH);
     
     return QRectF(0, y, w, h);
 }
@@ -175,26 +186,35 @@ QString Component::widgetValidationMessage(const QString& typeId, SubComponentTy
 
 qreal Component::containerWidth() const
 {
-    qreal subWidth = SubComponent::itemWidth() + PADDING * 2;
-    return qMax(MIN_WIDTH, subWidth);
+    qreal autoWidth = qMax(MIN_WIDTH, SubComponent::itemWidth() + PADDING * 2);
+    // If user has manually resized, use the larger of auto and user width
+    if (m_userWidth > 0) {
+        return qMax(autoWidth, m_userWidth);
+    }
+    return autoWidth;
 }
 
 qreal Component::containerHeight() const
 {
-    qreal height = HEADER_HEIGHT + PADDING;
+    qreal autoHeight = HEADER_HEIGHT + PADDING;
     
     if (!m_subComponents.isEmpty()) {
-        height += m_subComponents.size() * (SubComponent::itemHeight() + SUB_SPACING);
+        autoHeight += m_subComponents.size() * (SubComponent::itemHeight() + SUB_SPACING);
     } else {
-        height += 30; // Minimum content area
+        autoHeight += 30; // Minimum content area
     }
     
     // Design container area (always present to serve as drop target)
-    height += 4; // gap
-    height += m_designSubComponents.isEmpty() ? DESIGN_CONTAINER_MIN_HEIGHT : DESIGN_CONTAINER_FULL_HEIGHT;
+    autoHeight += 4; // gap
+    autoHeight += m_designSubComponents.isEmpty() ? DESIGN_CONTAINER_MIN_HEIGHT : DESIGN_CONTAINER_FULL_HEIGHT;
     
-    height += FOOTER_HEIGHT;
-    return height;
+    autoHeight += FOOTER_HEIGHT;
+    
+    // If user has manually resized, use the larger of auto and user height
+    if (m_userHeight > 0) {
+        return qMax(autoHeight, m_userHeight);
+    }
+    return autoHeight;
 }
 
 void Component::layoutSubComponents()
@@ -218,8 +238,9 @@ QRectF Component::boundingRect() const
     qreal w = containerWidth();
     qreal h = containerHeight();
     
-    // Add extra space for label below
-    return QRectF(-2, -2, w + 4, h + 4);
+    // Add extra space for resize handles and shadow
+    qreal margin = RESIZE_HANDLE_SIZE;
+    return QRectF(-margin, -margin, w + margin * 2, h + margin * 2);
 }
 
 void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
@@ -232,11 +253,9 @@ void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
     
     paintContainer(painter);
     
-    // Draw selection border if selected
+    // Draw resize handles when selected
     if (isSelected()) {
-        painter->setPen(QPen(QColor("#00BCD4"), 2, Qt::DashLine));
-        painter->setBrush(Qt::NoBrush);
-        painter->drawRoundedRect(boundingRect().adjusted(1, 1, -1, -1), 8, 8);
+        paintResizeHandles(painter);
     }
 }
 
@@ -433,13 +452,15 @@ void Component::setSize(qreal size)
 QString Component::toJson() const
 {
     // Note: full JSON serialization with design sub-components is handled by Canvas::saveToJson()
-    return QString("{\"id\":\"%1\",\"type\":\"%2\",\"x\":%3,\"y\":%4,\"color\":\"%5\",\"size\":%6}")
+    return QString("{\"id\":\"%1\",\"type\":\"%2\",\"x\":%3,\"y\":%4,\"color\":\"%5\",\"size\":%6,\"userWidth\":%7,\"userHeight\":%8}")
         .arg(m_id)
         .arg(m_typeId)
         .arg(pos().x())
         .arg(pos().y())
         .arg(m_color.name())
-        .arg(m_size);
+        .arg(m_size)
+        .arg(m_userWidth)
+        .arg(m_userHeight);
 }
 
 Component* Component::fromJson(const QString& id, const QString& typeId, qreal x, qreal y, 
@@ -450,6 +471,245 @@ Component* Component::fromJson(const QString& id, const QString& typeId, qreal x
     comp->setColor(color);
     comp->setSize(size);
     return comp;
+}
+
+void Component::setUserWidth(qreal w)
+{
+    prepareGeometryChange();
+    m_userWidth = w;
+    update();
+}
+
+void Component::setUserHeight(qreal h)
+{
+    prepareGeometryChange();
+    m_userHeight = h;
+    update();
+}
+
+// ======================================================================
+// Resize handle hit-testing
+// ======================================================================
+
+Component::ResizeHandle Component::handleAt(const QPointF& pos) const
+{
+    if (!isSelected()) return HandleNone;
+    
+    qreal w = containerWidth();
+    qreal h = containerHeight();
+    qreal hs = RESIZE_HANDLE_SIZE * 2.0; // hit-test tolerance
+    
+    // Corner handles
+    QRectF tl(-hs / 2, -hs / 2, hs, hs);
+    QRectF tr(w - hs / 2, -hs / 2, hs, hs);
+    QRectF bl(-hs / 2, h - hs / 2, hs, hs);
+    QRectF br(w - hs / 2, h - hs / 2, hs, hs);
+    
+    if (tl.contains(pos)) return HandleTopLeft;
+    if (tr.contains(pos)) return HandleTopRight;
+    if (bl.contains(pos)) return HandleBottomLeft;
+    if (br.contains(pos)) return HandleBottomRight;
+    
+    // Edge handles
+    QRectF top(hs / 2, -hs / 2, w - hs, hs);
+    QRectF bottom(hs / 2, h - hs / 2, w - hs, hs);
+    QRectF left(-hs / 2, hs / 2, hs, h - hs);
+    QRectF right(w - hs / 2, hs / 2, hs, h - hs);
+    
+    if (top.contains(pos)) return HandleTop;
+    if (bottom.contains(pos)) return HandleBottom;
+    if (left.contains(pos)) return HandleLeft;
+    if (right.contains(pos)) return HandleRight;
+    
+    return HandleNone;
+}
+
+void Component::paintResizeHandles(QPainter* painter)
+{
+    qreal w = containerWidth();
+    qreal h = containerHeight();
+    qreal hs = RESIZE_HANDLE_SIZE;
+    
+    // Selection dashed border
+    painter->setPen(QPen(QColor("#00BCD4"), 2, Qt::DashLine));
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRoundedRect(QRectF(0, 0, w, h), 8, 8);
+    
+    // Draw handle squares at corners and edges
+    painter->setPen(QPen(Qt::white, 1));
+    painter->setBrush(QColor("#00BCD4"));
+    
+    QRectF handles[] = {
+        QRectF(-hs / 2, -hs / 2, hs, hs),                          // TopLeft
+        QRectF(w / 2 - hs / 2, -hs / 2, hs, hs),                   // Top
+        QRectF(w - hs / 2, -hs / 2, hs, hs),                       // TopRight
+        QRectF(w - hs / 2, h / 2 - hs / 2, hs, hs),                // Right
+        QRectF(w - hs / 2, h - hs / 2, hs, hs),                    // BottomRight
+        QRectF(w / 2 - hs / 2, h - hs / 2, hs, hs),                // Bottom
+        QRectF(-hs / 2, h - hs / 2, hs, hs),                       // BottomLeft
+        QRectF(-hs / 2, h / 2 - hs / 2, hs, hs),                   // Left
+    };
+    
+    for (const auto& rect : handles) {
+        painter->drawRect(rect);
+    }
+}
+
+// ======================================================================
+// Mouse events for component resizing
+// ======================================================================
+
+void Component::mousePressEvent(QGraphicsSceneMouseEvent* event)
+{
+    if (event->button() == Qt::LeftButton && isSelected()) {
+        ResizeHandle handle = handleAt(event->pos());
+        if (handle != HandleNone) {
+            m_activeHandle = handle;
+            m_resizing = true;
+            m_lastMouseScenePos = event->scenePos();
+            event->accept();
+            return;
+        }
+    }
+    if (event->button() == Qt::LeftButton) {
+        setCursor(Qt::ClosedHandCursor);
+    }
+    QGraphicsItem::mousePressEvent(event);
+}
+
+void Component::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
+{
+    if (m_resizing && m_activeHandle != HandleNone) {
+        QPointF delta = event->scenePos() - m_lastMouseScenePos;
+        m_lastMouseScenePos = event->scenePos();
+        
+        prepareGeometryChange();
+        
+        qreal curW = containerWidth();
+        qreal curH = containerHeight();
+        qreal newX = pos().x();
+        qreal newY = pos().y();
+        qreal newW = curW;
+        qreal newH = curH;
+        
+        switch (m_activeHandle) {
+        case HandleTopLeft:
+            newX += delta.x();
+            newY += delta.y();
+            newW -= delta.x();
+            newH -= delta.y();
+            break;
+        case HandleTop:
+            newY += delta.y();
+            newH -= delta.y();
+            break;
+        case HandleTopRight:
+            newY += delta.y();
+            newW += delta.x();
+            newH -= delta.y();
+            break;
+        case HandleRight:
+            newW += delta.x();
+            break;
+        case HandleBottomRight:
+            newW += delta.x();
+            newH += delta.y();
+            break;
+        case HandleBottom:
+            newH += delta.y();
+            break;
+        case HandleBottomLeft:
+            newX += delta.x();
+            newW -= delta.x();
+            newH += delta.y();
+            break;
+        case HandleLeft:
+            newX += delta.x();
+            newW -= delta.x();
+            break;
+        default:
+            break;
+        }
+        
+        // Enforce minimum sizes
+        qreal minAutoW = qMax(MIN_WIDTH, SubComponent::itemWidth() + PADDING * 2);
+        qreal minAutoH = HEADER_HEIGHT + PADDING + 30 + 4 + DESIGN_CONTAINER_MIN_HEIGHT + FOOTER_HEIGHT;
+        
+        if (newW < minAutoW) {
+            if (m_activeHandle == HandleTopLeft || m_activeHandle == HandleBottomLeft || m_activeHandle == HandleLeft)
+                newX = pos().x() + curW - minAutoW;
+            newW = minAutoW;
+        }
+        if (newH < minAutoH) {
+            if (m_activeHandle == HandleTopLeft || m_activeHandle == HandleTopRight || m_activeHandle == HandleTop)
+                newY = pos().y() + curH - minAutoH;
+            newH = minAutoH;
+        }
+        
+        setPos(newX, newY);
+        m_userWidth = newW;
+        m_userHeight = newH;
+        
+        layoutSubComponents();
+        update();
+        event->accept();
+        return;
+    }
+    QGraphicsItem::mouseMoveEvent(event);
+}
+
+void Component::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
+{
+    if (m_resizing) {
+        m_resizing = false;
+        m_activeHandle = HandleNone;
+        setCursor(Qt::OpenHandCursor);
+        event->accept();
+        return;
+    }
+    setCursor(Qt::OpenHandCursor);
+    QGraphicsItem::mouseReleaseEvent(event);
+}
+
+// ======================================================================
+// Hover events for resize cursor feedback
+// ======================================================================
+
+void Component::hoverMoveEvent(QGraphicsSceneHoverEvent* event)
+{
+    if (isSelected()) {
+        ResizeHandle handle = handleAt(event->pos());
+        switch (handle) {
+        case HandleTopLeft:
+        case HandleBottomRight:
+            setCursor(Qt::SizeFDiagCursor);
+            break;
+        case HandleTopRight:
+        case HandleBottomLeft:
+            setCursor(Qt::SizeBDiagCursor);
+            break;
+        case HandleTop:
+        case HandleBottom:
+            setCursor(Qt::SizeVerCursor);
+            break;
+        case HandleLeft:
+        case HandleRight:
+            setCursor(Qt::SizeHorCursor);
+            break;
+        default:
+            setCursor(Qt::OpenHandCursor);
+            break;
+        }
+    } else {
+        setCursor(Qt::OpenHandCursor);
+    }
+    QGraphicsItem::hoverMoveEvent(event);
+}
+
+void Component::hoverLeaveEvent(QGraphicsSceneHoverEvent* event)
+{
+    setCursor(Qt::OpenHandCursor);
+    QGraphicsItem::hoverLeaveEvent(event);
 }
 
 QVariant Component::itemChange(GraphicsItemChange change, const QVariant& value)

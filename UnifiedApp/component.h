@@ -2,6 +2,8 @@
 #define COMPONENT_H
 
 #include <QGraphicsItem>
+#include <QGraphicsSceneMouseEvent>
+#include <QGraphicsSceneHoverEvent>
 #include <QColor>
 #include <QString>
 #include <QPainter>
@@ -23,6 +25,10 @@
  * 
  * RELATIONS: Components can be connected via Connection objects that draw
  * uni-directional or bi-directional arrows with labels.
+ * 
+ * RESIZING: Components can be resized by the user via corner and edge handles
+ * that appear when the component is selected. This allows the user to increase
+ * the component window size so more subcomponents can be added.
  */
 class Component : public QGraphicsItem
 {
@@ -43,6 +49,12 @@ public:
     // Mutators
     void setColor(const QColor& color);
     void setSize(qreal size);
+    
+    // User-resizable dimensions
+    void setUserWidth(qreal w);
+    void setUserHeight(qreal h);
+    qreal getUserWidth() const { return m_userWidth; }
+    qreal getUserHeight() const { return m_userHeight; }
     
     // Sub-component management (auto-created health-tracking subsystems)
     void addSubComponent(const QString& name);
@@ -79,8 +91,29 @@ public:
 
 protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+    void hoverMoveEvent(QGraphicsSceneHoverEvent* event) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
 
 private:
+    // Resize handle enumeration
+    enum ResizeHandle {
+        HandleNone = 0,
+        HandleTopLeft,
+        HandleTop,
+        HandleTopRight,
+        HandleRight,
+        HandleBottomRight,
+        HandleBottom,
+        HandleBottomLeft,
+        HandleLeft
+    };
+    
+    ResizeHandle handleAt(const QPointF& pos) const;
+    void paintResizeHandles(QPainter* painter);
+    
     void loadSubsystemImage();
     void createDefaultSubComponents();
     void layoutSubComponents();
@@ -92,6 +125,15 @@ private:
     qreal m_size;
     QPixmap m_image;
     bool m_hasImage;
+    
+    // User-resizable dimensions (0 = use auto-computed size)
+    qreal m_userWidth;
+    qreal m_userHeight;
+    
+    // Resize state
+    ResizeHandle m_activeHandle;
+    QPointF m_lastMouseScenePos;
+    bool m_resizing;
     
     QList<SubComponent*> m_subComponents;
     QList<DesignSubComponent*> m_designSubComponents;
@@ -105,6 +147,7 @@ private:
     static constexpr qreal DESIGN_CONTAINER_HEADER = 18.0;
     static constexpr qreal DESIGN_CONTAINER_MIN_HEIGHT = 35.0;
     static constexpr qreal DESIGN_CONTAINER_FULL_HEIGHT = 150.0;
+    static constexpr qreal RESIZE_HANDLE_SIZE = 8.0;
 };
 
 #endif // COMPONENT_H
