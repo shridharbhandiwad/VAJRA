@@ -4,17 +4,22 @@
   "components": [
     {
       "type_id": "Antenna",
-      "display_name": "Antenna",
+      "display_name": "Antenna System",
       "label": "ANT",
-      "description": "Primary radar signal transmission and reception",
+      "description": "APCU-based phased array antenna system with 4 quadrants, temperature monitoring, board diagnostics, QTRMs, and AQC controllers",
       "image_dir": "antenna",
       "icon_color": "#4CAF50",
       "subsystems": [
-        "Signal Strength",
-        "Alignment",
-        "Mechanical Status",
-        "Feed Horn",
-        "Rotary Joint"
+        "APCU Controller",
+        "Temperature Monitoring",
+        "Board Data",
+        "Board Status",
+        "Quadrant 0 (CB)",
+        "Quadrant 1 (CF)",
+        "Quadrant 2 (CD)",
+        "Quadrant 3 (CE)",
+        "QTRMs",
+        "AQC"
       ],
       "allowed_widgets": ["Label", "LineEdit", "Button"],
       "protocol": "TCP",

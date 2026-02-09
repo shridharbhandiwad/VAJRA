@@ -35,13 +35,74 @@ These health monitors simulate real-world radar subsystems that report their ope
 
 ## Scripts
 
+### apcu_simulator.py (APCU Antenna System Simulator)
+
+Full-fidelity simulator for the APCU 4 Left antenna system. Replicates all
+subsystems visible in the APCU control interface:
+
+- **APCU Controller** - Link status (Q0-Q3), Sequence On/Off, Array Voltage/Current
+- **Temperature Monitoring** - 3 Sensors (A, B, C) in Deg C
+- **Board Data** - Input Voltage (V), Current (A)
+- **Board Status** - CRC checks (User/Factory/Program Flash), CBIT, PBIT, Board Setting Check
+- **Quadrant 0 (CB)** - 16 channels with On/Off, Trip, Bit Status, Voltage, Current
+- **Quadrant 1 (CF)** - 16 channels
+- **Quadrant 2 (CD)** - 16 channels
+- **Quadrant 3 (CE)** - 16 channels
+- **QTRMs** - Quad Transmit/Receive Module groupings
+- **AQC** - Antenna Quadrant Controllers (0,1,2,3)
+
+**Basic Usage:**
+```bash
+python3 apcu_simulator.py component_1
+```
+
+**With Options:**
+```bash
+python3 apcu_simulator.py antenna_1 --mode degraded --interval 1.5
+```
+
+**Arguments:**
+- `component_id` (required): Component ID on canvas (e.g., component_1)
+- `--host`: Server hostname (default: localhost)
+- `--port`: Server port (default: 12345)
+- `--interval`: Update interval in seconds (default: 2.0)
+- `--mode`: Simulation mode: `nominal`, `degraded`, or `critical` (default: nominal)
+- `--quiet`: Suppress verbose console output
+- `--no-telemetry`: Send basic health only (no full APCU telemetry)
+
+**Console Output:**
+```
+══════════════════════════════════════════════════════════════════════
+  APCU 4 Left [V1.0.0]   Component: antenna_1
+══════════════════════════════════════════════════════════════════════
+  Array Voltage:  27.85 V   Array Current: 22.35 A   Overall Health:  94.2% [OPERATIONAL]
+  Links: Q0=UP  Q1=UP  Q2=UP  Q3=UP  Seq: ON
+
+  Temperature:  A=41.8°C  B=49.1°C  C=42.8°C  [Normal]
+  Board Data:   Vin=27.85V  Iin=5.33A
+  Board Status: CRC_UF=Pass  CRC_FF=Pass  CRC_PF=Pass  CBIT=Pass  PBIT=Pass  BSC=Pass
+
+  Quadrant 0 (CB)  Active: 16/16  Tripped: 0  Faulted: 0  Health: 100.0%
+  Quadrant 1 (CF)  Active: 16/16  Tripped: 0  Faulted: 0  Health: 100.0%
+  Quadrant 2 (CD)  Active: 16/16  Tripped: 0  Faulted: 0  Health: 100.0%
+  Quadrant 3 (CE)  Active: 16/16  Tripped: 0  Faulted: 0  Health: 100.0%
+
+  QTRMs Health: 100.0%  AQC Health: 100.0%
+```
+
 ### external_system.py
 
-Single subsystem health monitor with full configuration options.
+Single subsystem health monitor with full configuration options. Supports
+optional per-subsystem health reporting for known component types.
 
 **Basic Usage:**
 ```bash
 python3 external_system.py antenna_1
+```
+
+**With Subsystem-Level Health (Antenna type):**
+```bash
+python3 external_system.py antenna_1 --type Antenna
 ```
 
 **With Options:**
@@ -53,21 +114,32 @@ python3 external_system.py antenna_1 --interval 3.0 --host localhost --port 1234
 - `component_id` (required): Subsystem ID to monitor (e.g., antenna_1, power_1)
 - `--host`: Server hostname (default: localhost)
 - `--port`: Server port (default: 12345)
+- `--protocol`: tcp or udp (default: tcp)
 - `--interval`: Health update interval in seconds (default: 2.0)
+- `--type`: Component type for subsystem health (Antenna, PowerSystem, LiquidCoolingUnit, CommunicationSystem, RadarComputer)
 
 **Example:**
 ```bash
 # Monitor antenna subsystem with 1.5 second updates
 python3 external_system.py antenna_1 --interval 1.5
+
+# Monitor with subsystem detail
+python3 external_system.py power_1 --type PowerSystem
 ```
 
 ### run_multiple_systems.py
 
-Launches and manages multiple health monitors simultaneously.
+Launches and manages multiple health monitors simultaneously. Automatically
+selects the appropriate simulator based on component ID prefixes.
 
 **Basic Usage:**
 ```bash
 python3 run_multiple_systems.py
+```
+
+**With APCU Antenna Simulator:**
+```bash
+python3 run_multiple_systems.py --components antenna_1 power_1 cooling_1 --apcu antenna_1
 ```
 
 **Custom Subsystems:**
@@ -81,10 +153,21 @@ python3 run_multiple_systems.py --components antenna_1 power_1 --interval 3.0 --
 ```
 
 **Arguments:**
-- `--components`: List of subsystem IDs to monitor (default: antenna_1 power_1 cooling_1 comm_1 computer_1)
+- `--components`: List of subsystem IDs to monitor (default: component_1 through component_5)
+- `--apcu`: Component IDs that should use the APCU antenna simulator
 - `--host`: Server hostname (default: localhost)
 - `--port`: Server port (default: 12345)
+- `--protocol`: tcp or udp (default: tcp)
 - `--interval`: Base update interval (default: 2.0)
+
+**Automatic Simulator Selection:**
+- Components in `--apcu` list -> `apcu_simulator.py`
+- Component IDs starting with `antenna` -> `apcu_simulator.py`
+- Component IDs starting with `power` -> `external_system.py --type PowerSystem`
+- Component IDs starting with `cooling` -> `external_system.py --type LiquidCoolingUnit`
+- Component IDs starting with `comm` -> `external_system.py --type CommunicationSystem`
+- Component IDs starting with `computer` -> `external_system.py --type RadarComputer`
+- All others -> `external_system.py` (generic)
 
 **Features:**
 - Each monitor gets a slightly different interval to avoid synchronization
@@ -93,13 +176,13 @@ python3 run_multiple_systems.py --components antenna_1 power_1 --interval 3.0 --
 
 **Example:**
 ```bash
-# Monitor 3 specific subsystems
-python3 run_multiple_systems.py --components antenna_1 power_1 cooling_1 --interval 2.5
+# Monitor 3 specific subsystems with APCU antenna
+python3 run_multiple_systems.py --components antenna_1 power_1 cooling_1 --apcu antenna_1 --interval 2.5
 ```
 
-## Message Format
+## Message Protocol
 
-Health updates are sent as JSON messages:
+### Basic Health Update
 
 ```json
 {
@@ -109,10 +192,102 @@ Health updates are sent as JSON messages:
 }
 ```
 
+### Subsystem-Level Health Update
+
+```json
+{
+  "component_id": "antenna_1",
+  "subsystem": "Quadrant 0 (CB)",
+  "color": "#00FF00",
+  "size": 98.2
+}
+```
+
+### Bulk Subsystem Health (in component update)
+
+```json
+{
+  "component_id": "antenna_1",
+  "color": "#00FF00",
+  "size": 95.5,
+  "subsystem_health": {
+    "APCU Controller": 100.0,
+    "Temperature Monitoring": 95.0,
+    "Board Data": 100.0,
+    "Board Status": 100.0,
+    "Quadrant 0 (CB)": 98.2,
+    "Quadrant 1 (CF)": 97.5,
+    "Quadrant 2 (CD)": 99.1,
+    "Quadrant 3 (CE)": 96.8,
+    "QTRMs": 97.9,
+    "AQC": 98.5
+  }
+}
+```
+
+### Full APCU Telemetry
+
+```json
+{
+  "component_id": "antenna_1",
+  "color": "#00FF00",
+  "size": 95.5,
+  "subsystem_health": { ... },
+  "apcu_telemetry": {
+    "version": "1.0.0",
+    "unit": "APCU 4 Left",
+    "link_status": { "Q0": true, "Q1": true, "Q2": true, "Q3": true },
+    "sequence_on": true,
+    "array_voltage": 27.87,
+    "array_current": 22.35,
+    "temperature": {
+      "sensor_a": 41.79,
+      "sensor_b": 49.10,
+      "sensor_c": 42.78,
+      "status": "Normal"
+    },
+    "board_data": { "input_voltage": 27.85, "current": 5.33 },
+    "mode_status": {
+      "operating": "Operating",
+      "loss_of_input_voltage": "No Loss",
+      "reset_source": "Software Reset"
+    },
+    "board_status": {
+      "crc_user_flash": "Pass",
+      "crc_factory_flash": "Pass",
+      "crc_program_flash": "Pass",
+      "cbit": "Pass",
+      "pbit": "Pass",
+      "board_setting_check": "Pass"
+    },
+    "quadrants": [
+      {
+        "name": "Quadrant 0 (CB)",
+        "code": "CB",
+        "health": 98.2,
+        "active": 16,
+        "tripped": 0,
+        "faulted": 0,
+        "channels": [
+          { "ch": 0, "on": true, "trip": "Normal", "bit": "Normal", "voltage": 27.95, "current": 0.16 },
+          ...
+        ]
+      },
+      ...
+    ],
+    "qtrm_groups": [ [5,8,15,18,25,28], ... ],
+    "aqc_controllers": [0, 1, 2, 3]
+  }
+}
+```
+
 **Fields:**
 - `component_id`: Unique identifier for the subsystem
 - `color`: Hex color code representing health status
 - `size`: Health percentage (0-100)
+- `subsystem`: (optional) Name of specific subsystem being reported
+- `subsystem_health`: (optional) Map of subsystem names to health percentages
+- `apcu_telemetry`: (optional) Full APCU telemetry payload
 
 **Color Mapping:**
 - `#00FF00` - Green (Operational)

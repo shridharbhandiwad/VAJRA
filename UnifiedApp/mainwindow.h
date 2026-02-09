@@ -16,6 +16,7 @@
 #include "thememanager.h"
 #include "designsubcomponent.h"
 #include "userrole.h"
+#include <QJsonObject>
 
 /**
  * MainWindow - Unified application window that combines Designer and Runtime
@@ -50,6 +51,9 @@ private slots:
     void onDesignSubComponentAdded(const QString& parentId, SubComponentType subType);
     void onDropRejected(const QString& reason);
     void onMessageReceived(const QString& componentId, const QString& color, qreal size);
+    void onSubsystemHealthReceived(const QString& componentId, const QString& subsystemName,
+                                   const QString& color, qreal health);
+    void onTelemetryReceived(const QString& componentId, const QJsonObject& telemetry);
     void onClientConnected();
     void onClientDisconnected();
     void toggleVoiceAlerts();
