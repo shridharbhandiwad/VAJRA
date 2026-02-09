@@ -287,8 +287,8 @@ void EnlargedComponentView::setupUI()
 
     // ── Main horizontal layout: left panel + right panel ──
     QHBoxLayout* mainLayout = new QHBoxLayout(this);
-    mainLayout->setSpacing(12);
-    mainLayout->setContentsMargins(10, 10, 10, 10);
+    mainLayout->setSpacing(4);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
 
     // Get display name from registry
     ComponentRegistry& registry = ComponentRegistry::instance();
@@ -303,8 +303,8 @@ void EnlargedComponentView::setupUI()
     QWidget* leftPanel = new QWidget(this);
     leftPanel->setObjectName("enlargedLeftPanel");
     QVBoxLayout* leftLayout = new QVBoxLayout(leftPanel);
-    leftLayout->setSpacing(10);
-    leftLayout->setContentsMargins(16, 16, 16, 16);
+    leftLayout->setSpacing(4);
+    leftLayout->setContentsMargins(8, 8, 8, 8);
 
     // Title
     QLabel* leftTitle = new QLabel(displayName.toUpper() + "  —  ENLARGED VIEW", leftPanel);
@@ -342,8 +342,7 @@ void EnlargedComponentView::setupUI()
     m_componentView = new QGraphicsView(m_componentScene, leftPanel);
     m_componentView->setRenderHint(QPainter::Antialiasing);
     m_componentView->setBackgroundBrush(QBrush(tm.canvasBackground()));
-    m_componentView->setMinimumHeight(220);
-    m_componentView->setMaximumHeight(380);
+    m_componentView->setMinimumHeight(180);
     m_componentView->setFrameShape(QFrame::NoFrame);
     m_componentView->setObjectName("mainCanvas");
 
@@ -358,8 +357,8 @@ void EnlargedComponentView::setupUI()
     QWidget* rightPanel = new QWidget(this);
     rightPanel->setObjectName("enlargedRightPanel");
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
-    rightLayout->setSpacing(12);
-    rightLayout->setContentsMargins(16, 16, 16, 16);
+    rightLayout->setSpacing(4);
+    rightLayout->setContentsMargins(8, 8, 8, 8);
 
     QLabel* rightTitle = new QLabel("DATA ANALYTICS", rightPanel);
     rightTitle->setObjectName("enlargedTitle");
@@ -384,8 +383,8 @@ void EnlargedComponentView::setupUI()
         QWidget* card = new QWidget(statsContainer);
         card->setObjectName("statCard");
         QVBoxLayout* cardLayout = new QVBoxLayout(card);
-        cardLayout->setContentsMargins(12, 10, 12, 10);
-        cardLayout->setSpacing(4);
+        cardLayout->setContentsMargins(8, 6, 8, 6);
+        cardLayout->setSpacing(2);
 
         QLabel* lbl = new QLabel(label, card);
         lbl->setObjectName("statCardLabel");
