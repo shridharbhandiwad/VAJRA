@@ -3,4 +3,7 @@
     <qresource prefix="/styles">
         <file>styles.qss</file>
     </qresource>
+    <qresource prefix="/config">
+        <file>components.json</file>
+    </qresource>
 </RCC>
