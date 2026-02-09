@@ -3,11 +3,17 @@
 #include <QPainter>
 #include <QCursor>
 #include <QLinearGradient>
+#include <QInputDialog>
+#include <QMenu>
+#include <QAction>
+#include <QGraphicsView>
+#include <QGraphicsScene>
 
 // Out-of-class definitions for static constexpr members (required for ODR-use in C++14)
 constexpr qreal SubComponent::HANDLE_SIZE;
 constexpr qreal SubComponent::MIN_WIDTH;
 constexpr qreal SubComponent::MIN_HEIGHT;
+constexpr qreal SubComponent::HEALTH_BAR_WIDTH;
 
 SubComponent::SubComponent(SubComponentType type, const QString& text, QGraphicsItem* parent)
     : QGraphicsItem(parent)
@@ -17,6 +23,8 @@ SubComponent::SubComponent(SubComponentType type, const QString& text, QGraphics
     , m_height(30)
     , m_activeHandle(HandleNone)
     , m_resizing(false)
+    , m_healthColor(QColor(76, 175, 80))  // Default green (healthy)
+    , m_healthValue(100.0)
 {
     setFlag(ItemIsMovable, true);
     setFlag(ItemIsSelectable, true);
@@ -83,10 +91,13 @@ void SubComponent::paintLabel(QPainter* painter)
     painter->setBrush(QColor(52, 56, 63));
     painter->drawRoundedRect(0, 0, m_width, m_height, 3, 3);
 
-    // Text
+    // Health indicator bar on the left
+    paintHealthIndicator(painter);
+
+    // Text (offset to make room for health indicator bar)
     painter->setPen(QColor(220, 222, 228));
     painter->setFont(QFont("Segoe UI", 8));
-    painter->drawText(QRectF(6, 0, m_width - 12, m_height),
+    painter->drawText(QRectF(HEALTH_BAR_WIDTH + 6, 0, m_width - HEALTH_BAR_WIDTH - 12, m_height),
                       Qt::AlignVCenter | Qt::AlignLeft, m_text);
 }
 
@@ -97,10 +108,13 @@ void SubComponent::paintLineEdit(QPainter* painter)
     painter->setBrush(QColor(40, 42, 50));
     painter->drawRoundedRect(0, 0, m_width, m_height, 3, 3);
 
+    // Health indicator bar on the left
+    paintHealthIndicator(painter);
+
     // Placeholder text
     painter->setPen(QColor(140, 145, 155));
     painter->setFont(QFont("Segoe UI", 8));
-    painter->drawText(QRectF(8, 0, m_width - 16, m_height),
+    painter->drawText(QRectF(HEALTH_BAR_WIDTH + 8, 0, m_width - HEALTH_BAR_WIDTH - 16, m_height),
                       Qt::AlignVCenter | Qt::AlignLeft, m_text);
 
     // Bottom accent line (focus hint)
@@ -119,11 +133,22 @@ void SubComponent::paintButton(QPainter* painter)
     painter->setBrush(gradient);
     painter->drawRoundedRect(0, 0, m_width, m_height, 4, 4);
 
+    // Health indicator bar on the left
+    paintHealthIndicator(painter);
+
     // Centered white text
     painter->setPen(Qt::white);
     painter->setFont(QFont("Segoe UI", 8, QFont::Bold));
     painter->drawText(QRectF(0, 0, m_width, m_height),
                       Qt::AlignCenter, m_text);
+}
+
+void SubComponent::paintHealthIndicator(QPainter* painter)
+{
+    // Health indicator bar on the left edge of the subcomponent
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(m_healthColor);
+    painter->drawRoundedRect(0, 0, HEALTH_BAR_WIDTH, m_height, 2, 2);
 }
 
 void SubComponent::paintResizeHandles(QPainter* painter)
@@ -354,6 +379,86 @@ QVariant SubComponent::itemChange(GraphicsItemChange change, const QVariant& val
 }
 
 // ---------------------------------------------------------------------------
+// Double-click to edit text
+// ---------------------------------------------------------------------------
+
+void SubComponent::mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event)
+{
+    Q_UNUSED(event);
+    showTextEditDialog();
+}
+
+void SubComponent::showTextEditDialog()
+{
+    // Get the parent widget from the scene's view
+    QWidget* parentWidget = nullptr;
+    if (scene() && !scene()->views().isEmpty()) {
+        parentWidget = scene()->views().first();
+    }
+
+    bool ok = false;
+    QString newText = QInputDialog::getText(
+        parentWidget,
+        "Edit Sub-Component Text",
+        "Enter new text:",
+        QLineEdit::Normal,
+        m_text,
+        &ok);
+
+    if (ok && !newText.isEmpty()) {
+        setText(newText);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Right-click context menu
+// ---------------------------------------------------------------------------
+
+void SubComponent::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
+{
+    QMenu menu;
+
+    QAction* editAction = menu.addAction("Edit Text...");
+    menu.addSeparator();
+
+    QAction* setLabelAction = menu.addAction("Change to Label");
+    QAction* setLineEditAction = menu.addAction("Change to LineEdit");
+    QAction* setButtonAction = menu.addAction("Change to Button");
+    menu.addSeparator();
+
+    QAction* deleteAction = menu.addAction("Delete");
+
+    // Disable the type that is already selected
+    switch (m_type) {
+    case SubComponentType::Label:    setLabelAction->setEnabled(false); break;
+    case SubComponentType::LineEdit: setLineEditAction->setEnabled(false); break;
+    case SubComponentType::Button:   setButtonAction->setEnabled(false); break;
+    }
+
+    QAction* selected = menu.exec(event->screenPos());
+
+    if (selected == editAction) {
+        showTextEditDialog();
+    } else if (selected == setLabelAction) {
+        m_type = SubComponentType::Label;
+        update();
+    } else if (selected == setLineEditAction) {
+        m_type = SubComponentType::LineEdit;
+        update();
+    } else if (selected == setButtonAction) {
+        m_type = SubComponentType::Button;
+        update();
+    } else if (selected == deleteAction) {
+        Component* parentComp = dynamic_cast<Component*>(parentItem());
+        if (parentComp) {
+            parentComp->removeSubComponent(this);
+        }
+        delete this;
+        return;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Mutators
 // ---------------------------------------------------------------------------
 
@@ -368,6 +473,18 @@ void SubComponent::setSize(qreal w, qreal h)
     prepareGeometryChange();
     m_width = qMax(w, MIN_WIDTH);
     m_height = qMax(h, MIN_HEIGHT);
+    update();
+}
+
+void SubComponent::setHealthColor(const QColor& color)
+{
+    m_healthColor = color;
+    update();
+}
+
+void SubComponent::setHealthValue(qreal value)
+{
+    m_healthValue = qBound(0.0, value, 100.0);
     update();
 }
 

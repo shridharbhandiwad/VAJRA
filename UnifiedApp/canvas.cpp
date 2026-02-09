@@ -513,6 +513,8 @@ QString Canvas::saveToJson() const
             dsubObj["y"]      = dsub->pos().y();
             dsubObj["width"]  = dsub->getWidth();
             dsubObj["height"] = dsub->getHeight();
+            dsubObj["healthColor"] = dsub->getHealthColor().name();
+            dsubObj["healthValue"] = dsub->getHealthValue();
             designSubArray.append(dsubObj);
         }
         if (!designSubArray.isEmpty()) {
@@ -611,6 +613,15 @@ void Canvas::loadFromJson(const QString& json)
             
             DesignSubComponent* dsub = new DesignSubComponent(subType, text);
             dsub->setSize(sw, sh);
+            
+            // Restore health properties
+            if (dsubObj.contains("healthColor")) {
+                dsub->setHealthColor(QColor(dsubObj["healthColor"].toString("#4CAF50")));
+            }
+            if (dsubObj.contains("healthValue")) {
+                dsub->setHealthValue(dsubObj["healthValue"].toDouble(100.0));
+            }
+            
             comp->addDesignSubComponent(dsub);   // sets parent
             dsub->setPos(sx, sy);                 // in parent coords
         }
