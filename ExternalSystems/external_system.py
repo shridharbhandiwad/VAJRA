@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 """
 External Radar Subsystem Simulator
-Sends periodic health status messages to the Runtime Application
+Sends periodic health status messages to the Runtime Application.
+
+Supports multiple protocols:
+- TCP (default, port 12345) - Line-delimited JSON
+- UDP (port 12346) - JSON datagrams
+
+The component_id can be any string matching a component placed on the canvas.
+New component types can be added to the system via the UI or components.json
+without modifying this script.
 """
 
 import socket
@@ -12,10 +20,11 @@ import argparse
 import sys
 
 class ExternalSystem:
-    def __init__(self, component_id, host='localhost', port=12345):
+    def __init__(self, component_id, host='localhost', port=12345, protocol='tcp'):
         self.component_id = component_id
         self.host = host
         self.port = port
+        self.protocol = protocol.lower()
         self.socket = None
         self.connected = False
         
@@ -35,10 +44,16 @@ class ExternalSystem:
     def connect(self):
         """Connect to the Runtime Application server"""
         try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.connect((self.host, self.port))
-            self.connected = True
-            print(f"[{self.component_id}] Connected to {self.host}:{self.port}")
+            if self.protocol == 'udp':
+                self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.connected = True
+                print(f"[{self.component_id}] UDP socket ready -> {self.host}:{self.port}")
+            else:
+                # Default TCP
+                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.socket.connect((self.host, self.port))
+                self.connected = True
+                print(f"[{self.component_id}] TCP connected to {self.host}:{self.port}")
             return True
         except Exception as e:
             print(f"[{self.component_id}] Connection failed: {e}")
@@ -67,8 +82,15 @@ class ExternalSystem:
         
         try:
             json_data = json.dumps(message) + '\n'
-            self.socket.sendall(json_data.encode('utf-8'))
-            print(f"[{self.component_id}] Health Update: status={status}, health={health:.1f}%, color={color}")
+            encoded = json_data.encode('utf-8')
+            
+            if self.protocol == 'udp':
+                self.socket.sendto(encoded, (self.host, self.port))
+            else:
+                self.socket.sendall(encoded)
+            
+            print(f"[{self.component_id}] Health Update ({self.protocol.upper()}): "
+                  f"status={status}, health={health:.1f}%, color={color}")
             return True
         except Exception as e:
             print(f"[{self.component_id}] Send failed: {e}")
@@ -113,7 +135,8 @@ class ExternalSystem:
     
     def run(self, interval=2.0):
         """Run the external system, sending periodic health updates"""
-        print(f"[{self.component_id}] Starting Radar Subsystem Health Monitor")
+        print(f"[{self.component_id}] Starting Health Monitor ({self.protocol.upper()})")
+        print(f"[{self.component_id}] Target: {self.host}:{self.port}")
         print(f"[{self.component_id}] Update interval: {interval} seconds")
         print(f"[{self.component_id}] Initial health: {self.current_health:.1f}%")
         print()
@@ -142,16 +165,39 @@ class ExternalSystem:
             self.disconnect()
 
 def main():
-    parser = argparse.ArgumentParser(description='External Radar Subsystem Health Monitor')
-    parser.add_argument('component_id', help='Subsystem ID to monitor (e.g., antenna_1, power_1)')
-    parser.add_argument('--host', default='localhost', help='Server host (default: localhost)')
-    parser.add_argument('--port', type=int, default=12345, help='Server port (default: 12345)')
+    parser = argparse.ArgumentParser(
+        description='External Subsystem Health Monitor',
+        epilog="""
+Examples:
+  # Monitor a component via TCP (default)
+  python3 external_system.py component_1
+
+  # Monitor via UDP
+  python3 external_system.py component_1 --protocol udp --port 12346
+
+  # Monitor a custom component type
+  python3 external_system.py gps_receiver_1 --interval 3.0
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument('component_id', 
+                       help='Component ID to monitor (must match ID on canvas, e.g., component_1)')
+    parser.add_argument('--host', default='localhost', 
+                       help='Server host (default: localhost)')
+    parser.add_argument('--port', type=int, default=None, 
+                       help='Server port (default: 12345 for TCP, 12346 for UDP)')
+    parser.add_argument('--protocol', choices=['tcp', 'udp'], default='tcp',
+                       help='Communication protocol (default: tcp)')
     parser.add_argument('--interval', type=float, default=2.0, 
                        help='Health update interval in seconds (default: 2.0)')
     
     args = parser.parse_args()
     
-    system = ExternalSystem(args.component_id, args.host, args.port)
+    # Set default port based on protocol if not specified
+    if args.port is None:
+        args.port = 12346 if args.protocol == 'udp' else 12345
+    
+    system = ExternalSystem(args.component_id, args.host, args.port, args.protocol)
     system.run(args.interval)
 
 if __name__ == '__main__':
