@@ -5,12 +5,15 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QComboBox>
+#include <QTabWidget>
+#include <QMap>
 #include "logindialog.h"
 #include "componentlist.h"
 #include "canvas.h"
 #include "analytics.h"
 #include "messageserver.h"
 #include "voicealertmanager.h"
+#include "enlargedcomponentview.h"
 
 class MainWindow : public QMainWindow
 {
@@ -43,6 +46,8 @@ private:
     void setupDesignerMode();
     void setupRuntimeMode();
     void autoLoadDesign();
+    void createComponentTabs();
+    void clearComponentTabs();
     
     UserRole m_userRole;
     QString m_username;
@@ -61,6 +66,10 @@ private:
     // Connection UI
     QPushButton* m_connectBtn;
     QComboBox* m_connectionTypeCombo;
+    
+    // Tab widget for enlarged component views (Runtime mode)
+    QTabWidget* m_tabWidget;
+    QMap<QString, EnlargedComponentView*> m_enlargedViews;
 };
 
 #endif // MAINWINDOW_H
