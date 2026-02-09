@@ -3,42 +3,134 @@
     {
       "id": "antenna_1",
       "type": "Antenna",
-      "x": 300,
-      "y": 100,
-      "color": "#0000ff",
-      "size": 50
+      "x": 50,
+      "y": 30,
+      "color": "#4CAF50",
+      "size": 85,
+      "subcomponents": [
+        { "name": "Signal Strength", "health": 90, "color": "#4CAF50" },
+        { "name": "Alignment", "health": 85, "color": "#4CAF50" },
+        { "name": "Mechanical Status", "health": 78, "color": "#FFC107" },
+        { "name": "Feed Horn", "health": 92, "color": "#4CAF50" },
+        { "name": "Rotary Joint", "health": 70, "color": "#FF9800" }
+      ]
     },
     {
       "id": "power_1",
       "type": "PowerSystem",
-      "x": 100,
-      "y": 250,
-      "color": "#0000ff",
-      "size": 50
+      "x": 50,
+      "y": 340,
+      "color": "#FF9800",
+      "size": 72,
+      "subcomponents": [
+        { "name": "Voltage Levels", "health": 80, "color": "#4CAF50" },
+        { "name": "Current Draw", "health": 65, "color": "#FF9800" },
+        { "name": "Battery Status", "health": 72, "color": "#FFC107" },
+        { "name": "UPS Module", "health": 88, "color": "#4CAF50" },
+        { "name": "Power Distribution", "health": 75, "color": "#FFC107" }
+      ]
     },
     {
       "id": "computer_1",
       "type": "RadarComputer",
-      "x": 300,
-      "y": 250,
-      "color": "#0000ff",
-      "size": 50
+      "x": 400,
+      "y": 30,
+      "color": "#F44336",
+      "size": 60,
+      "subcomponents": [
+        { "name": "CPU Usage", "health": 55, "color": "#FF9800" },
+        { "name": "Memory", "health": 62, "color": "#FF9800" },
+        { "name": "Processing Capacity", "health": 58, "color": "#FF9800" },
+        { "name": "GPU Accelerator", "health": 70, "color": "#FFC107" },
+        { "name": "Storage Controller", "health": 85, "color": "#4CAF50" }
+      ]
     },
     {
       "id": "cooling_1",
       "type": "LiquidCoolingUnit",
-      "x": 500,
-      "y": 250,
-      "color": "#0000ff",
-      "size": 50
+      "x": 750,
+      "y": 30,
+      "color": "#03A9F4",
+      "size": 90,
+      "subcomponents": [
+        { "name": "Coolant Temperature", "health": 95, "color": "#4CAF50" },
+        { "name": "Flow Rate", "health": 88, "color": "#4CAF50" },
+        { "name": "Pump Status", "health": 92, "color": "#4CAF50" },
+        { "name": "Heat Exchanger", "health": 85, "color": "#4CAF50" }
+      ]
     },
     {
       "id": "comm_1",
       "type": "CommunicationSystem",
-      "x": 300,
-      "y": 400,
-      "color": "#0000ff",
-      "size": 50
+      "x": 400,
+      "y": 340,
+      "color": "#9C27B0",
+      "size": 78,
+      "subcomponents": [
+        { "name": "Signal Quality", "health": 80, "color": "#4CAF50" },
+        { "name": "Bandwidth", "health": 72, "color": "#FFC107" },
+        { "name": "Link Status", "health": 90, "color": "#4CAF50" },
+        { "name": "Encryption Module", "health": 85, "color": "#4CAF50" },
+        { "name": "Protocol Handler", "health": 68, "color": "#FF9800" }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "connection_1",
+      "source": "antenna_1",
+      "target": "computer_1",
+      "type": "unidirectional",
+      "label": "Raw Signal",
+      "color": "#64B4DC"
+    },
+    {
+      "id": "connection_2",
+      "source": "computer_1",
+      "target": "comm_1",
+      "type": "bidirectional",
+      "label": "Data Link",
+      "color": "#BB86FC"
+    },
+    {
+      "id": "connection_3",
+      "source": "power_1",
+      "target": "computer_1",
+      "type": "unidirectional",
+      "label": "DC Power",
+      "color": "#FFB74D"
+    },
+    {
+      "id": "connection_4",
+      "source": "power_1",
+      "target": "antenna_1",
+      "type": "unidirectional",
+      "label": "AC Power",
+      "color": "#FFB74D"
+    },
+    {
+      "id": "connection_5",
+      "source": "cooling_1",
+      "target": "computer_1",
+      "type": "unidirectional",
+      "label": "Coolant Flow",
+      "color": "#4FC3F7"
+    },
+    {
+      "id": "connection_6",
+      "source": "cooling_1",
+      "target": "antenna_1",
+      "type": "unidirectional",
+      "label": "Thermal Mgmt",
+      "color": "#4FC3F7"
+    },
+    {
+      "id": "connection_7",
+      "source": "power_1",
+      "target": "comm_1",
+      "type": "unidirectional",
+      "label": "Power Supply",
+      "color": "#FFB74D"
     }
   ]
 }

@@ -12,6 +12,8 @@ SOURCES += \
     logindialog.cpp \
     mainwindow.cpp \
     component.cpp \
+    subcomponent.cpp \
+    connection.cpp \
     canvas.cpp \
     componentlist.cpp \
     analytics.cpp \
@@ -24,6 +26,8 @@ HEADERS += \
     logindialog.h \
     mainwindow.h \
     component.h \
+    subcomponent.h \
+    connection.h \
     canvas.h \
     componentlist.h \
     analytics.h \

@@ -12,7 +12,9 @@
       "subsystems": [
         "Signal Strength",
         "Alignment",
-        "Mechanical Status"
+        "Mechanical Status",
+        "Feed Horn",
+        "Rotary Joint"
       ],
       "protocol": "TCP",
       "port": 12345,
@@ -29,7 +31,9 @@
       "subsystems": [
         "Voltage Levels",
         "Current Draw",
-        "Battery Status"
+        "Battery Status",
+        "UPS Module",
+        "Power Distribution"
       ],
       "protocol": "TCP",
       "port": 12345,
@@ -46,7 +50,8 @@
       "subsystems": [
         "Coolant Temperature",
         "Flow Rate",
-        "Pump Status"
+        "Pump Status",
+        "Heat Exchanger"
       ],
       "protocol": "TCP",
       "port": 12345,
@@ -63,7 +68,9 @@
       "subsystems": [
         "Signal Quality",
         "Bandwidth",
-        "Link Status"
+        "Link Status",
+        "Encryption Module",
+        "Protocol Handler"
       ],
       "protocol": "TCP",
       "port": 12345,
@@ -80,7 +87,9 @@
       "subsystems": [
         "CPU Usage",
         "Memory",
-        "Processing Capacity"
+        "Processing Capacity",
+        "GPU Accelerator",
+        "Storage Controller"
       ],
       "protocol": "TCP",
       "port": 12345,

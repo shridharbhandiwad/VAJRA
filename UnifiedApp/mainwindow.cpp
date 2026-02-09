@@ -25,6 +25,8 @@ MainWindow::MainWindow(UserRole userRole, const QString& username, QWidget* pare
     , m_connectedClients(0)
     , m_voiceAlertManager(nullptr)
     , m_voiceToggleBtn(nullptr)
+    , m_connectBtn(nullptr)
+    , m_connectionTypeCombo(nullptr)
 {
     setupUI();
     
@@ -34,7 +36,7 @@ MainWindow::MainWindow(UserRole userRole, const QString& username, QWidget* pare
         setWindowTitle("Radar System - Runtime Monitor");
     }
     
-    resize(1280, 780);
+    resize(1400, 850);
 }
 
 MainWindow::~MainWindow()
@@ -92,11 +94,46 @@ void MainWindow::setupDesignerMode()
     toolbar->addWidget(clearBtn);
     toolbar->addSeparator();
     toolbar->addWidget(addTypeBtn);
+    toolbar->addSeparator();
+    
+    // Connection mode controls
+    m_connectBtn = new QPushButton("CONNECT MODE", this);
+    m_connectBtn->setObjectName("connectButton");
+    m_connectBtn->setCheckable(true);
+    m_connectBtn->setToolTip("Toggle connection drawing mode. Click a source component, then drag to target.");
+    m_connectBtn->setStyleSheet(
+        "QPushButton { background: rgba(100, 180, 220, 0.15); color: #64B4DC; "
+        "border: 1px solid rgba(100, 180, 220, 0.3); border-radius: 6px; "
+        "padding: 7px 18px; font-size: 10px; font-weight: 600; "
+        "text-transform: uppercase; letter-spacing: 1px; min-height: 28px; }"
+        "QPushButton:hover { background: rgba(100, 180, 220, 0.25); }"
+        "QPushButton:checked { background: rgba(100, 180, 220, 0.35); "
+        "border: 1px solid #64B4DC; color: #fff; }");
+    
+    m_connectionTypeCombo = new QComboBox(this);
+    m_connectionTypeCombo->setObjectName("connectionTypeCombo");
+    m_connectionTypeCombo->addItem("Uni-directional", static_cast<int>(ConnectionType::Unidirectional));
+    m_connectionTypeCombo->addItem("Bi-directional", static_cast<int>(ConnectionType::Bidirectional));
+    m_connectionTypeCombo->setToolTip("Select connection direction type");
+    m_connectionTypeCombo->setStyleSheet(
+        "QComboBox { background: rgba(36, 39, 46, 0.9); color: #c4c7cc; "
+        "border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; "
+        "padding: 5px 12px; font-size: 10px; min-height: 28px; }"
+        "QComboBox:hover { border: 1px solid rgba(100, 180, 220, 0.3); }"
+        "QComboBox::drop-down { border: none; }"
+        "QComboBox QAbstractItemView { background: #24272e; color: #c4c7cc; "
+        "border: 1px solid rgba(255, 255, 255, 0.08); selection-background-color: rgba(100, 180, 220, 0.3); }");
+    
+    toolbar->addWidget(m_connectBtn);
+    toolbar->addWidget(m_connectionTypeCombo);
     
     connect(saveBtn, &QPushButton::clicked, this, &MainWindow::saveDesign);
     connect(loadBtn, &QPushButton::clicked, this, &MainWindow::loadDesign);
     connect(clearBtn, &QPushButton::clicked, this, &MainWindow::clearCanvas);
     connect(addTypeBtn, &QPushButton::clicked, this, &MainWindow::addNewComponentType);
+    connect(m_connectBtn, &QPushButton::clicked, this, &MainWindow::toggleConnectionMode);
+    connect(m_connectionTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &MainWindow::onConnectionTypeChanged);
     
     // Create main widget and layout
     QWidget* centralWidget = new QWidget(this);
@@ -130,10 +167,26 @@ void MainWindow::setupDesignerMode()
     addInlineBtn->setCursor(Qt::PointingHandCursor);
     connect(addInlineBtn, &QPushButton::clicked, this, &MainWindow::addNewComponentType);
     
+    // Connection help text
+    QLabel* connectionHelpLabel = new QLabel(
+        "To connect components:\n"
+        "1. Click 'CONNECT MODE'\n"
+        "2. Choose direction type\n"
+        "3. Click source, drag to target\n"
+        "4. Enter optional label\n"
+        "Press Escape to cancel", leftPanel);
+    connectionHelpLabel->setProperty("hint", true);
+    connectionHelpLabel->setWordWrap(true);
+    connectionHelpLabel->setStyleSheet(
+        "color: #5f6368; font-size: 9px; padding: 8px; "
+        "background: rgba(100, 180, 220, 0.05); "
+        "border-radius: 6px; border-left: 2px solid rgba(100, 180, 220, 0.3);");
+    
     leftLayout->addWidget(componentsLabel);
     leftLayout->addWidget(countLabel);
     leftLayout->addWidget(m_componentList);
     leftLayout->addWidget(addInlineBtn);
+    leftLayout->addWidget(connectionHelpLabel);
     leftPanel->setLayout(leftLayout);
     leftPanel->setMaximumWidth(240);
     leftPanel->setMinimumWidth(210);
@@ -158,7 +211,8 @@ void MainWindow::setupDesignerMode()
     
     QLabel* hintLabel = new QLabel(
         "Drag components from the left panel onto the canvas. "
-        "Use '+ Add Component Type' to define new types without code changes.", centerPanel);
+        "Use Connect Mode to draw relations between components. "
+        "Press Delete to remove selected connections.", centerPanel);
     hintLabel->setProperty("hint", true);
     hintLabel->setAlignment(Qt::AlignCenter);
     hintLabel->setWordWrap(true);
@@ -197,6 +251,7 @@ void MainWindow::setupDesignerMode()
     
     // Connect signals
     connect(m_canvas, &Canvas::componentAdded, this, &MainWindow::onComponentAdded);
+    connect(m_canvas, &Canvas::modeChanged, this, &MainWindow::onModeChanged);
 }
 
 void MainWindow::setupRuntimeMode()
@@ -286,9 +341,11 @@ void MainWindow::setupRuntimeMode()
     m_canvas->setObjectName("mainCanvas");
     
     QLabel* hintLabel = new QLabel(
-        "Load a system layout to monitor subsystems in real-time", centerPanel);
+        "Load a system layout to monitor subsystems in real-time. "
+        "Each component shows embedded sub-systems with individual health status.", centerPanel);
     hintLabel->setProperty("hint", true);
     hintLabel->setAlignment(Qt::AlignCenter);
+    hintLabel->setWordWrap(true);
     
     centerLayout->addWidget(canvasLabel);
     centerLayout->addWidget(m_canvas);
@@ -411,6 +468,36 @@ void MainWindow::addNewComponentType()
                     "It is now available in the component list for drag-and-drop.\n"
                     "The definition has been saved to components.json.")
                 .arg(def.displayName));
+    }
+}
+
+void MainWindow::toggleConnectionMode()
+{
+    if (!m_canvas || !m_connectBtn) return;
+    
+    if (m_connectBtn->isChecked()) {
+        m_canvas->setMode(CanvasMode::Connect);
+        // Set connection type from combo
+        int typeIdx = m_connectionTypeCombo->currentData().toInt();
+        m_canvas->setConnectionType(static_cast<ConnectionType>(typeIdx));
+    } else {
+        m_canvas->setMode(CanvasMode::Select);
+    }
+}
+
+void MainWindow::onConnectionTypeChanged(int index)
+{
+    Q_UNUSED(index);
+    if (!m_canvas || !m_connectionTypeCombo) return;
+    
+    int typeVal = m_connectionTypeCombo->currentData().toInt();
+    m_canvas->setConnectionType(static_cast<ConnectionType>(typeVal));
+}
+
+void MainWindow::onModeChanged(CanvasMode mode)
+{
+    if (m_connectBtn) {
+        m_connectBtn->setChecked(mode == CanvasMode::Connect);
     }
 }
 
