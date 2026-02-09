@@ -195,15 +195,15 @@ void MainWindow::setupUI()
     QWidget* centralWidget = new QWidget(this);
     centralWidget->setObjectName("centralWidget");
     QHBoxLayout* mainLayout = new QHBoxLayout(centralWidget);
-    mainLayout->setSpacing(12);
-    mainLayout->setContentsMargins(12, 12, 12, 12);
+    mainLayout->setSpacing(4);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
     
     // ========== LEFT PANEL - Components & Sub-Components List ==========
     m_leftPanel = new QWidget(this);
     m_leftPanel->setObjectName("leftPanel");
     QVBoxLayout* leftLayout = new QVBoxLayout(m_leftPanel);
-    leftLayout->setSpacing(10);
-    leftLayout->setContentsMargins(14, 14, 14, 14);
+    leftLayout->setSpacing(4);
+    leftLayout->setContentsMargins(6, 6, 6, 6);
     
     QLabel* componentsLabel = new QLabel("COMPONENTS", m_leftPanel);
     componentsLabel->setObjectName("componentsLabel");
@@ -221,25 +221,13 @@ void MainWindow::setupUI()
     addInlineBtn->setCursor(Qt::PointingHandCursor);
     connect(addInlineBtn, &QPushButton::clicked, this, &MainWindow::addNewComponentType);
     
-    QLabel* helpLabel = new QLabel(
-        "Drag components onto the canvas.\n"
-        "Drag Label/LineEdit/Button into\n"
-        "components as sub-widgets.\n\n"
-        "Connect Mode: click source,\n"
-        "drag to target.\n"
-        "Press Delete to remove selected.", m_leftPanel);
-    helpLabel->setObjectName("connectionHelpLabel");
-    helpLabel->setProperty("hint", true);
-    helpLabel->setWordWrap(true);
-    
     leftLayout->addWidget(componentsLabel);
     leftLayout->addWidget(countLabel);
     leftLayout->addWidget(m_componentList);
     leftLayout->addWidget(addInlineBtn);
-    leftLayout->addWidget(helpLabel);
     m_leftPanel->setLayout(leftLayout);
-    m_leftPanel->setMaximumWidth(240);
-    m_leftPanel->setMinimumWidth(210);
+    m_leftPanel->setMaximumWidth(190);
+    m_leftPanel->setMinimumWidth(160);
     
     connect(&registry, &ComponentRegistry::registryChanged, this, [countLabel, &registry]() {
         countLabel->setText(QString("%1 types available").arg(registry.componentCount()));
@@ -249,7 +237,7 @@ void MainWindow::setupUI()
     QWidget* centerPanel = new QWidget(this);
     centerPanel->setObjectName("centerPanel");
     QVBoxLayout* centerLayout = new QVBoxLayout(centerPanel);
-    centerLayout->setSpacing(8);
+    centerLayout->setSpacing(0);
     centerLayout->setContentsMargins(0, 0, 0, 0);
     
     m_tabWidget = new QTabWidget(centerPanel);
@@ -261,34 +249,13 @@ void MainWindow::setupUI()
     QWidget* overviewTab = new QWidget();
     overviewTab->setObjectName("overviewTab");
     QVBoxLayout* overviewLayout = new QVBoxLayout(overviewTab);
-    overviewLayout->setSpacing(8);
-    overviewLayout->setContentsMargins(8, 8, 8, 8);
-    
-    QString canvasTitle = (m_role == UserRole::User) ? "SYSTEM MONITOR" : "DESIGN & MONITOR";
-    QLabel* canvasLabel = new QLabel(canvasTitle, overviewTab);
-    canvasLabel->setProperty("heading", true);
+    overviewLayout->setSpacing(2);
+    overviewLayout->setContentsMargins(2, 2, 2, 2);
     
     m_canvas = new Canvas(overviewTab);
     m_canvas->setObjectName("mainCanvas");
     
-    QString hintText;
-    if (m_role == UserRole::User) {
-        hintText = "Monitoring mode - health updates appear in real-time when external systems connect. "
-                   "Components are read-only in this view.";
-    } else {
-        hintText = "Drag components from the left panel onto the canvas. "
-                   "Drop Label/LineEdit/Button sub-components inside parent components. "
-                   "Use Connect Mode to draw relations. "
-                   "Health updates appear in real-time when external systems connect.";
-    }
-    QLabel* hintLabel = new QLabel(hintText, overviewTab);
-    hintLabel->setProperty("hint", true);
-    hintLabel->setAlignment(Qt::AlignCenter);
-    hintLabel->setWordWrap(true);
-    
-    overviewLayout->addWidget(canvasLabel);
     overviewLayout->addWidget(m_canvas);
-    overviewLayout->addWidget(hintLabel);
     
     m_tabWidget->addTab(overviewTab, "  System Overview  ");
     
@@ -299,8 +266,8 @@ void MainWindow::setupUI()
     QWidget* rightPanel = new QWidget(this);
     rightPanel->setObjectName("rightPanel");
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
-    rightLayout->setSpacing(10);
-    rightLayout->setContentsMargins(14, 14, 14, 14);
+    rightLayout->setSpacing(4);
+    rightLayout->setContentsMargins(6, 6, 6, 6);
     
     QLabel* analyticsLabel = new QLabel("ANALYTICS", rightPanel);
     analyticsLabel->setProperty("heading", true);
@@ -311,8 +278,8 @@ void MainWindow::setupUI()
     rightLayout->addWidget(analyticsLabel);
     rightLayout->addWidget(m_analytics);
     rightPanel->setLayout(rightLayout);
-    rightPanel->setMaximumWidth(320);
-    rightPanel->setMinimumWidth(260);
+    rightPanel->setMaximumWidth(260);
+    rightPanel->setMinimumWidth(200);
     
     // ========== ASSEMBLE MAIN LAYOUT ==========
     mainLayout->addWidget(m_leftPanel);
