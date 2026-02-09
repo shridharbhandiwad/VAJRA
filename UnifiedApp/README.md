@@ -1,189 +1,158 @@
-# Unified Radar System Application
+# UnifiedApp - Modular Radar System Monitor (v3.0)
 
-A single, unified application that combines both the Designer and Runtime monitoring capabilities of the Radar System. Access control is managed through role-based login credentials.
+The recommended unified application combining Designer and Runtime capabilities with a **fully modular component architecture**.
 
-## Overview
+## Key Feature: Zero-Code Component Extension
 
-This application replaces the separate DesignerApp and RuntimeApp with a single, unified solution. Based on login credentials, users are granted appropriate access:
+New component types can be added **without modifying any C++ code**:
 
-- **Designer Mode**: Full design capabilities including creating, editing, and saving radar system layouts
-- **Runtime Mode**: Real-time monitoring of radar subsystem health status
+1. **Via the UI**: Click "+" Add Component Type" button in Designer mode
+2. **Via JSON**: Edit `components.json` configuration file
+3. **Image support**: Place images in `assets/subsystems/<dir>/`
 
-## Login Credentials
+## Architecture
 
-### Designer Access
-- **Username**: `Designer`
-- **Password**: `designer`
-- **Capabilities**: 
-  - Design radar system layouts
-  - Drag and drop subsystem components
-  - Save and load designs
-  - Clear canvas
-  - View analytics
-
-### User Access (Runtime Monitoring)
-- **Username**: `User`
-- **Password**: `user`
-- **Capabilities**:
-  - Load existing radar system layouts
-  - Monitor subsystem health in real-time
-  - Receive updates from external systems via TCP (port 12345)
-  - View analytics and status information
-
-## Features
-
-### Common Features
-- Modern, intuitive user interface
-- Analytics panel showing component statistics
-- Load existing radar system designs
-- Real-time visualization
-
-### Designer-Only Features
-- Component palette with drag-and-drop functionality
-- Save designs to `.design` files
-- Create new system layouts
-- Edit existing layouts
-- Clear canvas
-
-### Runtime-Only Features
-- TCP message server (port 12345) for receiving health updates
-- Real-time component status visualization
-- Client connection monitoring
-- Health color indicators based on external system data
-
-## Building the Application
-
-### Prerequisites
-- Qt5 development libraries
-- C++11 compatible compiler
-- qmake build tool
-
-### Installation on Ubuntu/Debian
-```bash
-sudo apt-get install qt5-qmake qtbase5-dev qtbase5-dev-tools
+```
+components.json ──→ ComponentRegistry (singleton)
+                         │
+         ┌───────────────┼───────────────┐
+         ▼               ▼               ▼
+   ComponentList      Canvas          Analytics
+   (auto-populates)  (drag/drop)    (dynamic types)
+         │               │
+         ▼               ▼
+   AddComponentDialog  Component
+   (runtime type add)  (data-driven rendering)
 ```
 
-### Building
+### Core Classes
+
+| Class | Purpose |
+|-------|---------|
+| `ComponentRegistry` | Singleton that loads/saves/manages component definitions from JSON |
+| `ComponentDefinition` | Data struct for one component type (name, image, subsystems, protocol, etc.) |
+| `Component` | Graphics item that renders based on registry data, no hardcoded types |
+| `ComponentList` | Auto-populates from registry, refreshes when types change |
+| `Canvas` | Resolves drag-drop types via registry, full backward compatibility |
+| `AddComponentDialog` | UI for defining new types at runtime |
+| `MessageServer` | Multi-protocol receiver (TCP port 12345, UDP port 12346) |
+| `Analytics` | Dynamic HTML display supporting any component type |
+
+## Quick Start
+
 ```bash
 cd UnifiedApp
 qmake UnifiedApp.pro
 make
-```
-
-## Running the Application
-
-```bash
 ./UnifiedApp
 ```
 
-Upon launch, a login dialog will appear. Enter your credentials to access the appropriate mode.
+### Login Credentials
 
-## Architecture
+| Username | Password | Role |
+|----------|----------|------|
+| Designer | designer | Full design capabilities + add component types |
+| User | user | Runtime health monitoring |
 
-The unified application uses role-based access control to determine the user interface and functionality:
+## Adding New Component Types
 
-1. **Login Dialog** (`logindialog.h/cpp`)
-   - Authenticates user credentials
-   - Determines user role (Designer or User)
-   - Passes role information to main window
+### Method 1: UI Dialog
 
-2. **Main Window** (`mainwindow.h/cpp`)
-   - Adapts UI based on user role
-   - Loads appropriate components and features
-   - Manages all application functionality
+1. Login as Designer
+2. Click **"+ ADD COMPONENT TYPE"** in toolbar (or "+" New Type" in side panel)
+3. Fill in the form:
+   - **Component Name**: e.g., "GPS Receiver"
+   - **Short Label**: e.g., "GPS"
+   - **Description**: Brief description
+   - **Image Directory**: Directory name under `assets/subsystems/`
+   - **Subsystems**: One per line (e.g., "Signal Strength", "Satellite Lock")
+   - **Protocol**: TCP, UDP, WebSocket, or MQTT
+   - **Port**: Default 12345 for TCP, 12346 for UDP
+   - **Category**: Sensor, Infrastructure, Network, Processing, Navigation, etc.
+   - **Fallback Shape**: rect, ellipse, hexagon, or diamond
+4. Click "ADD COMPONENT" - immediately available in the component list!
 
-3. **Canvas** (`canvas.h/cpp`)
-   - Unified canvas supporting both design and runtime modes
-   - Handles drag-and-drop (Designer mode)
-   - Updates component visuals from TCP messages (Runtime mode)
+### Method 2: Edit components.json
 
-4. **Components** (`component.h/cpp`)
-   - Radar subsystem visual representations
-   - Support for different types: Antenna, Power System, Liquid Cooling Unit, Communication System, Radar Computer
-
-5. **Message Server** (`messageserver.h/cpp`)
-   - TCP server for Runtime mode
-   - Receives health status updates from external systems
-   - Updates component visuals in real-time
-
-6. **Analytics** (`analytics.h/cpp`)
-   - Real-time statistics and component tracking
-   - Message history (Runtime mode)
-   - Component count and type information
-
-## Component Types
-
-The application supports the following radar subsystem types:
-- **Antenna**: Radar signal transmission/reception
-- **Power System**: Power distribution and management
-- **Liquid Cooling Unit**: Thermal management
-- **Communication System**: Data communication interfaces
-- **Radar Computer**: Processing and control
-
-## File Format
-
-Designs are saved in JSON format (`.design` files) containing:
-- Component IDs and types
-- Position coordinates
-- Visual properties (color, size)
-
-## Integration with External Systems
-
-In Runtime mode, the application listens on TCP port 12345 for health status messages. External systems can send JSON-formatted messages:
+Add a new entry to the `components` array:
 
 ```json
 {
-    "component_id": "component_1",
-    "color": "#00ff00",
-    "size": 50.0
+  "type_id": "GpsReceiver",
+  "display_name": "GPS Receiver",
+  "label": "GPS",
+  "description": "Satellite navigation and positioning system",
+  "image_dir": "gps_receiver",
+  "icon_color": "#2196F3",
+  "subsystems": ["Signal Strength", "Satellite Lock Count", "Position Accuracy"],
+  "protocol": "UDP",
+  "port": 12346,
+  "category": "Navigation",
+  "shape": "hexagon"
 }
 ```
 
-See `ExternalSystems/` directory for example external system simulators.
+### Method 3: With Custom Image
 
-## Security Notes
+1. Create `assets/subsystems/gps_receiver/` directory
+2. Add `gps_receiver_main.jpg` (or `.png`) image file
+3. Add the JSON definition as above with `"image_dir": "gps_receiver"`
+4. The component will display your custom image on the canvas
 
-- Current implementation uses hardcoded credentials for demonstration purposes
-- For production use, implement proper authentication mechanisms
-- Consider encrypting saved design files for sensitive applications
+## Component Definition Schema
 
-## Benefits of Unified Application
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type_id` | string | Yes | Unique identifier (PascalCase, e.g., "GpsReceiver") |
+| `display_name` | string | Yes | Human-readable name (e.g., "GPS Receiver") |
+| `label` | string | Yes | Short canvas label (max 5 chars, e.g., "GPS") |
+| `description` | string | No | Brief description of the component |
+| `image_dir` | string | No | Directory name under `assets/subsystems/` |
+| `icon_color` | string | No | Hex color for fallback rendering (default: blue) |
+| `subsystems` | array | No | List of sub-component names for health tracking |
+| `protocol` | string | No | "TCP", "UDP", "WebSocket", or "MQTT" (default: "TCP") |
+| `port` | int | No | Port number (default: 12345) |
+| `category` | string | No | Grouping category (default: "General") |
+| `shape` | string | No | Fallback shape: "rect", "ellipse", "hexagon", "diamond" |
 
-1. **Single Installation**: Deploy one application instead of two
-2. **Consistent User Experience**: Unified interface and design language
-3. **Easier Maintenance**: Single codebase to maintain and update
-4. **Role-Based Access**: Appropriate capabilities for each user type
-5. **Shared Components**: Code reuse between Designer and Runtime modes
-6. **Simplified Deployment**: One executable to distribute
+## Multi-Protocol Support
 
-## Comparison with Original Applications
+The MessageServer supports receiving health data via multiple protocols:
 
-| Feature | DesignerApp | RuntimeApp | UnifiedApp |
-|---------|-------------|------------|------------|
-| Design Layouts | ✓ | ✗ | ✓ (Designer role) |
-| Save Designs | ✓ | ✗ | ✓ (Designer role) |
-| Load Designs | ✓ | ✓ | ✓ (Both roles) |
-| Real-time Monitoring | ✗ | ✓ | ✓ (User role) |
-| TCP Message Server | ✗ | ✓ | ✓ (User role) |
-| Role-Based Access | ✗ | ✗ | ✓ |
-| Single Application | ✗ | ✗ | ✓ |
+| Protocol | Port | Format | Status |
+|----------|------|--------|--------|
+| TCP | 12345 | Line-delimited JSON | Fully implemented |
+| UDP | 12346 | JSON datagrams | Fully implemented |
+| WebSocket | - | JSON | Extensible (registry option) |
+| MQTT | - | JSON topics | Extensible (registry option) |
 
-## Troubleshooting
+## Design File Format
 
-### Login Issues
-- Ensure credentials are entered exactly as shown (case-sensitive)
-- Check for extra spaces in username/password fields
+Design files (`.design`) store component placements:
 
-### Build Errors
-- Verify Qt5 development packages are installed
-- Check that qmake is in your PATH
-- Ensure C++11 support in your compiler
+```json
+{
+  "components": [
+    {
+      "id": "component_1",
+      "type": "Antenna",
+      "x": 300,
+      "y": 100,
+      "color": "#4CAF50",
+      "size": 50
+    }
+  ]
+}
+```
 
-### Runtime Connection Issues
-- Verify port 12345 is not blocked by firewall
-- Check that no other application is using port 12345
-- Ensure external systems are configured to connect to the correct IP address
+**Backward compatible**: Files using old type names (e.g., "PowerSystem") are automatically resolved via the registry.
 
-## License
+## UI Design
 
-Part of the Radar System Monitoring Suite.
+Modern glass-morphism inspired dark theme with:
+- Teal/cyan (#00BCD4) accent colors
+- Rounded corners (8-12px)
+- Semi-transparent panel backgrounds
+- Gradient buttons
+- Rich HTML analytics with health bars
+- Responsive card-based layout
