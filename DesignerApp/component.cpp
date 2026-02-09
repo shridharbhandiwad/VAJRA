@@ -20,31 +20,46 @@ Component::Component(ComponentType type, const QString& id, QGraphicsItem* paren
     loadSubsystemImage();
 }
 
+// ======================================================================
+// Geometry
+// ======================================================================
+
 QRectF Component::boundingRect() const
 {
     qreal halfSize = m_size / 2.0;
     
-    // Calculate bounds that encompass all drawing operations for all component types
-    // Different component types draw shapes that extend beyond the basic square
+    // Base bounds (same as original – covers all geometric shapes + text)
+    qreal top    = -halfSize * 1.3;
+    qreal bottom =  halfSize * 2.5;
+    qreal left   = -halfSize * 1.2;
+    qreal right  =  halfSize * 1.2;
     
-    // Maximum extents across all component types:
-    // - Antenna: ellipse + lines + text
-    // - PowerSystem: large rect (1.4x height) + top rect + text
-    // - LiquidCoolingUnit: ellipse + top rects at -1.2x + text
-    // - CommunicationSystem: rect (1.2x width/height) + arcs + text
-    // - RadarComputer: large rect (1.6x height) + text
+    // Expand to include the container area when subcomponents are present
+    if (!m_subComponents.isEmpty()) {
+        QRectF container = containerRect();
+        left   = qMin(left,   container.left()   - 2);
+        right  = qMax(right,  container.right()  + 2);
+        bottom = qMax(bottom, container.bottom() + 2);
+    }
     
-    // Text labels add ~14 pixels below (halfSize + 2 + 12)
-    qreal top = -halfSize * 1.3;      // Covers top rects/decorations
-    qreal bottom = halfSize * 2.5;     // Covers large rects + text
-    qreal left = -halfSize * 1.2;      // Covers extended shapes
-    qreal right = halfSize * 1.2;      // Covers extended shapes
-    
-    qreal width = right - left;
-    qreal height = bottom - top;
-    
-    return QRectF(left, top, width, height);
+    return QRectF(left, top, right - left, bottom - top);
 }
+
+QRectF Component::containerRect() const
+{
+    // The container is a fixed-size area below the main visual
+    // where subcomponents are placed.
+    qreal containerWidth  = 200.0;
+    qreal containerHeight = 180.0;
+    qreal containerTop    = m_size * 1.3 + 8;  // gap below main visual
+    
+    return QRectF(-containerWidth / 2.0, containerTop,
+                   containerWidth, containerHeight);
+}
+
+// ======================================================================
+// Painting
+// ======================================================================
 
 void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {
@@ -54,39 +69,61 @@ void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setRenderHint(QPainter::SmoothPixmapTransform);
     
-    // If we have an image, draw it; otherwise fallback to geometric representation
+    // --- Container area (drawn behind the main visual) ---
+    if (!m_subComponents.isEmpty()) {
+        QRectF container = containerRect();
+        
+        // Background
+        painter->setPen(QPen(QColor(58, 63, 75), 1, Qt::DashLine));
+        painter->setBrush(QColor(30, 32, 38, 210));
+        painter->drawRoundedRect(container, 6, 6);
+        
+        // Header text
+        painter->setPen(QColor(160, 165, 175));
+        painter->setFont(QFont("Segoe UI", 7, QFont::Bold));
+        painter->drawText(QRectF(container.left() + 8, container.top() + 2,
+                                 container.width() - 16, 18),
+                          Qt::AlignLeft | Qt::AlignVCenter, "SUB-COMPONENTS");
+        
+        // Thin connecting line from visual to container
+        painter->setPen(QPen(QColor(58, 63, 75), 1, Qt::DotLine));
+        qreal halfSize = m_size / 2.0;
+        painter->drawLine(QPointF(0, halfSize * 2.5),
+                          QPointF(0, container.top()));
+    }
+    
+    // --- Main component visual ---
     if (m_hasImage && !m_image.isNull()) {
-        // Calculate image drawing area - make it slightly larger for better visibility
-        qreal imageSize = m_size * 1.8;
+        qreal imageSize     = m_size * 1.8;
         qreal imageHalfSize = imageSize / 2.0;
         
-        // Draw a subtle background/border
         painter->setPen(QPen(Qt::black, 1));
         painter->setBrush(QColor(240, 240, 240));
-        painter->drawRoundedRect(-imageHalfSize, -imageHalfSize, imageSize, imageSize, 5, 5);
+        painter->drawRoundedRect(-imageHalfSize, -imageHalfSize,
+                                  imageSize, imageSize, 5, 5);
         
-        // Draw the subsystem image
-        QRectF imageRect(-imageHalfSize + 2, -imageHalfSize + 2, imageSize - 4, imageSize - 4);
+        QRectF imageRect(-imageHalfSize + 2, -imageHalfSize + 2,
+                          imageSize - 4, imageSize - 4);
         painter->drawPixmap(imageRect.toRect(), m_image);
         
-        // Draw label below the image
         painter->setFont(QFont("Arial", 8, QFont::Bold));
         painter->setPen(Qt::black);
         QString label;
         switch (m_type) {
-            case ComponentType::Antenna: label = "ANT"; break;
-            case ComponentType::PowerSystem: label = "PWR"; break;
-            case ComponentType::LiquidCoolingUnit: label = "COOL"; break;
-            case ComponentType::CommunicationSystem: label = "COMM"; break;
-            case ComponentType::RadarComputer: label = "CPU"; break;
+            case ComponentType::Antenna:             label = "ANT";  break;
+            case ComponentType::PowerSystem:          label = "PWR";  break;
+            case ComponentType::LiquidCoolingUnit:    label = "COOL"; break;
+            case ComponentType::CommunicationSystem:  label = "COMM"; break;
+            case ComponentType::RadarComputer:        label = "CPU";  break;
         }
-        painter->drawText(QRectF(-imageHalfSize, imageHalfSize + 2, imageSize, 14), Qt::AlignCenter, label);
+        painter->drawText(QRectF(-imageHalfSize, imageHalfSize + 2,
+                                  imageSize, 14),
+                          Qt::AlignCenter, label);
     } else {
-        // Fallback to geometric representation
         paintGeometric(painter);
     }
     
-    // Draw selection border if selected
+    // --- Selection border ---
     if (isSelected()) {
         painter->setPen(QPen(Qt::red, 2, Qt::DashLine));
         painter->setBrush(Qt::NoBrush);
@@ -103,77 +140,147 @@ void Component::paintGeometric(QPainter* painter)
     
     switch (m_type) {
         case ComponentType::Antenna: {
-            // Draw antenna with dish and support structure
             painter->drawEllipse(-halfSize, -halfSize * 0.6, m_size, m_size * 0.6);
             painter->drawLine(0, halfSize * 0.3, 0, halfSize);
             painter->drawLine(-halfSize * 0.4, halfSize, halfSize * 0.4, halfSize);
-            // Draw label
             painter->setFont(QFont("Arial", 8));
-            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12), Qt::AlignCenter, "ANT");
+            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12),
+                              Qt::AlignCenter, "ANT");
             break;
         }
-            
         case ComponentType::PowerSystem: {
-            // Draw power system as battery/power unit
             painter->drawRect(-halfSize, -halfSize * 0.7, m_size, m_size * 1.4);
             painter->drawRect(-halfSize * 0.3, -halfSize * 0.9, m_size * 0.6, m_size * 0.2);
-            // Draw power symbol
             QPen yellowPen(Qt::yellow, 3);
             painter->setPen(yellowPen);
             painter->drawLine(-halfSize * 0.3, -halfSize * 0.3, 0, 0);
             painter->drawLine(0, 0, halfSize * 0.3, halfSize * 0.3);
             painter->setPen(QPen(Qt::black, 2));
             painter->setFont(QFont("Arial", 8));
-            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12), Qt::AlignCenter, "PWR");
+            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12),
+                              Qt::AlignCenter, "PWR");
             break;
         }
-            
         case ComponentType::LiquidCoolingUnit: {
-            // Draw cooling unit with pipes
             painter->drawEllipse(-halfSize, -halfSize, m_size, m_size);
             painter->drawRect(-halfSize * 0.6, -halfSize * 1.2, m_size * 0.25, m_size * 0.25);
             painter->drawRect(halfSize * 0.35, -halfSize * 1.2, m_size * 0.25, m_size * 0.25);
             painter->drawLine(-halfSize * 0.5, -halfSize * 0.95, -halfSize * 0.5, -halfSize * 0.7);
             painter->drawLine(halfSize * 0.5, -halfSize * 0.95, halfSize * 0.5, -halfSize * 0.7);
-            // Draw snowflake symbol
             QPen bluePen(Qt::cyan, 2);
             painter->setPen(bluePen);
             painter->drawLine(-halfSize * 0.3, 0, halfSize * 0.3, 0);
             painter->drawLine(0, -halfSize * 0.3, 0, halfSize * 0.3);
             painter->setPen(QPen(Qt::black, 2));
             painter->setFont(QFont("Arial", 8));
-            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12), Qt::AlignCenter, "COOL");
+            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12),
+                              Qt::AlignCenter, "COOL");
             break;
         }
-            
         case ComponentType::CommunicationSystem: {
-            // Draw communication system with signal waves
             painter->drawRect(-halfSize * 0.6, -halfSize * 0.6, m_size * 1.2, m_size * 1.2);
-            // Draw signal waves
             for (int i = 1; i <= 3; i++) {
                 qreal radius = halfSize * 0.3 * i;
                 painter->drawArc(-radius, -radius, radius * 2, radius * 2, 45 * 16, 90 * 16);
             }
             painter->setFont(QFont("Arial", 8));
-            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12), Qt::AlignCenter, "COMM");
+            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12),
+                              Qt::AlignCenter, "COMM");
             break;
         }
-            
         case ComponentType::RadarComputer: {
-            // Draw computer/processor unit
             painter->drawRect(-halfSize, -halfSize * 0.8, m_size, m_size * 1.6);
-            // Draw circuit pattern
             painter->drawLine(-halfSize * 0.5, -halfSize * 0.4, halfSize * 0.5, -halfSize * 0.4);
             painter->drawLine(-halfSize * 0.5, 0, halfSize * 0.5, 0);
             painter->drawLine(-halfSize * 0.5, halfSize * 0.4, halfSize * 0.5, halfSize * 0.4);
             painter->drawEllipse(-halfSize * 0.3, -halfSize * 0.2, m_size * 0.2, m_size * 0.2);
             painter->drawEllipse(halfSize * 0.1, -halfSize * 0.2, m_size * 0.2, m_size * 0.2);
             painter->setFont(QFont("Arial", 8));
-            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12), Qt::AlignCenter, "CPU");
+            painter->drawText(QRectF(-halfSize, halfSize + 2, m_size, 12),
+                              Qt::AlignCenter, "CPU");
             break;
         }
     }
 }
+
+// ======================================================================
+// Sub-component management
+// ======================================================================
+
+bool Component::canAcceptSubComponent(SubComponentType subType) const
+{
+    QList<SubComponentType> allowed = allowedSubComponentTypes(m_type);
+    return allowed.contains(subType);
+}
+
+void Component::addSubComponent(SubComponent* sub)
+{
+    if (!sub) return;
+    prepareGeometryChange();
+    sub->setParentItem(this);
+    m_subComponents.append(sub);
+    update();
+}
+
+void Component::removeSubComponent(SubComponent* sub)
+{
+    if (!sub) return;
+    prepareGeometryChange();
+    m_subComponents.removeOne(sub);
+    update();
+}
+
+QList<SubComponentType> Component::allowedSubComponentTypes(ComponentType compType)
+{
+    QList<SubComponentType> allowed;
+    
+    switch (compType) {
+    case ComponentType::Antenna:
+        // Antenna: Label and Button only – no text input
+        allowed << SubComponentType::Label << SubComponentType::Button;
+        break;
+    case ComponentType::PowerSystem:
+        // Power System: all types (configurable parameters)
+        allowed << SubComponentType::Label << SubComponentType::LineEdit << SubComponentType::Button;
+        break;
+    case ComponentType::LiquidCoolingUnit:
+        // Liquid Cooling: Label and Button only
+        allowed << SubComponentType::Label << SubComponentType::Button;
+        break;
+    case ComponentType::CommunicationSystem:
+        // Communication System: all types (needs text fields)
+        allowed << SubComponentType::Label << SubComponentType::LineEdit << SubComponentType::Button;
+        break;
+    case ComponentType::RadarComputer:
+        // Radar Computer: all types (configurable parameters)
+        allowed << SubComponentType::Label << SubComponentType::LineEdit << SubComponentType::Button;
+        break;
+    }
+    
+    return allowed;
+}
+
+QString Component::validationMessage(ComponentType compType, SubComponentType subType)
+{
+    if (allowedSubComponentTypes(compType).contains(subType)) {
+        return QString(); // Valid – no error
+    }
+    
+    QString compName = componentTypeName(compType);
+    QString subName  = SubComponent::typeToString(subType);
+    
+    QStringList allowedNames;
+    foreach (SubComponentType t, allowedSubComponentTypes(compType)) {
+        allowedNames << SubComponent::typeToString(t);
+    }
+    
+    return QString("%1 cannot be placed inside %2.\nAllowed sub-component types: %3")
+            .arg(subName, compName, allowedNames.join(", "));
+}
+
+// ======================================================================
+// Property setters
+// ======================================================================
 
 void Component::setColor(const QColor& color)
 {
@@ -188,15 +295,19 @@ void Component::setSize(qreal size)
     update();
 }
 
+// ======================================================================
+// Serialization
+// ======================================================================
+
 QString Component::toJson() const
 {
     QString typeStr;
     switch (m_type) {
-        case ComponentType::Antenna: typeStr = "Antenna"; break;
-        case ComponentType::PowerSystem: typeStr = "PowerSystem"; break;
-        case ComponentType::LiquidCoolingUnit: typeStr = "LiquidCoolingUnit"; break;
-        case ComponentType::CommunicationSystem: typeStr = "CommunicationSystem"; break;
-        case ComponentType::RadarComputer: typeStr = "RadarComputer"; break;
+        case ComponentType::Antenna:             typeStr = "Antenna"; break;
+        case ComponentType::PowerSystem:          typeStr = "PowerSystem"; break;
+        case ComponentType::LiquidCoolingUnit:    typeStr = "LiquidCoolingUnit"; break;
+        case ComponentType::CommunicationSystem:  typeStr = "CommunicationSystem"; break;
+        case ComponentType::RadarComputer:        typeStr = "RadarComputer"; break;
     }
     
     return QString("{\"id\":\"%1\",\"type\":\"%2\",\"x\":%3,\"y\":%4,\"color\":\"%5\",\"size\":%6}")
@@ -221,9 +332,25 @@ Component* Component::fromJson(const QString& id, ComponentType type, qreal x, q
 QVariant Component::itemChange(GraphicsItemChange change, const QVariant& value)
 {
     if (change == ItemPositionChange && scene()) {
-        // Component position changed
+        // Component position changed – children follow automatically
     }
     return QGraphicsItem::itemChange(change, value);
+}
+
+// ======================================================================
+// Helpers
+// ======================================================================
+
+QString Component::componentTypeName(ComponentType type)
+{
+    switch (type) {
+        case ComponentType::Antenna:             return "Antenna";
+        case ComponentType::PowerSystem:          return "Power System";
+        case ComponentType::LiquidCoolingUnit:    return "Liquid Cooling Unit";
+        case ComponentType::CommunicationSystem:  return "Communication System";
+        case ComponentType::RadarComputer:        return "Radar Computer";
+        default: return "Unknown";
+    }
 }
 
 void Component::loadSubsystemImage()
@@ -231,26 +358,22 @@ void Component::loadSubsystemImage()
     QString dirName = getSubsystemDirName(m_type);
     QString imagePath = QString("assets/subsystems/%1/%2_main.jpg").arg(dirName).arg(dirName);
     
-    // Check if file exists
     QFileInfo checkFile(imagePath);
     if (checkFile.exists() && checkFile.isFile()) {
         m_image.load(imagePath);
         if (!m_image.isNull()) {
             m_hasImage = true;
-            // Scale image to a reasonable size for better performance
             if (m_image.width() > 512 || m_image.height() > 512) {
                 m_image = m_image.scaled(512, 512, Qt::KeepAspectRatio, Qt::SmoothTransformation);
             }
         }
     } else {
-        // Try PNG extension as fallback
         imagePath = QString("assets/subsystems/%1/%2_main.png").arg(dirName).arg(dirName);
         QFileInfo checkFilePng(imagePath);
         if (checkFilePng.exists() && checkFilePng.isFile()) {
             m_image.load(imagePath);
             if (!m_image.isNull()) {
                 m_hasImage = true;
-                // Scale image to a reasonable size for better performance
                 if (m_image.width() > 512 || m_image.height() > 512) {
                     m_image = m_image.scaled(512, 512, Qt::KeepAspectRatio, Qt::SmoothTransformation);
                 }
@@ -262,17 +385,11 @@ void Component::loadSubsystemImage()
 QString Component::getSubsystemDirName(ComponentType type)
 {
     switch (type) {
-        case ComponentType::Antenna:
-            return "antenna";
-        case ComponentType::PowerSystem:
-            return "power_system";
-        case ComponentType::LiquidCoolingUnit:
-            return "liquid_cooling_unit";
-        case ComponentType::CommunicationSystem:
-            return "communication_system";
-        case ComponentType::RadarComputer:
-            return "radar_computer";
-        default:
-            return "antenna";
+        case ComponentType::Antenna:             return "antenna";
+        case ComponentType::PowerSystem:          return "power_system";
+        case ComponentType::LiquidCoolingUnit:    return "liquid_cooling_unit";
+        case ComponentType::CommunicationSystem:  return "communication_system";
+        case ComponentType::RadarComputer:        return "radar_computer";
+        default: return "antenna";
     }
 }

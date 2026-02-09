@@ -88,9 +88,12 @@ void MainWindow::setupUI()
     m_canvas = new Canvas(centerPanel);
     m_canvas->setObjectName("mainCanvas");
     
-    QLabel* hintLabel = new QLabel("Drag and drop radar components onto the canvas to create your system layout", centerPanel);
+    QLabel* hintLabel = new QLabel(
+        "Drag radar subsystems onto the canvas, then drop Label / LineEdit / Button sub-components inside them",
+        centerPanel);
     hintLabel->setProperty("hint", true);
     hintLabel->setAlignment(Qt::AlignCenter);
+    hintLabel->setWordWrap(true);
     
     centerLayout->addWidget(canvasLabel);
     centerLayout->addWidget(hintLabel);
@@ -125,7 +128,12 @@ void MainWindow::setupUI()
     setCentralWidget(centralWidget);
     
     // Connect signals
-    connect(m_canvas, &Canvas::componentAdded, this, &MainWindow::onComponentAdded);
+    connect(m_canvas, &Canvas::componentAdded,
+            this, &MainWindow::onComponentAdded);
+    connect(m_canvas, &Canvas::subComponentAdded,
+            this, &MainWindow::onSubComponentAdded);
+    connect(m_canvas, &Canvas::dropRejected,
+            this, &MainWindow::onDropRejected);
 }
 
 void MainWindow::saveDesign()
@@ -172,9 +180,13 @@ void MainWindow::loadDesign()
     m_analytics->clear();
     m_canvas->loadFromJson(json);
     
-    // Update analytics with loaded components
+    // Update analytics with loaded components and sub-components
     foreach (Component* comp, m_canvas->getComponents()) {
         onComponentAdded(comp->getId(), comp->getType());
+        foreach (SubComponent* sub, comp->getSubComponents()) {
+            m_analytics->addSubComponent(comp->getId(),
+                                         SubComponent::typeToString(sub->getType()));
+        }
     }
     
     QMessageBox::information(this, "Success", "Design loaded successfully!");
@@ -189,6 +201,16 @@ void MainWindow::clearCanvas()
 void MainWindow::onComponentAdded(const QString& id, ComponentType type)
 {
     m_analytics->addComponent(id, getComponentTypeName(type));
+}
+
+void MainWindow::onSubComponentAdded(const QString& parentId, SubComponentType subType)
+{
+    m_analytics->addSubComponent(parentId, SubComponent::typeToString(subType));
+}
+
+void MainWindow::onDropRejected(const QString& reason)
+{
+    QMessageBox::warning(this, "Invalid Drop", reason);
 }
 
 QString MainWindow::getComponentTypeName(ComponentType type)

@@ -5,6 +5,7 @@
 Analytics::Analytics(QWidget* parent)
     : QWidget(parent)
     , m_textEdit(new QTextEdit(this))
+    , m_totalSubComponents(0)
 {
     QVBoxLayout* layout = new QVBoxLayout(this);
     
@@ -59,10 +60,20 @@ void Analytics::recordMessage(const QString& id, const QString& color, qreal siz
     updateDisplay();
 }
 
+void Analytics::addSubComponent(const QString& parentId, const QString& subType)
+{
+    Q_UNUSED(parentId);
+    m_totalSubComponents++;
+    m_subTypeCounts[subType]++;
+    updateDisplay();
+}
+
 void Analytics::clear()
 {
     m_stats.clear();
     m_componentTypes.clear();
+    m_totalSubComponents = 0;
+    m_subTypeCounts.clear();
     updateDisplay();
 }
 
@@ -70,19 +81,27 @@ void Analytics::updateDisplay()
 {
     QString text = "Radar Subsystem Count:\n\n";
     
-    if (m_stats.isEmpty()) {
+    if (m_stats.isEmpty() && m_totalSubComponents == 0) {
         text += "No subsystems on canvas";
     } else {
+        // Component type counts
         QMap<QString, int> typeCounts;
         for (auto it = m_componentTypes.begin(); it != m_componentTypes.end(); ++it) {
-            QString type = it.value();
-            typeCounts[type]++;
+            typeCounts[it.value()]++;
         }
         
-        text += QString("Total Subsystems: %1\n\n").arg(m_stats.size());
+        text += QString("Total Subsystems: %1\n").arg(m_stats.size());
         
         for (auto it = typeCounts.begin(); it != typeCounts.end(); ++it) {
-            text += QString("%1: %2\n").arg(it.key()).arg(it.value());
+            text += QString("  %1: %2\n").arg(it.key()).arg(it.value());
+        }
+        
+        // Sub-component counts
+        if (m_totalSubComponents > 0) {
+            text += QString("\nSub-Components: %1\n").arg(m_totalSubComponents);
+            for (auto it = m_subTypeCounts.begin(); it != m_subTypeCounts.end(); ++it) {
+                text += QString("  %1: %2\n").arg(it.key()).arg(it.value());
+            }
         }
     }
     
