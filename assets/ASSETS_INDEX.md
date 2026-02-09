@@ -54,9 +54,7 @@ Potential additions to the assets directory:
 ## Usage in Applications
 
 Assets in this directory are referenced by:
-- **DesignerApp** - Component list, canvas visualization, help documentation
-- **RuntimeApp** - Real-time monitoring displays, detailed views
-- **UnifiedApp** - Combined usage from both Designer and Runtime modes
+- **UnifiedApp** - Component list, canvas visualization, real-time monitoring displays, detailed views
 
 ### Asset Loading Example
 

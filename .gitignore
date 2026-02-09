@@ -10,8 +10,6 @@ Makefile
 .qmake.stash
 
 # Executables
-DesignerApp/DesignerApp
-RuntimeApp/RuntimeApp
 UnifiedApp/UnifiedApp
 *.exe
 
@@ -34,7 +32,4 @@ __pycache__/
 # OS files
 .DS_Store
 Thumbs.db
-RuntimeApp/build/
-DesignerApp/build/
 UnifiedApp/build/
-RuntimeApp/build/
