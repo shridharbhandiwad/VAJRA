@@ -1,57 +1,104 @@
 #include "componentlist.h"
-#include "component.h"
+#include "componentregistry.h"
 #include <QDrag>
 #include <QMimeData>
 #include <QApplication>
 #include <QIcon>
 #include <QPixmap>
 #include <QFileInfo>
+#include <QPainter>
+#include <QDebug>
 
 ComponentList::ComponentList(QWidget* parent)
     : QListWidget(parent)
 {
-    // Set larger icon size for better visibility
     setIconSize(QSize(48, 48));
-    
-    // Add components with icons
-    addComponentItem("Antenna", ComponentType::Antenna);
-    addComponentItem("Power System", ComponentType::PowerSystem);
-    addComponentItem("Liquid Cooling Unit", ComponentType::LiquidCoolingUnit);
-    addComponentItem("Communication System", ComponentType::CommunicationSystem);
-    addComponentItem("Radar Computer", ComponentType::RadarComputer);
-    
     setDragEnabled(true);
-    setMaximumWidth(180);
+    setMaximumWidth(220);
+    setSpacing(2);
+    
+    // Populate from registry
+    refreshFromRegistry();
+    
+    // Auto-refresh when registry changes
+    connect(&ComponentRegistry::instance(), &ComponentRegistry::registryChanged,
+            this, &ComponentList::refreshFromRegistry);
 }
 
-void ComponentList::addComponentItem(const QString& name, ComponentType type)
+void ComponentList::refreshFromRegistry()
 {
-    QListWidgetItem* item = new QListWidgetItem(name);
+    clear();
     
-    // Load icon for the component
-    QString dirName = Component::getSubsystemDirName(type);
-    QString iconPath = QString("assets/subsystems/%1/%2_main.jpg").arg(dirName).arg(dirName);
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    QList<ComponentDefinition> components = registry.getAllComponents();
     
-    QFileInfo checkFile(iconPath);
-    if (checkFile.exists() && checkFile.isFile()) {
-        QPixmap pixmap(iconPath);
-        if (!pixmap.isNull()) {
-            // Scale to icon size
-            QPixmap scaledPixmap = pixmap.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-            item->setIcon(QIcon(scaledPixmap));
-        }
-    } else {
-        // Try PNG extension as fallback
-        iconPath = QString("assets/subsystems/%1/%2_main.png").arg(dirName).arg(dirName);
-        QFileInfo checkFilePng(iconPath);
-        if (checkFilePng.exists() && checkFilePng.isFile()) {
+    for (const ComponentDefinition& def : components) {
+        addComponentItem(def.displayName, def.typeId, def.imageDir, def.iconColor);
+    }
+    
+    qDebug() << "[ComponentList] Refreshed with" << components.size() << "component types";
+}
+
+void ComponentList::addComponentItem(const QString& displayName, const QString& typeId, 
+                                      const QString& imageDir, const QColor& iconColor)
+{
+    QListWidgetItem* item = new QListWidgetItem(displayName);
+    item->setData(Qt::UserRole, typeId);  // Store typeId for drag-drop
+    item->setToolTip(typeId);
+    
+    bool iconSet = false;
+    
+    // Try to load icon from image directory
+    if (!imageDir.isEmpty()) {
+        // Try JPG first
+        QString iconPath = QString("assets/subsystems/%1/%1_main.jpg").arg(imageDir);
+        QFileInfo checkFile(iconPath);
+        if (checkFile.exists() && checkFile.isFile()) {
             QPixmap pixmap(iconPath);
             if (!pixmap.isNull()) {
-                // Scale to icon size
                 QPixmap scaledPixmap = pixmap.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation);
                 item->setIcon(QIcon(scaledPixmap));
+                iconSet = true;
             }
         }
+        
+        if (!iconSet) {
+            // Try PNG
+            iconPath = QString("assets/subsystems/%1/%1_main.png").arg(imageDir);
+            QFileInfo checkFilePng(iconPath);
+            if (checkFilePng.exists() && checkFilePng.isFile()) {
+                QPixmap pixmap(iconPath);
+                if (!pixmap.isNull()) {
+                    QPixmap scaledPixmap = pixmap.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                    item->setIcon(QIcon(scaledPixmap));
+                    iconSet = true;
+                }
+            }
+        }
+    }
+    
+    // Generate a colored icon if no image is available
+    if (!iconSet) {
+        QPixmap colorIcon(48, 48);
+        colorIcon.fill(Qt::transparent);
+        
+        QPainter painter(&colorIcon);
+        painter.setRenderHint(QPainter::Antialiasing);
+        
+        // Draw a colored circle with the label
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(iconColor);
+        painter.drawRoundedRect(4, 4, 40, 40, 8, 8);
+        
+        // Draw label text
+        painter.setPen(Qt::white);
+        painter.setFont(QFont("Segoe UI", 10, QFont::Bold));
+        ComponentRegistry& registry = ComponentRegistry::instance();
+        QString label = registry.hasComponent(typeId) ? registry.getComponent(typeId).label : typeId.left(3);
+        painter.drawText(QRect(4, 4, 40, 40), Qt::AlignCenter, label);
+        painter.end();
+        
+        item->setIcon(QIcon(colorIcon));
     }
     
     addItem(item);
@@ -82,7 +129,11 @@ void ComponentList::mouseMoveEvent(QMouseEvent* event)
     
     QDrag* drag = new QDrag(this);
     QMimeData* mimeData = new QMimeData;
+    
+    // Send display name as text (for backward compat) and typeId in custom format
     mimeData->setText(item->text());
+    mimeData->setData("application/x-component-typeid", 
+                       item->data(Qt::UserRole).toString().toUtf8());
     drag->setMimeData(mimeData);
     
     drag->exec(Qt::CopyAction);

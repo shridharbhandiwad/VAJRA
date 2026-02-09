@@ -1,4 +1,5 @@
 #include "canvas.h"
+#include "componentregistry.h"
 #include <QDragEnterEvent>
 #include <QMimeData>
 #include <QJsonDocument>
@@ -18,8 +19,8 @@ Canvas::Canvas(QWidget* parent)
     // Set scene size
     m_scene->setSceneRect(0, 0, 600, 500);
     
-    // Set background
-    setBackgroundBrush(QBrush(QColor(240, 240, 240)));
+    // Modern dark background
+    setBackgroundBrush(QBrush(QColor(24, 26, 31)));
 }
 
 Canvas::~Canvas()
@@ -30,15 +31,20 @@ Component* Canvas::getComponentById(const QString& id)
 {
     Component* comp = m_componentMap.value(id, nullptr);
     qDebug() << "[Canvas] getComponentById(" << id << ") =" << (comp ? "FOUND" : "NOT FOUND");
-    qDebug() << "[Canvas] Current map size:" << m_componentMap.size();
-    qDebug() << "[Canvas] Map keys:" << m_componentMap.keys();
     return comp;
 }
 
-void Canvas::addComponent(ComponentType type)
+void Canvas::addComponent(const QString& typeId)
 {
+    // Verify type exists in registry
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    if (!registry.hasComponent(typeId)) {
+        qWarning() << "[Canvas] Unknown component type:" << typeId;
+        return;
+    }
+    
     QString id = QString("component_%1").arg(++m_componentCounter);
-    Component* comp = new Component(type, id);
+    Component* comp = new Component(typeId, id);
     
     // Place at center of view
     QPointF centerPos = mapToScene(viewport()->rect().center());
@@ -46,7 +52,7 @@ void Canvas::addComponent(ComponentType type)
     
     m_scene->addItem(comp);
     m_componentMap[id] = comp;
-    emit componentAdded(id, type);
+    emit componentAdded(id, typeId);
 }
 
 QList<Component*> Canvas::getComponents() const
@@ -69,46 +75,51 @@ void Canvas::clearCanvas()
 
 void Canvas::dragEnterEvent(QDragEnterEvent* event)
 {
-    if (event->mimeData()->hasText()) {
+    if (event->mimeData()->hasText() || 
+        event->mimeData()->hasFormat("application/x-component-typeid")) {
         event->acceptProposedAction();
     }
 }
 
 void Canvas::dragMoveEvent(QDragMoveEvent* event)
 {
-    if (event->mimeData()->hasText()) {
+    if (event->mimeData()->hasText() || 
+        event->mimeData()->hasFormat("application/x-component-typeid")) {
         event->acceptProposedAction();
     }
 }
 
 void Canvas::dropEvent(QDropEvent* event)
 {
-    QString typeStr = event->mimeData()->text();
-    ComponentType type;
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    QString typeId;
     
-    if (typeStr == "Antenna") {
-        type = ComponentType::Antenna;
-    } else if (typeStr == "Power System") {
-        type = ComponentType::PowerSystem;
-    } else if (typeStr == "Liquid Cooling Unit") {
-        type = ComponentType::LiquidCoolingUnit;
-    } else if (typeStr == "Communication System") {
-        type = ComponentType::CommunicationSystem;
-    } else if (typeStr == "Radar Computer") {
-        type = ComponentType::RadarComputer;
-    } else {
+    // Try custom mime type first (preferred)
+    if (event->mimeData()->hasFormat("application/x-component-typeid")) {
+        typeId = QString::fromUtf8(event->mimeData()->data("application/x-component-typeid"));
+    }
+    
+    // Fall back to text (display name) and resolve via registry
+    if (typeId.isEmpty() && event->mimeData()->hasText()) {
+        QString text = event->mimeData()->text();
+        typeId = registry.resolveTypeId(text);
+    }
+    
+    // Verify type is registered
+    if (typeId.isEmpty() || !registry.hasComponent(typeId)) {
+        qWarning() << "[Canvas] Drop rejected - unknown type from mime data";
         return;
     }
     
     QString id = QString("component_%1").arg(++m_componentCounter);
-    Component* comp = new Component(type, id);
+    Component* comp = new Component(typeId, id);
     
     QPointF scenePos = mapToScene(event->pos());
     comp->setPos(scenePos);
     
     m_scene->addItem(comp);
     m_componentMap[id] = comp;
-    emit componentAdded(id, type);
+    emit componentAdded(id, typeId);
     
     event->acceptProposedAction();
 }
@@ -120,16 +131,7 @@ QString Canvas::saveToJson() const
     foreach (Component* comp, getComponents()) {
         QJsonObject compObj;
         compObj["id"] = comp->getId();
-        
-        QString typeStr;
-        switch (comp->getType()) {
-            case ComponentType::Antenna: typeStr = "Antenna"; break;
-            case ComponentType::PowerSystem: typeStr = "PowerSystem"; break;
-            case ComponentType::LiquidCoolingUnit: typeStr = "LiquidCoolingUnit"; break;
-            case ComponentType::CommunicationSystem: typeStr = "CommunicationSystem"; break;
-            case ComponentType::RadarComputer: typeStr = "RadarComputer"; break;
-        }
-        compObj["type"] = typeStr;
+        compObj["type"] = comp->getTypeId();
         compObj["x"] = comp->pos().x();
         compObj["y"] = comp->pos().y();
         compObj["color"] = comp->getColor().name();
@@ -160,6 +162,8 @@ void Canvas::loadFromJson(const QString& json)
     QJsonArray componentsArray = root["components"].toArray();
     qDebug() << "[Canvas] Found" << componentsArray.size() << "components to load";
     
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    
     foreach (const QJsonValue& value, componentsArray) {
         QJsonObject compObj = value.toObject();
         
@@ -170,25 +174,27 @@ void Canvas::loadFromJson(const QString& json)
         QString colorStr = compObj["color"].toString();
         qreal size = compObj["size"].toDouble();
         
-        ComponentType type;
-        if (typeStr == "Antenna") type = ComponentType::Antenna;
-        else if (typeStr == "PowerSystem") type = ComponentType::PowerSystem;
-        else if (typeStr == "LiquidCoolingUnit") type = ComponentType::LiquidCoolingUnit;
-        else if (typeStr == "CommunicationSystem") type = ComponentType::CommunicationSystem;
-        else if (typeStr == "RadarComputer") type = ComponentType::RadarComputer;
-        else {
-            qDebug() << "[Canvas] Unknown component type:" << typeStr;
-            continue;
+        // Resolve typeId - handles both new format and legacy format
+        QString typeId = typeStr;
+        if (!registry.hasComponent(typeId)) {
+            typeId = registry.resolveTypeId(typeStr);
         }
         
-        Component* comp = Component::fromJson(id, type, x, y, QColor(colorStr), size);
+        if (typeId.isEmpty() || !registry.hasComponent(typeId)) {
+            qWarning() << "[Canvas] Unknown component type in design file:" << typeStr 
+                       << "- creating with raw type ID";
+            // Still allow loading unregistered types for forward compatibility
+            typeId = typeStr;
+        }
+        
+        Component* comp = Component::fromJson(id, typeId, x, y, QColor(colorStr), size);
         m_scene->addItem(comp);
         m_componentMap[id] = comp;
         
-        qDebug() << "[Canvas] Loaded component" << id << "of type" << typeStr << "at (" << x << "," << y << ")";
-        qDebug() << "[Canvas] Component map now contains" << m_componentMap.size() << "components";
+        qDebug() << "[Canvas] Loaded component" << id << "of type" << typeId 
+                 << "at (" << x << "," << y << ")";
         
-        emit componentLoaded(id, typeStr);
+        emit componentLoaded(id, typeId);
         
         // Update counter
         if (id.startsWith("component_")) {

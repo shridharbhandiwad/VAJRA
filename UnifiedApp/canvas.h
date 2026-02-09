@@ -7,6 +7,13 @@
 #include <QMap>
 #include "component.h"
 
+/**
+ * Canvas - The main design/runtime canvas for placing and viewing components.
+ * 
+ * MODULAR DESIGN: The canvas no longer knows about specific component types.
+ * It uses the ComponentRegistry to resolve drag-drop type names to type IDs.
+ * Any component type registered in the registry can be placed on the canvas.
+ */
 class Canvas : public QGraphicsView
 {
     Q_OBJECT
@@ -15,7 +22,7 @@ public:
     explicit Canvas(QWidget* parent = nullptr);
     ~Canvas();
     
-    void addComponent(ComponentType type);
+    void addComponent(const QString& typeId);
     QList<Component*> getComponents() const;
     Component* getComponentById(const QString& id);
     void clearCanvas();
@@ -23,8 +30,8 @@ public:
     QString saveToJson() const;
     
 signals:
-    void componentAdded(const QString& id, ComponentType type);
-    void componentLoaded(const QString& id, const QString& type);
+    void componentAdded(const QString& id, const QString& typeId);
+    void componentLoaded(const QString& id, const QString& typeId);
     
 protected:
     void dragEnterEvent(QDragEnterEvent* event) override;
