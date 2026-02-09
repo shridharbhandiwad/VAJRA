@@ -1,8 +1,10 @@
 #include "mainwindow.h"
 #include "logindialog.h"
+#include "componentregistry.h"
 #include <QApplication>
 #include <QFont>
 #include <QFontDatabase>
+#include <QDebug>
 
 int main(int argc, char *argv[])
 {
@@ -10,7 +12,7 @@ int main(int argc, char *argv[])
     
     // Set application properties
     app.setApplicationName("Radar System Enterprise");
-    app.setApplicationVersion("2.0");
+    app.setApplicationVersion("3.0");
     app.setOrganizationName("Radar Systems Inc.");
     
     // Set modern application-wide font
@@ -21,23 +23,34 @@ int main(int argc, char *argv[])
     // Enable high DPI scaling
     app.setAttribute(Qt::AA_UseHighDpiPixmaps);
     
-    // Set modern style hints
+    // Set modern Fusion style
     app.setStyle("Fusion");
     
-    // Show login dialog with enterprise styling
+    // Initialize the component registry from JSON config
+    // This is the core of the modular architecture - components are defined
+    // in components.json, not in code. New components can be added without
+    // any code changes.
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    if (!registry.loadFromFile()) {
+        qWarning() << "[Main] Could not load components.json - starting with empty registry.";
+        qWarning() << "[Main] Use the 'Add Component Type' button to define components.";
+    } else {
+        qDebug() << "[Main] Component registry loaded:"
+                 << registry.componentCount() << "types,"
+                 << registry.getCategories().size() << "categories";
+    }
+    
+    // Show login dialog
     LoginDialog loginDialog;
     if (loginDialog.exec() == QDialog::Accepted) {
-        // User authenticated successfully
         UserRole userRole = loginDialog.getUserRole();
         QString username = loginDialog.getUsername();
         
-        // Create and show main window with appropriate role
         MainWindow window(userRole, username);
         window.show();
         
         return app.exec();
     }
     
-    // User cancelled login
     return 0;
 }
