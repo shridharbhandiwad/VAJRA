@@ -6,6 +6,7 @@
 #include <QString>
 #include <QPainter>
 #include <QPixmap>
+#include <QList>
 
 enum class ComponentType {
     Antenna,
@@ -13,6 +14,14 @@ enum class ComponentType {
     LiquidCoolingUnit,
     CommunicationSystem,
     RadarComputer
+};
+
+struct SubcomponentInfo {
+    QString name;
+    int health;
+    QColor color;
+    SubcomponentInfo() : health(0), color(Qt::gray) {}
+    SubcomponentInfo(const QString& n, int h, const QColor& c) : name(n), health(h), color(c) {}
 };
 
 class Component : public QGraphicsItem
@@ -30,6 +39,14 @@ public:
     
     void setColor(const QColor& color);
     void setSize(qreal size);
+    
+    // Subcomponent management
+    QList<SubcomponentInfo> getSubcomponents() const { return m_subcomponents; }
+    void setSubcomponents(const QList<SubcomponentInfo>& subs) { m_subcomponents = subs; }
+    
+    // Human-readable name for component type
+    static QString typeName(ComponentType type);
+    static QString typeShortName(ComponentType type);
     
     QString toJson() const;
     static Component* fromJson(const QString& id, ComponentType type, qreal x, qreal y, 
@@ -51,6 +68,7 @@ private:
     qreal m_size;
     QPixmap m_image;
     bool m_hasImage;
+    QList<SubcomponentInfo> m_subcomponents;
 };
 
 #endif // COMPONENT_H

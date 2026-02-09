@@ -78,6 +78,20 @@ void Canvas::loadFromJson(const QString& json)
         }
         
         Component* comp = Component::fromJson(id, type, x, y, QColor(colorStr), size);
+        
+        // Parse subcomponents if present
+        QJsonArray subArray = compObj["subcomponents"].toArray();
+        QList<SubcomponentInfo> subcomponents;
+        for (const QJsonValue& subVal : subArray) {
+            QJsonObject subObj = subVal.toObject();
+            QString subName = subObj["name"].toString();
+            int subHealth = subObj["health"].toInt();
+            QColor subColor(subObj["color"].toString());
+            subcomponents.append(SubcomponentInfo(subName, subHealth, subColor));
+        }
+        comp->setSubcomponents(subcomponents);
+        qDebug() << "[Canvas] Component" << id << "has" << subcomponents.size() << "subcomponents";
+        
         m_scene->addItem(comp);
         m_componentMap[id] = comp;
         
