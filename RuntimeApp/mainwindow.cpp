@@ -8,9 +8,13 @@
 #include <QToolBar>
 #include <QDebug>
 #include <QDir>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
+    , m_tabWidget(nullptr)
     , m_canvas(nullptr)
     , m_analytics(nullptr)
     , m_messageServer(nullptr)
@@ -41,7 +45,7 @@ MainWindow::MainWindow(QWidget* parent)
     m_voiceAlertManager = new VoiceAlertManager(this);
     
     setWindowTitle("Radar System Monitor - Real-time Health Monitoring");
-    resize(1000, 700);
+    resize(1100, 750);
     
     // Auto-load radar_system.design if it exists
     autoLoadDesign();
@@ -56,7 +60,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::setupUI()
 {
-    // Create toolbar
+    // ── Toolbar ────────────────────────────────────────────
     QToolBar* toolbar = addToolBar("Main Toolbar");
     toolbar->setObjectName("mainToolbar");
     toolbar->setMovable(false);
@@ -101,15 +105,28 @@ void MainWindow::setupUI()
     
     connect(loadBtn, &QPushButton::clicked, this, &MainWindow::loadDesign);
     
-    // Create main widget and layout
+    // ── Central widget with tab view ───────────────────────
     QWidget* centralWidget = new QWidget(this);
     centralWidget->setObjectName("centralWidget");
-    QHBoxLayout* mainLayout = new QHBoxLayout(centralWidget);
-    mainLayout->setSpacing(15);
-    mainLayout->setContentsMargins(15, 15, 15, 15);
+    QVBoxLayout* centralLayout = new QVBoxLayout(centralWidget);
+    centralLayout->setSpacing(0);
+    centralLayout->setContentsMargins(8, 8, 8, 8);
     
-    // Center panel - Canvas
-    QWidget* centerPanel = new QWidget(this);
+    // Tab widget
+    m_tabWidget = new QTabWidget(centralWidget);
+    m_tabWidget->setObjectName("componentTabWidget");
+    m_tabWidget->setDocumentMode(false);
+    m_tabWidget->setTabPosition(QTabWidget::North);
+    
+    // ── "System Overview" tab (existing canvas + analytics) ─
+    QWidget* overviewTab = new QWidget();
+    overviewTab->setObjectName("overviewTab");
+    QHBoxLayout* overviewLayout = new QHBoxLayout(overviewTab);
+    overviewLayout->setSpacing(15);
+    overviewLayout->setContentsMargins(10, 10, 10, 10);
+    
+    // Center panel – Canvas
+    QWidget* centerPanel = new QWidget(overviewTab);
     centerPanel->setObjectName("centerPanel");
     QVBoxLayout* centerLayout = new QVBoxLayout(centerPanel);
     centerLayout->setSpacing(10);
@@ -128,10 +145,9 @@ void MainWindow::setupUI()
     centerLayout->addWidget(canvasLabel);
     centerLayout->addWidget(hintLabel);
     centerLayout->addWidget(m_canvas);
-    centerPanel->setLayout(centerLayout);
     
-    // Right panel - Analytics
-    QWidget* rightPanel = new QWidget(this);
+    // Right panel – Analytics
+    QWidget* rightPanel = new QWidget(overviewTab);
     rightPanel->setObjectName("rightPanel");
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
     rightLayout->setSpacing(10);
@@ -145,19 +161,56 @@ void MainWindow::setupUI()
     
     rightLayout->addWidget(analyticsLabel);
     rightLayout->addWidget(m_analytics);
-    rightPanel->setLayout(rightLayout);
     rightPanel->setMaximumWidth(320);
     rightPanel->setMinimumWidth(280);
     
-    // Add panels to main layout
-    mainLayout->addWidget(centerPanel, 1);
-    mainLayout->addWidget(rightPanel);
+    overviewLayout->addWidget(centerPanel, 1);
+    overviewLayout->addWidget(rightPanel);
     
-    centralWidget->setLayout(mainLayout);
+    // Add overview as first tab
+    m_tabWidget->addTab(overviewTab, "  System Overview  ");
+    
+    centralLayout->addWidget(m_tabWidget);
     setCentralWidget(centralWidget);
     
     // Connect signals
     connect(m_canvas, &Canvas::componentLoaded, this, &MainWindow::onComponentLoaded);
+}
+
+void MainWindow::createComponentTabs()
+{
+    clearComponentTabs();
+    
+    QList<Component*> components = m_canvas->getComponents();
+    qDebug() << "[MainWindow] Creating enlarged tabs for" << components.size() << "components";
+    
+    for (Component* comp : components) {
+        QString id = comp->getId();
+        ComponentType type = comp->getType();
+        QList<SubcomponentInfo> subs = comp->getSubcomponents();
+        
+        EnlargedComponentView* view = new EnlargedComponentView(id, type, subs, m_tabWidget);
+        m_enlargedViews[id] = view;
+        
+        // Set initial colour from the component
+        view->updateComponentHealth(comp->getColor(), comp->getSize());
+        
+        QString tabName = "  " + Component::typeShortName(type) + "  ";
+        m_tabWidget->addTab(view, tabName);
+        
+        qDebug() << "[MainWindow] Added enlarged tab for" << id << "(" << tabName.trimmed() << ")";
+    }
+}
+
+void MainWindow::clearComponentTabs()
+{
+    // Remove all tabs except the first one (System Overview)
+    while (m_tabWidget->count() > 1) {
+        QWidget* w = m_tabWidget->widget(m_tabWidget->count() - 1);
+        m_tabWidget->removeTab(m_tabWidget->count() - 1);
+        delete w;
+    }
+    m_enlargedViews.clear();
 }
 
 void MainWindow::loadDesign()
@@ -180,6 +233,9 @@ void MainWindow::loadDesign()
     
     m_analytics->clear();
     m_canvas->loadFromJson(json);
+    
+    // Create component tabs after loading
+    createComponentTabs();
     
     QMessageBox::information(this, "Success", 
         QString("Radar system layout loaded successfully!\n\nWaiting for health updates from subsystems..."));
@@ -228,6 +284,9 @@ void MainWindow::autoLoadDesign()
     qDebug() << "[MainWindow] Loading JSON into canvas...";
     m_canvas->loadFromJson(json);
     
+    // Create component tabs after loading
+    createComponentTabs();
+    
     qDebug() << "[MainWindow] Auto-loaded radar_system.design successfully from:" << foundPath;
     m_statusLabel->setText(QString("STATUS: ACTIVE | PORT: 12345 | CLIENTS: %1 | DESIGN LOADED")
         .arg(m_connectedClients));
@@ -250,19 +309,16 @@ void MainWindow::onMessageReceived(const QString& componentId, const QString& co
     // Always update analytics, even if component visual doesn't exist
     m_analytics->recordMessage(componentId, color, size);
     
+    // Update enlarged view if it exists for this component
+    if (m_enlargedViews.contains(componentId)) {
+        m_enlargedViews[componentId]->updateComponentHealth(QColor(color), size);
+    }
+    
     // Trigger voice alert for critical/degraded health states
     if (m_voiceAlertManager) {
         QString componentName = componentId;
         if (comp) {
-            // Derive a human-readable name from the component type
-            switch (comp->getType()) {
-                case ComponentType::Antenna:             componentName = "Antenna"; break;
-                case ComponentType::PowerSystem:         componentName = "Power System"; break;
-                case ComponentType::LiquidCoolingUnit:   componentName = "Liquid Cooling Unit"; break;
-                case ComponentType::CommunicationSystem: componentName = "Communication System"; break;
-                case ComponentType::RadarComputer:       componentName = "Radar Computer"; break;
-                default:                                 componentName = comp->getId(); break;
-            }
+            componentName = Component::typeName(comp->getType());
         }
         m_voiceAlertManager->processHealthUpdate(componentId, componentName, color, size);
     }

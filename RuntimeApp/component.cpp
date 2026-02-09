@@ -258,6 +258,30 @@ void Component::loadSubsystemImage()
     }
 }
 
+QString Component::typeName(ComponentType type)
+{
+    switch (type) {
+        case ComponentType::Antenna:             return "Antenna";
+        case ComponentType::PowerSystem:         return "Power System";
+        case ComponentType::LiquidCoolingUnit:   return "Cooling";
+        case ComponentType::CommunicationSystem: return "Comms";
+        case ComponentType::RadarComputer:       return "Radar Computer";
+        default:                                 return "Unknown";
+    }
+}
+
+QString Component::typeShortName(ComponentType type)
+{
+    switch (type) {
+        case ComponentType::Antenna:             return "Antenna";
+        case ComponentType::PowerSystem:         return "Power";
+        case ComponentType::LiquidCoolingUnit:   return "Cooling";
+        case ComponentType::CommunicationSystem: return "Comms";
+        case ComponentType::RadarComputer:       return "Radar";
+        default:                                 return "Unknown";
+    }
+}
+
 QString Component::getSubsystemDirName(ComponentType type)
 {
     switch (type) {

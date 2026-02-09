@@ -14,7 +14,8 @@ SOURCES += \
     canvas.cpp \
     analytics.cpp \
     messageserver.cpp \
-    voicealertmanager.cpp
+    voicealertmanager.cpp \
+    enlargedcomponentview.cpp
 
 HEADERS += \
     mainwindow.h \
@@ -22,7 +23,8 @@ HEADERS += \
     canvas.h \
     analytics.h \
     messageserver.h \
-    voicealertmanager.h
+    voicealertmanager.h \
+    enlargedcomponentview.h
 
 RESOURCES += \
     resources.qrc
