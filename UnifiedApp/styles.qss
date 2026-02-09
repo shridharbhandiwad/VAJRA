@@ -558,3 +558,76 @@ QPushButton#linkButton {
 QPushButton#linkButton:hover {
     color: #4DD0E1;
 }
+
+/* ============================================
+   Tab Widget – Component Enlarged View Tabs
+   ============================================ */
+
+QTabWidget#componentTabWidget {
+    background: transparent;
+    border: none;
+}
+
+QTabWidget#componentTabWidget::pane {
+    background: rgba(18, 20, 26, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+}
+
+QTabWidget#componentTabWidget > QTabBar {
+    background: transparent;
+}
+
+QTabBar::tab {
+    background: rgba(36, 39, 46, 0.9);
+    color: #9aa0a6;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: none;
+    padding: 10px 22px;
+    margin-right: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
+    border-radius: 8px 8px 0 0;
+    min-width: 90px;
+    letter-spacing: 0.5px;
+}
+
+QTabBar::tab:hover {
+    background: rgba(45, 49, 59, 0.95);
+    color: #e8eaed;
+    border: 1px solid rgba(0, 188, 212, 0.2);
+    border-bottom: none;
+}
+
+QTabBar::tab:selected {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(0, 137, 123, 0.9), stop:1 rgba(0, 105, 92, 0.9));
+    color: #ffffff;
+    border: 1px solid rgba(0, 188, 212, 0.4);
+    border-bottom: 2px solid rgba(0, 137, 123, 0.9);
+    font-weight: 700;
+}
+
+QTabBar::tab:!selected {
+    margin-top: 2px;
+}
+
+/* Scrollable tab bar arrows */
+QTabBar::scroller {
+    width: 28px;
+}
+
+QTabBar QToolButton {
+    background: rgba(36, 39, 46, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    padding: 2px;
+    color: #9aa0a6;
+}
+
+QTabBar QToolButton:hover {
+    background: rgba(45, 49, 59, 0.95);
+    color: #e8eaed;
+}
