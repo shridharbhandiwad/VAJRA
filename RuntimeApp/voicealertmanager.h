@@ -9,28 +9,40 @@
 #include <QProcess>
 
 /**
- * VoiceAlertManager - Modern voice-based system health alert manager.
+ * VoiceAlertManager - Robust voice-based system health alert manager.
  *
  * Announces system health status changes using text-to-speech when a
- * subsystem enters a critical or degraded state. Uses platform TTS
- * engines (espeak-ng / espeak / say) for cross-platform speech synthesis.
+ * subsystem enters a critical or degraded state.
  *
- * Alert format: "System Status <Critical|Degraded|Warning|Offline> <health>%"
+ * Uses a multi-strategy approach to maximize audio reliability:
+ *   1. Pipeline: espeak-ng --stdout | aplay  (bypasses PulseAudio issues)
+ *   2. WAV file: espeak-ng -w file.wav + aplay file.wav
+ *   3. Direct:   espeak-ng "text"  (simplest, may fail with audio config)
+ *
+ * Alert format: "<ComponentName>, System Status <Level>, <health> percent"
  *
  * Features:
+ *   - Multi-strategy TTS with automatic fallback
  *   - Per-component cooldown to prevent alert spam
  *   - Configurable alert thresholds and cooldown interval
  *   - Priority queuing (critical > degraded > warning)
- *   - Mute/unmute toggle
- *   - Rate-limited speech to avoid overlapping announcements
- *   - Robust TTS engine detection via QStandardPaths + common paths
+ *   - Mute/unmute toggle with test voice button
  *   - Watchdog timer to recover from hung TTS processes
+ *   - Comprehensive startup diagnostics
  */
 class VoiceAlertManager : public QObject
 {
     Q_OBJECT
 
 public:
+    /** TTS playback strategy - ordered by reliability on Linux */
+    enum SpeakStrategy {
+        ShellPipeline,    // espeak --stdout | aplay (most reliable)
+        WavFilePlayback,  // espeak -w file.wav && aplay file.wav
+        DirectTTS,        // espeak "text" (simplest but may fail)
+        NoStrategy        // No TTS available
+    };
+
     explicit VoiceAlertManager(QObject* parent = nullptr);
     ~VoiceAlertManager();
 
@@ -60,9 +72,23 @@ public:
     void setAlertOnWarning(bool enabled);
     void setAlertOnOffline(bool enabled);
 
+    /** Speak a test message to verify audio output works */
+    void testVoice();
+
+    /** Check if a working TTS strategy is available */
+    bool isTtsAvailable() const;
+
+    /** Get human-readable diagnostic information */
+    QString diagnosticInfo() const;
+
+    /** Get the name of the currently selected strategy */
+    QString strategyName() const;
+
 signals:
     /** Emitted when a voice alert is triggered */
     void alertTriggered(const QString& componentId, const QString& status, qreal healthPercent);
+    /** Emitted when TTS availability status changes */
+    void ttsStatusChanged(bool available, const QString& info);
 
 private slots:
     void processQueue();
@@ -79,25 +105,43 @@ private:
         int     priority;       // Lower = higher priority
     };
 
+    // Health status resolution
     QString resolveHealthStatus(const QString& color) const;
     int     statusPriority(const QString& status) const;
     bool    shouldAlert(const QString& status) const;
-    void    speak(const QString& text);
-    void    resetSpeakingState();
+
+    // Speech output
+    void speak(const QString& text);
+    void speakWithShellPipeline(const QString& text);
+    void speakWithWavFile(const QString& text);
+    void speakDirect(const QString& text);
+    void resetSpeakingState();
+    void cleanupWavFile();
+
+    // Text sanitization for shell commands
+    QString shellEscape(const QString& text) const;
+
+    // TTS detection
     QString findTtsEngine() const;
+    QString findAudioPlayer() const;
+    SpeakStrategy detectBestStrategy() const;
+    void logAudioDiagnostics() const;
 
     // Alert queue and processing
     QList<AlertEntry> m_alertQueue;
     QTimer* m_queueTimer;
     bool m_isSpeaking;
 
-    // TTS engine
+    // TTS engine and audio playback
     QProcess* m_ttsProcess;
     QString m_ttsEngine;
+    QString m_audioPlayer;
+    SpeakStrategy m_strategy;
+    QString m_currentWavFile;
 
     // Watchdog timer to recover from hung TTS processes
     QTimer* m_watchdogTimer;
-    static const int WATCHDOG_TIMEOUT_MS = 10000; // 10 seconds max for any speech
+    static const int WATCHDOG_TIMEOUT_MS = 15000; // 15 seconds max
 
     // Per-component cooldown tracking
     QMap<QString, QElapsedTimer*> m_lastAlertTime;

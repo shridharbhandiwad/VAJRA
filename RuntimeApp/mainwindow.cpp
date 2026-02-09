@@ -82,11 +82,22 @@ void MainWindow::setupUI()
         "QPushButton:!checked { background: #b71c1c; color: #ef9a9a; border-color: #c62828; }");
     connect(m_voiceToggleBtn, &QPushButton::clicked, this, &MainWindow::toggleVoiceAlerts);
     
+    // Test voice button to verify audio output
+    QPushButton* testVoiceBtn = new QPushButton("TEST VOICE", this);
+    testVoiceBtn->setObjectName("testVoiceBtn");
+    testVoiceBtn->setToolTip("Test voice output - plays a brief test message");
+    testVoiceBtn->setStyleSheet(
+        "QPushButton { background: #0d47a1; color: #90caf9; border: 1px solid #1565c0; "
+        "border-radius: 4px; padding: 4px 12px; font-size: 10px; font-weight: bold; }"
+        "QPushButton:hover { background: #1565c0; }");
+    connect(testVoiceBtn, &QPushButton::clicked, this, &MainWindow::testVoice);
+    
     toolbar->addWidget(loadBtn);
     toolbar->addSeparator();
     toolbar->addWidget(m_statusLabel);
     toolbar->addSeparator();
     toolbar->addWidget(m_voiceToggleBtn);
+    toolbar->addWidget(testVoiceBtn);
     
     connect(loadBtn, &QPushButton::clicked, this, &MainWindow::loadDesign);
     
@@ -243,7 +254,15 @@ void MainWindow::onMessageReceived(const QString& componentId, const QString& co
     if (m_voiceAlertManager) {
         QString componentName = componentId;
         if (comp) {
-            componentName = comp->getId();
+            // Derive a human-readable name from the component type
+            switch (comp->getType()) {
+                case ComponentType::Antenna:             componentName = "Antenna"; break;
+                case ComponentType::PowerSystem:         componentName = "Power System"; break;
+                case ComponentType::LiquidCoolingUnit:   componentName = "Liquid Cooling Unit"; break;
+                case ComponentType::CommunicationSystem: componentName = "Communication System"; break;
+                case ComponentType::RadarComputer:       componentName = "Radar Computer"; break;
+                default:                                 componentName = comp->getId(); break;
+            }
         }
         m_voiceAlertManager->processHealthUpdate(componentId, componentName, color, size);
     }
@@ -276,4 +295,20 @@ void MainWindow::toggleVoiceAlerts()
     bool isOn = m_voiceToggleBtn->isChecked();
     m_voiceAlertManager->setMuted(!isOn);
     m_voiceToggleBtn->setText(isOn ? "VOICE ALERTS: ON" : "VOICE ALERTS: OFF");
+}
+
+void MainWindow::testVoice()
+{
+    if (!m_voiceAlertManager) return;
+    
+    if (!m_voiceAlertManager->isTtsAvailable()) {
+        QMessageBox::warning(this, "Voice Not Available",
+            "No text-to-speech engine is installed.\n\n"
+            "Install espeak-ng and alsa-utils:\n"
+            "  sudo apt-get install espeak-ng alsa-utils\n\n"
+            "Then restart the application.");
+        return;
+    }
+    
+    m_voiceAlertManager->testVoice();
 }
