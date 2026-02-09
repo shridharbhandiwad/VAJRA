@@ -20,7 +20,8 @@ SOURCES += \
     messageserver.cpp \
     componentregistry.cpp \
     addcomponentdialog.cpp \
-    voicealertmanager.cpp
+    voicealertmanager.cpp \
+    enlargedcomponentview.cpp
 
 HEADERS += \
     logindialog.h \
@@ -34,7 +35,8 @@ HEADERS += \
     messageserver.h \
     componentregistry.h \
     addcomponentdialog.h \
-    voicealertmanager.h
+    voicealertmanager.h \
+    enlargedcomponentview.h
 
 RESOURCES += \
     resources.qrc

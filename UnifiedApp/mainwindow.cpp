@@ -27,6 +27,7 @@ MainWindow::MainWindow(UserRole userRole, const QString& username, QWidget* pare
     , m_voiceToggleBtn(nullptr)
     , m_connectBtn(nullptr)
     , m_connectionTypeCombo(nullptr)
+    , m_tabWidget(nullptr)
 {
     setupUI();
     
@@ -320,15 +321,28 @@ void MainWindow::setupRuntimeMode()
     connect(m_messageServer, &MessageServer::clientDisconnected,
             this, &MainWindow::onClientDisconnected);
     
-    // Create main widget and layout
+    // ── Central widget with tab-based layout ───────────────
     QWidget* centralWidget = new QWidget(this);
     centralWidget->setObjectName("centralWidget");
-    QHBoxLayout* mainLayout = new QHBoxLayout(centralWidget);
-    mainLayout->setSpacing(12);
-    mainLayout->setContentsMargins(12, 12, 12, 12);
+    QVBoxLayout* centralLayout = new QVBoxLayout(centralWidget);
+    centralLayout->setSpacing(0);
+    centralLayout->setContentsMargins(8, 8, 8, 8);
+    
+    // Tab widget for System Overview + per-component enlarged views
+    m_tabWidget = new QTabWidget(centralWidget);
+    m_tabWidget->setObjectName("componentTabWidget");
+    m_tabWidget->setDocumentMode(false);
+    m_tabWidget->setTabPosition(QTabWidget::North);
+    
+    // ── "System Overview" tab (canvas + analytics side-by-side) ──
+    QWidget* overviewTab = new QWidget();
+    overviewTab->setObjectName("overviewTab");
+    QHBoxLayout* overviewLayout = new QHBoxLayout(overviewTab);
+    overviewLayout->setSpacing(12);
+    overviewLayout->setContentsMargins(10, 10, 10, 10);
     
     // Center panel - Canvas
-    QWidget* centerPanel = new QWidget(this);
+    QWidget* centerPanel = new QWidget(overviewTab);
     centerPanel->setObjectName("centerPanel");
     QVBoxLayout* centerLayout = new QVBoxLayout(centerPanel);
     centerLayout->setSpacing(8);
@@ -342,7 +356,8 @@ void MainWindow::setupRuntimeMode()
     
     QLabel* hintLabel = new QLabel(
         "Load a system layout to monitor subsystems in real-time. "
-        "Each component shows embedded sub-systems with individual health status.", centerPanel);
+        "Each component shows embedded sub-systems with individual health status. "
+        "Use the tabs above to see enlarged views and analytics for each component.", centerPanel);
     hintLabel->setProperty("hint", true);
     hintLabel->setAlignment(Qt::AlignCenter);
     hintLabel->setWordWrap(true);
@@ -350,10 +365,9 @@ void MainWindow::setupRuntimeMode()
     centerLayout->addWidget(canvasLabel);
     centerLayout->addWidget(m_canvas);
     centerLayout->addWidget(hintLabel);
-    centerPanel->setLayout(centerLayout);
     
     // Right panel - Analytics
-    QWidget* rightPanel = new QWidget(this);
+    QWidget* rightPanel = new QWidget(overviewTab);
     rightPanel->setObjectName("rightPanel");
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
     rightLayout->setSpacing(10);
@@ -367,15 +381,16 @@ void MainWindow::setupRuntimeMode()
     
     rightLayout->addWidget(analyticsLabel);
     rightLayout->addWidget(m_analytics);
-    rightPanel->setLayout(rightLayout);
     rightPanel->setMaximumWidth(340);
     rightPanel->setMinimumWidth(280);
     
-    // Add panels to main layout
-    mainLayout->addWidget(centerPanel, 1);
-    mainLayout->addWidget(rightPanel);
+    overviewLayout->addWidget(centerPanel, 1);
+    overviewLayout->addWidget(rightPanel);
     
-    centralWidget->setLayout(mainLayout);
+    // Add overview as first tab
+    m_tabWidget->addTab(overviewTab, "  System Overview  ");
+    
+    centralLayout->addWidget(m_tabWidget);
     setCentralWidget(centralWidget);
     
     // Connect signals
@@ -383,6 +398,59 @@ void MainWindow::setupRuntimeMode()
     
     // Auto-load radar_system.design if it exists
     autoLoadDesign();
+}
+
+void MainWindow::createComponentTabs()
+{
+    clearComponentTabs();
+    
+    QList<Component*> components = m_canvas->getComponents();
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    
+    qDebug() << "[MainWindow] Creating enlarged tabs for" << components.size() << "components";
+    
+    for (Component* comp : components) {
+        QString id = comp->getId();
+        QString typeId = comp->getTypeId();
+        
+        // Collect subsystem names
+        QStringList subsystemNames;
+        for (SubComponent* sub : comp->getSubComponents()) {
+            subsystemNames << sub->getName();
+        }
+        
+        EnlargedComponentView* view = new EnlargedComponentView(id, typeId, subsystemNames, m_tabWidget);
+        m_enlargedViews[id] = view;
+        
+        // Set initial health from the component
+        view->updateComponentHealth(comp->getColor(), comp->getSize());
+        
+        // Also set initial subsystem health
+        for (SubComponent* sub : comp->getSubComponents()) {
+            view->updateSubsystemHealth(sub->getName(), qRound(sub->getHealth()), sub->getColor());
+        }
+        
+        // Get a short tab name from the registry
+        QString tabName = typeId;
+        if (registry.hasComponent(typeId)) {
+            tabName = registry.getComponent(typeId).displayName;
+        }
+        
+        m_tabWidget->addTab(view, "  " + tabName + "  ");
+        
+        qDebug() << "[MainWindow] Added enlarged tab for" << id << "(" << tabName << ")";
+    }
+}
+
+void MainWindow::clearComponentTabs()
+{
+    // Remove all tabs except the first one (System Overview)
+    while (m_tabWidget && m_tabWidget->count() > 1) {
+        QWidget* w = m_tabWidget->widget(m_tabWidget->count() - 1);
+        m_tabWidget->removeTab(m_tabWidget->count() - 1);
+        delete w;
+    }
+    m_enlargedViews.clear();
 }
 
 void MainWindow::saveDesign()
@@ -436,8 +504,10 @@ void MainWindow::loadDesign()
         }
         QMessageBox::information(this, "Success", "Design loaded successfully!");
     } else {
+        // Create enlarged component tabs in runtime mode
+        createComponentTabs();
         QMessageBox::information(this, "Success", 
-            "Radar system layout loaded!\nWaiting for health updates...");
+            "Radar system layout loaded!\nUse tabs to view enlarged components and analytics.\nWaiting for health updates...");
     }
 }
 
@@ -529,6 +599,9 @@ void MainWindow::autoLoadDesign()
     m_analytics->clear();
     m_canvas->loadFromJson(json);
     
+    // Create enlarged component tabs in runtime mode
+    createComponentTabs();
+    
     qDebug() << "[MainWindow] Auto-loaded design from:" << foundPath;
     if (m_statusLabel) {
         m_statusLabel->setText(QString("STATUS: ACTIVE  |  PORT: 12345  |  CLIENTS: %1  |  DESIGN LOADED")
@@ -558,6 +631,19 @@ void MainWindow::onMessageReceived(const QString& componentId, const QString& co
     }
     
     m_analytics->recordMessage(componentId, color, size);
+    
+    // Update enlarged view if it exists for this component
+    if (m_enlargedViews.contains(componentId)) {
+        EnlargedComponentView* view = m_enlargedViews[componentId];
+        view->updateComponentHealth(QColor(color), size);
+        
+        // Also update individual subsystem health bars from the component's sub-components
+        if (comp) {
+            for (SubComponent* sub : comp->getSubComponents()) {
+                view->updateSubsystemHealth(sub->getName(), qRound(sub->getHealth()), sub->getColor());
+            }
+        }
+    }
     
     // Trigger voice alert for critical/degraded health states
     if (m_voiceAlertManager) {
