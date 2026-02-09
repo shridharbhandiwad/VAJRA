@@ -36,6 +36,7 @@ MainWindow::MainWindow(const QString& username, UserRole role, QWidget* parent)
     , m_addTypeBtn(nullptr)
     , m_leftPanel(nullptr)
     , m_tabWidget(nullptr)
+    , m_rightStack(nullptr)
 {
     setupUI();
     
@@ -295,21 +296,26 @@ void MainWindow::setupUI()
     centerLayout->addWidget(m_tabWidget);
     centerPanel->setLayout(centerLayout);
     
-    // ========== RIGHT PANEL - Analytics ==========
+    // ========== RIGHT PANEL - Stacked Analytics ==========
     QWidget* rightPanel = new QWidget(this);
     rightPanel->setObjectName("rightPanel");
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
     rightLayout->setSpacing(10);
     rightLayout->setContentsMargins(14, 14, 14, 14);
-    
+
     QLabel* analyticsLabel = new QLabel("ANALYTICS", rightPanel);
     analyticsLabel->setProperty("heading", true);
-    
-    m_analytics = new Analytics(rightPanel);
+
+    // Stacked widget: page 0 = system analytics, page 1+ = per-component data analytics
+    m_rightStack = new QStackedWidget(rightPanel);
+    m_rightStack->setObjectName("rightStack");
+
+    m_analytics = new Analytics(m_rightStack);
     m_analytics->setObjectName("analyticsPanel");
-    
+    m_rightStack->addWidget(m_analytics);  // index 0
+
     rightLayout->addWidget(analyticsLabel);
-    rightLayout->addWidget(m_analytics);
+    rightLayout->addWidget(m_rightStack);
     rightPanel->setLayout(rightLayout);
     rightPanel->setMaximumWidth(320);
     rightPanel->setMinimumWidth(260);
@@ -328,6 +334,9 @@ void MainWindow::setupUI()
     connect(m_canvas, &Canvas::designSubComponentAdded, this, &MainWindow::onDesignSubComponentAdded);
     connect(m_canvas, &Canvas::dropRejected, this, &MainWindow::onDropRejected);
     connect(m_canvas, &Canvas::modeChanged, this, &MainWindow::onModeChanged);
+
+    // Switch right panel content when tabs change
+    connect(m_tabWidget, &QTabWidget::currentChanged, this, &MainWindow::onTabChanged);
     
     // ========== INITIALIZE RUNTIME SERVICES ==========
     // Voice alert manager
@@ -398,6 +407,14 @@ void MainWindow::addComponentTab(Component* comp)
     
     EnlargedComponentView* view = new EnlargedComponentView(id, typeId, subNames, m_tabWidget);
     m_enlargedViews[id] = view;
+
+    // Create data analytics panel for the right-side stacked widget
+    if (m_rightStack) {
+        QWidget* dataAnalyticsPanel = view->createDataAnalyticsWidget(m_rightStack);
+        int stackIndex = m_rightStack->addWidget(dataAnalyticsPanel);
+        m_dataAnalyticsPanels[id] = dataAnalyticsPanel;
+        m_dataAnalyticsStackIndices[id] = stackIndex;
+    }
     
     view->updateComponentHealth(comp->getColor(), comp->getSize());
     
@@ -416,6 +433,21 @@ void MainWindow::clearComponentTabs()
         delete w;
     }
     m_enlargedViews.clear();
+
+    // Remove data analytics panels from the right stack
+    for (auto it = m_dataAnalyticsPanels.begin(); it != m_dataAnalyticsPanels.end(); ++it) {
+        if (m_rightStack) {
+            m_rightStack->removeWidget(it.value());
+        }
+        delete it.value();
+    }
+    m_dataAnalyticsPanels.clear();
+    m_dataAnalyticsStackIndices.clear();
+
+    // Show default analytics page
+    if (m_rightStack) {
+        m_rightStack->setCurrentIndex(0);
+    }
 }
 
 // ======================================================================
@@ -656,6 +688,30 @@ void MainWindow::onClientDisconnected()
     if (m_statusLabel) {
         m_statusLabel->setText(QString("STATUS: ACTIVE  |  PORT: 12345  |  CLIENTS: %1")
             .arg(m_connectedClients));
+    }
+}
+
+// ======================================================================
+// Tab Change – switch right panel between Analytics and Data Analytics
+// ======================================================================
+
+void MainWindow::onTabChanged(int index)
+{
+    if (!m_rightStack) return;
+
+    if (index == 0) {
+        // System Overview tab – show normal Analytics
+        m_rightStack->setCurrentIndex(0);
+    } else {
+        // Enlarged component tab – show that component's data analytics
+        QWidget* tabWidget = m_tabWidget->widget(index);
+        EnlargedComponentView* view = qobject_cast<EnlargedComponentView*>(tabWidget);
+        if (view) {
+            QString compId = view->getComponentId();
+            if (m_dataAnalyticsStackIndices.contains(compId)) {
+                m_rightStack->setCurrentIndex(m_dataAnalyticsStackIndices[compId]);
+            }
+        }
     }
 }
 
