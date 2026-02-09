@@ -52,12 +52,12 @@ LoginDialog::LoginDialog(QWidget* parent)
 void LoginDialog::setupUI()
 {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(35, 35, 35, 35);
-    mainLayout->setSpacing(25);
+    mainLayout->setContentsMargins(28, 20, 28, 16);
+    mainLayout->setSpacing(10);
     
     // ========== HEADER SECTION ==========
     QVBoxLayout* headerLayout = new QVBoxLayout();
-    headerLayout->setSpacing(6);
+    headerLayout->setSpacing(4);
     
     // Title - Main heading
     m_titleLabel = new QLabel("RADAR MONITORING SYSTEM", this);
@@ -76,7 +76,7 @@ void LoginDialog::setupUI()
     
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addWidget(m_subtitleLabel);
-    headerLayout->addSpacing(12);
+    headerLayout->addSpacing(6);
     headerLayout->addWidget(m_welcomeLabel);
     
     // ========== INPUT FRAME ==========
@@ -84,11 +84,11 @@ void LoginDialog::setupUI()
     inputFrame->setObjectName("inputFrame");
     
     QVBoxLayout* inputLayout = new QVBoxLayout(inputFrame);
-    inputLayout->setSpacing(20);
+    inputLayout->setSpacing(12);
     
     // Username field
     QVBoxLayout* usernameLayout = new QVBoxLayout();
-    usernameLayout->setSpacing(8);
+    usernameLayout->setSpacing(4);
     
     QLabel* usernameLabel = new QLabel("USERNAME", this);
     usernameLabel->setObjectName("fieldLabel");
@@ -101,7 +101,7 @@ void LoginDialog::setupUI()
     
     // Password field with toggle
     QVBoxLayout* passwordLayout = new QVBoxLayout();
-    passwordLayout->setSpacing(8);
+    passwordLayout->setSpacing(4);
     
     QLabel* passwordLabel = new QLabel("PASSWORD", this);
     passwordLabel->setObjectName("fieldLabel");
@@ -109,7 +109,7 @@ void LoginDialog::setupUI()
     // Create a container frame for password input with integrated button
     QFrame* passwordContainer = new QFrame(this);
     passwordContainer->setObjectName("passwordContainer");
-    passwordContainer->setMinimumHeight(48);
+    passwordContainer->setMinimumHeight(36);
     
     QHBoxLayout* passwordInputLayout = new QHBoxLayout(passwordContainer);
     passwordInputLayout->setContentsMargins(0, 0, 0, 0);
@@ -122,7 +122,7 @@ void LoginDialog::setupUI()
     
     m_togglePasswordBtn = new QPushButton("SHOW", passwordContainer);
     m_togglePasswordBtn->setObjectName("togglePassword");
-    m_togglePasswordBtn->setFixedSize(60, 46);
+    m_togglePasswordBtn->setFixedSize(60, 34);
     m_togglePasswordBtn->setCursor(Qt::PointingHandCursor);
     m_togglePasswordBtn->setToolTip("Toggle password visibility");
     
@@ -161,12 +161,12 @@ void LoginDialog::setupUI()
     m_loginButton->setObjectName("loginButton");
     m_loginButton->setDefault(true);
     m_loginButton->setCursor(Qt::PointingHandCursor);
-    m_loginButton->setMinimumHeight(52);
+    m_loginButton->setMinimumHeight(40);
     
     m_cancelButton = new QPushButton("CANCEL", this);
     m_cancelButton->setObjectName("cancelButton");
     m_cancelButton->setCursor(Qt::PointingHandCursor);
-    m_cancelButton->setMinimumHeight(52);
+    m_cancelButton->setMinimumHeight(40);
     
     buttonLayout->addWidget(m_loginButton);
     buttonLayout->addWidget(m_cancelButton);
@@ -196,13 +196,13 @@ void LoginDialog::setupUI()
     
     // ========== ASSEMBLE MAIN LAYOUT ==========
     mainLayout->addLayout(headerLayout);
-    mainLayout->addSpacing(10);
+    mainLayout->addSpacing(6);
     mainLayout->addWidget(inputFrame);
     mainLayout->addWidget(m_errorLabel);
     mainLayout->addWidget(m_successLabel);
-    mainLayout->addSpacing(5);
+    mainLayout->addSpacing(4);
     mainLayout->addLayout(buttonLayout);
-    mainLayout->addSpacing(15);
+    mainLayout->addSpacing(8);
     mainLayout->addWidget(infoPanel);
     mainLayout->addStretch();
     mainLayout->addWidget(footerLabel);

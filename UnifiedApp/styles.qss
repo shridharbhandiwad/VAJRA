@@ -13,10 +13,10 @@ QDialog#LoginDialog {
 /* Title Label - System Header */
 QLabel#titleLabel {
     color: #e8eaed;
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 600;
     font-family: "Roboto", "Arial", sans-serif;
-    padding: 20px;
+    padding: 4px 0px;
     background: transparent;
     letter-spacing: 1px;
 }
@@ -24,10 +24,10 @@ QLabel#titleLabel {
 /* Subtitle Label */
 QLabel#subtitleLabel {
     color: #9aa0a6;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 400;
     font-family: "Roboto", "Arial", sans-serif;
-    padding: 5px;
+    padding: 2px 0px;
     background: transparent;
     letter-spacing: 1px;
 }
@@ -35,9 +35,9 @@ QLabel#subtitleLabel {
 /* Welcome Message */
 QLabel#welcomeLabel {
     color: #c4c7cc;
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 500;
-    padding: 15px;
+    padding: 2px 0px;
     background: transparent;
 }
 
@@ -46,7 +46,7 @@ QFrame#inputFrame {
     background: #2d313b;
     border: 1px solid #3a3f4b;
     border-radius: 2px;
-    padding: 25px;
+    padding: 16px;
 }
 
 /* Line Edit - Input Fields */
@@ -54,13 +54,13 @@ QLineEdit {
     background-color: #24272e;
     border: 1px solid #3a3f4b;
     border-radius: 2px;
-    padding: 12px 14px;
-    font-size: 14px;
+    padding: 8px 12px;
+    font-size: 13px;
     font-family: "Roboto", "Arial", sans-serif;
     color: #e8eaed;
     selection-background-color: #1565c0;
     selection-color: white;
-    min-height: 48px;
+    min-height: 32px;
 }
 
 QLineEdit:focus {
@@ -85,7 +85,7 @@ QLabel#fieldLabel {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
-    padding: 5px 2px;
+    padding: 2px 2px;
     font-family: "Roboto", "Arial", sans-serif;
 }
 
@@ -95,11 +95,11 @@ QPushButton#loginButton {
     color: #ffffff;
     border: 1px solid #0d47a1;
     border-radius: 2px;
-    padding: 13px 35px;
+    padding: 10px 30px;
     font-size: 13px;
     font-weight: 600;
     font-family: "Roboto", "Arial", sans-serif;
-    min-width: 130px;
+    min-width: 120px;
     letter-spacing: 1px;
     text-transform: uppercase;
 }
@@ -126,11 +126,11 @@ QPushButton#cancelButton {
     color: #9aa0a6;
     border: 1px solid #3a3f4b;
     border-radius: 2px;
-    padding: 13px 35px;
+    padding: 10px 30px;
     font-size: 13px;
     font-weight: 600;
     font-family: "Roboto", "Arial", sans-serif;
-    min-width: 130px;
+    min-width: 120px;
     letter-spacing: 1px;
     text-transform: uppercase;
 }
@@ -181,7 +181,7 @@ QFrame#infoPanel {
     background: rgba(21, 101, 192, 0.08);
     border-left: 3px solid #1565c0;
     border-radius: 2px;
-    padding: 14px;
+    padding: 10px;
 }
 
 QLabel#infoPanelText {
@@ -327,7 +327,7 @@ QLineEdit#passwordInput {
     border: none;
     border-right: 1px solid #3a3f4b;
     border-radius: 0px;
-    padding: 12px 14px;
+    padding: 8px 12px;
 }
 
 QLineEdit#passwordInput:focus {
