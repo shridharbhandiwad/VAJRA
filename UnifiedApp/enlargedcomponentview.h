@@ -69,10 +69,6 @@ public:
     QString getComponentId() const { return m_componentId; }
     QString getTypeId() const { return m_typeId; }
 
-    // Create a standalone data analytics widget (trend chart + stats)
-    // to be placed in the main window's right panel.
-    QWidget* createDataAnalyticsWidget(QWidget* parent);
-
 private:
     void setupUI();
     QString healthStatusText(const QColor& color) const;
@@ -82,7 +78,7 @@ private:
     QColor m_currentColor;
     qreal m_currentSize;
 
-    // Enlarged component view
+    // Left panel – enlarged component
     QGraphicsView* m_componentView;
     QGraphicsScene* m_componentScene;
     Component* m_displayComponent;
@@ -90,7 +86,7 @@ private:
     QLabel* m_healthStatusLabel;
     QLabel* m_healthValueLabel;
 
-    // Data analytics (placed in external right panel)
+    // Right panel – analytics
     HealthTrendChart* m_trendChart;
     QLabel* m_analyticsStatusLabel;
     QLabel* m_updateCountLabel;
