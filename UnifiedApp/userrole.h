@@ -6,7 +6,7 @@
  *
  * Designer:  Full design capabilities on the System Overview canvas.
  *            Can drag-drop components, draw connections, save/load designs.
- *            Has per-component enlarged view tabs with data analytics.
+ *            Sees only the System Overview canvas (no per-component tabs).
  *
  * User:      Monitor-only access. Can view the System Overview canvas and
  *            analytics in real-time, but cannot design or see the Components
