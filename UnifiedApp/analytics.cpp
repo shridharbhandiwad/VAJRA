@@ -86,6 +86,19 @@ void Analytics::addSubComponent(const QString& parentId, const QString& subName)
     }
 }
 
+void Analytics::refreshComponent(const QString& id, const QString& type)
+{
+    // Clear existing subcomponents for this component
+    m_subComponents[id].clear();
+    
+    // Update the component type
+    m_componentTypes[id] = type;
+    
+    // Note: The actual subcomponents will be re-added by MainWindow
+    // This method just prepares the analytics for a refresh
+    updateDisplay();
+}
+
 void Analytics::clear()
 {
     m_stats.clear();

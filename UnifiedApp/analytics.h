@@ -51,6 +51,9 @@ public:
     /** Track a regular sub-component being added to a parent component. */
     void addSubComponent(const QString& parentId, const QString& subName);
     
+    /** Refresh a component's subcomponents list (called after editing). */
+    void refreshComponent(const QString& id, const QString& type);
+    
     void clear();
     void updateDisplay();
     

@@ -66,9 +66,13 @@ public:
     // Remove all components of a specific type (called when type is deleted from registry)
     void removeComponentsByType(const QString& typeId);
     
+    // Notify that a component has been edited (called by Component after edit dialog)
+    void notifyComponentEdited(const QString& id, const QString& typeId);
+    
 signals:
     void componentAdded(const QString& id, const QString& typeId);
     void componentLoaded(const QString& id, const QString& typeId);
+    void componentEdited(const QString& id, const QString& typeId);
     void designSubComponentAdded(const QString& parentId, SubComponentType subType);
     void dropRejected(const QString& reason);
     void modeChanged(CanvasMode mode);

@@ -162,6 +162,12 @@ void Canvas::removeComponentsByType(const QString& typeId)
              << "components and" << connectionsToRemove.size() << "connections";
 }
 
+void Canvas::notifyComponentEdited(const QString& id, const QString& typeId)
+{
+    qDebug() << "[Canvas] Component edited:" << id << "type:" << typeId;
+    emit componentEdited(id, typeId);
+}
+
 void Canvas::setMode(CanvasMode mode)
 {
     m_mode = mode;
