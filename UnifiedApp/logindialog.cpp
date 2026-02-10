@@ -102,12 +102,13 @@ void LoginDialog::setupUI()
     inputFrame->setObjectName("inputFrame");
     
     QVBoxLayout* inputLayout = new QVBoxLayout(inputFrame);
-    inputLayout->setSpacing(18);
+    inputLayout->setSpacing(24);
     inputLayout->setContentsMargins(20, 20, 20, 20);
     
     // Username field
     QVBoxLayout* usernameLayout = new QVBoxLayout();
-    usernameLayout->setSpacing(8);
+    usernameLayout->setSpacing(10);
+    usernameLayout->setContentsMargins(0, 0, 0, 0);
     
     QLabel* usernameLabel = new QLabel("USERNAME", this);
     usernameLabel->setObjectName("fieldLabel");
@@ -120,7 +121,8 @@ void LoginDialog::setupUI()
     
     // Password field with toggle
     QVBoxLayout* passwordLayout = new QVBoxLayout();
-    passwordLayout->setSpacing(8);
+    passwordLayout->setSpacing(10);
+    passwordLayout->setContentsMargins(0, 0, 0, 0);
     
     QLabel* passwordLabel = new QLabel("PASSWORD", this);
     passwordLabel->setObjectName("fieldLabel");
