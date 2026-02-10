@@ -306,14 +306,14 @@ void MainWindow::setupUI()
     centerLayout->addWidget(m_tabWidget);
     centerPanel->setLayout(centerLayout);
     
-    // ========== RIGHT PANEL - Analytics ==========
+    // ========== RIGHT PANEL - System Overview ==========
     QWidget* rightPanel = new QWidget(this);
     rightPanel->setObjectName("rightPanel");
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
     rightLayout->setSpacing(4);
     rightLayout->setContentsMargins(6, 6, 6, 6);
     
-    QLabel* analyticsLabel = new QLabel("ANALYTICS", rightPanel);
+    QLabel* analyticsLabel = new QLabel("SYSTEM OVERVIEW", rightPanel);
     analyticsLabel->setProperty("heading", true);
     
     m_analytics = new Analytics(rightPanel);
@@ -565,9 +565,20 @@ void MainWindow::onComponentAdded(const QString& id, const QString& typeId)
     }
     m_analytics->addComponent(id, displayName);
     
-    // Create enlarged tab for the new component
+    // Add all subcomponents to analytics
     Component* comp = m_canvas->getComponentById(id);
     if (comp) {
+        // Add regular SubComponents
+        for (SubComponent* sub : comp->getSubComponents()) {
+            m_analytics->addSubComponent(id, sub->getName());
+        }
+        
+        // Add DesignSubComponents
+        for (DesignSubComponent* dsub : comp->getDesignSubComponents()) {
+            m_analytics->addDesignSubComponent(id, DesignSubComponent::typeToString(dsub->getType()));
+        }
+        
+        // Create enlarged tab for the new component
         addComponentTab(comp);
     }
 }
@@ -580,6 +591,20 @@ void MainWindow::onComponentLoaded(const QString& id, const QString& typeId)
         displayName = registry.getComponent(typeId).displayName;
     }
     m_analytics->addComponent(id, displayName);
+    
+    // Add all subcomponents to analytics
+    Component* comp = m_canvas->getComponentById(id);
+    if (comp) {
+        // Add regular SubComponents
+        for (SubComponent* sub : comp->getSubComponents()) {
+            m_analytics->addSubComponent(id, sub->getName());
+        }
+        
+        // Add DesignSubComponents
+        for (DesignSubComponent* dsub : comp->getDesignSubComponents()) {
+            m_analytics->addDesignSubComponent(id, DesignSubComponent::typeToString(dsub->getType()));
+        }
+    }
 }
 
 void MainWindow::onDesignSubComponentAdded(const QString& parentId, SubComponentType subType)

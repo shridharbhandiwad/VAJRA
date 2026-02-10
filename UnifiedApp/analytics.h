@@ -2,9 +2,11 @@
 #define ANALYTICS_H
 
 #include <QWidget>
-#include <QTextEdit>
+#include <QTextBrowser>
 #include <QMap>
 #include <QString>
+#include <QSet>
+#include <QList>
 
 struct ComponentStats {
     int messageCount;
@@ -17,11 +19,20 @@ struct ComponentStats {
                        colorChanges(0), sizeChanges(0) {}
 };
 
+struct SubComponentInfo {
+    QString name;
+    QString type;  // "SubComponent", "Label", "LineEdit", "Button"
+    
+    SubComponentInfo() {}
+    SubComponentInfo(const QString& n, const QString& t) : name(n), type(t) {}
+};
+
 /**
- * Analytics - Health analytics panel that works with any component type.
+ * Analytics - System Overview panel showing components and their subcomponents.
  * 
- * Fully dynamic - no hardcoded component types. Works with any type
- * registered in the ComponentRegistry.
+ * Displays a hierarchical view of all components on the canvas and their
+ * subcomponents (both auto-created subsystems and user-added design widgets).
+ * Components can be clicked to expand/collapse their subcomponent list.
  */
 class Analytics : public QWidget
 {
@@ -37,20 +48,28 @@ public:
     /** Track a design sub-component being added to a parent component. */
     void addDesignSubComponent(const QString& parentId, const QString& subType);
     
+    /** Track a regular sub-component being added to a parent component. */
+    void addSubComponent(const QString& parentId, const QString& subName);
+    
     void clear();
     void updateDisplay();
+    
+private slots:
+    void onLinkClicked(const QUrl& url);
     
 private:
     QString getHealthStatus(const QString& color) const;
     QString getHealthBar(qreal health) const;
     
-    QTextEdit* m_textEdit;
+    QTextBrowser* m_textBrowser;
     QMap<QString, ComponentStats> m_stats;
     QMap<QString, QString> m_componentTypes;
     
-    // Design sub-component tracking
-    int m_totalDesignSubComponents;
-    QMap<QString, int> m_designSubTypeCounts;  // "Label" -> count, etc.
+    // Subcomponent tracking (both SubComponents and DesignSubComponents)
+    QMap<QString, QList<SubComponentInfo>> m_subComponents;  // parentId -> list of subcomponents
+    
+    // Expand/collapse state
+    QSet<QString> m_expandedComponents;  // Set of component IDs that are currently expanded
 };
 
 #endif // ANALYTICS_H
