@@ -22,7 +22,11 @@ int main(int argc, char *argv[])
     // Fallback chain: Inter → Segoe UI Variable → SF Pro Display → Segoe UI → Roboto
     QStringList fontFamilies;
     fontFamilies << "Inter" << "Segoe UI Variable" << "SF Pro Display" << "Segoe UI" << "Roboto" << "Helvetica Neue";
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
     appFont.setFamilies(fontFamilies);
+#else
+    appFont.setFamily(fontFamilies.join(QLatin1Char(',')));
+#endif
     app.setFont(appFont);
     
     // Enable high DPI scaling
