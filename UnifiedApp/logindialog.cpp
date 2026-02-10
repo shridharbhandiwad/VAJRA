@@ -94,7 +94,7 @@ void LoginDialog::setupUI()
     // ========== CENTER CONTENT CONTAINER ==========
     QWidget* centerContainer = new QWidget(this);
     centerContainer->setObjectName("centerContainer");
-    centerContainer->setMaximumWidth(700);
+    centerContainer->setMaximumWidth(950);
     
     QVBoxLayout* centerLayout = new QVBoxLayout(centerContainer);
     centerLayout->setSpacing(0);
