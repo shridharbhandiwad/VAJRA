@@ -50,17 +50,41 @@ int main(int argc, char *argv[])
                  << registry.getCategories().size() << "categories";
     }
     
-    // Show login dialog with role-based access
-    LoginDialog loginDialog;
-    if (loginDialog.exec() == QDialog::Accepted) {
-        QString username = loginDialog.getUsername();
-        UserRole role = loginDialog.getUserRole();
+    // Main application loop - allows role switching without restart
+    bool shouldContinue = true;
+    
+    while (shouldContinue) {
+        // Show login dialog with role-based access
+        LoginDialog loginDialog;
         
-        // Create MainWindow with role-based access restrictions
-        MainWindow window(username, role);
-        window.show();
-        
-        return app.exec();
+        if (loginDialog.exec() == QDialog::Accepted) {
+            QString username = loginDialog.getUsername();
+            UserRole role = loginDialog.getUserRole();
+            
+            // Create MainWindow with role-based access restrictions
+            MainWindow* window = new MainWindow(username, role);
+            
+            // Connect logout signal to allow returning to login
+            bool logoutRequested = false;
+            QObject::connect(window, &MainWindow::logoutRequested, [&logoutRequested]() {
+                logoutRequested = true;
+            });
+            
+            window->show();
+            app.exec();
+            
+            // Check if user logged out (to switch roles) or closed the window (to exit)
+            if (logoutRequested) {
+                delete window;
+                shouldContinue = true;  // Show login again
+            } else {
+                delete window;
+                shouldContinue = false;  // Exit application
+            }
+        } else {
+            // User cancelled login
+            shouldContinue = false;
+        }
     }
     
     return 0;

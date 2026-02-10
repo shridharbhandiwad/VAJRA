@@ -68,6 +68,12 @@ private slots:
     void onThemeToggle();
     void onThemeChanged(AppTheme theme);
     
+    // Logout slot
+    void onLogout();
+
+signals:
+    void logoutRequested();
+    
 private:
     void setupUI();
     void applyRoleRestrictions();
@@ -98,6 +104,9 @@ private:
     
     // Theme UI
     QPushButton* m_themeToggleBtn;
+    
+    // Logout button
+    QPushButton* m_logoutBtn;
     
     // Design toolbar buttons (Save/Clear/AddType hidden for User role; Load visible for all)
     QPushButton* m_saveBtn;
