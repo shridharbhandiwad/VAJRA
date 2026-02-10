@@ -387,8 +387,8 @@ QListWidget#componentList::item {
     background: rgba(36, 39, 46, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 6px;
-    padding: 8px;
-    margin: 2px 0px;
+    padding: 2px;
+    margin: 3px 0px;
     color: #c4c7cc;
 }
 

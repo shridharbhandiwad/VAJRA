@@ -16,39 +16,60 @@ ComponentItemWidget::ComponentItemWidget(const QString& displayName, const QStri
     , m_typeId(typeId)
 {
     QHBoxLayout* layout = new QHBoxLayout(this);
-    layout->setContentsMargins(4, 2, 4, 2);
-    layout->setSpacing(4);
+    layout->setContentsMargins(8, 4, 8, 4);
+    layout->setSpacing(8);
     
     // Component name label
     m_nameLabel = new QLabel(displayName);
     m_nameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    m_nameLabel->setStyleSheet(
+        "QLabel {"
+        "    color: #c4c7cc;"
+        "    font-size: 13px;"
+        "    font-weight: 500;"
+        "    background: transparent;"
+        "    border: none;"
+        "}"
+    );
     layout->addWidget(m_nameLabel);
     
-    // Delete button (small, with × symbol)
+    // Delete button (circular, with × symbol)
     m_deleteBtn = new QPushButton("×");
-    m_deleteBtn->setFixedSize(20, 20);
+    m_deleteBtn->setFixedSize(24, 24);
+    m_deleteBtn->setCursor(Qt::PointingHandCursor);
     m_deleteBtn->setStyleSheet(
         "QPushButton {"
-        "    background-color: rgba(255, 70, 70, 180);"
+        "    background-color: #ef5350;"
         "    color: white;"
-        "    border: none;"
-        "    border-radius: 10px;"
-        "    font-size: 16px;"
+        "    border: 1px solid #d32f2f;"
+        "    border-radius: 12px;"
+        "    font-size: 18px;"
         "    font-weight: bold;"
         "    padding: 0px;"
+        "    margin: 0px;"
         "}"
         "QPushButton:hover {"
-        "    background-color: rgba(255, 30, 30, 220);"
+        "    background-color: #f44336;"
+        "    border: 1px solid #c62828;"
         "}"
         "QPushButton:pressed {"
-        "    background-color: rgba(200, 0, 0, 255);"
+        "    background-color: #c62828;"
+        "    border: 1px solid #b71c1c;"
         "}"
     );
     m_deleteBtn->setToolTip(QString("Delete %1 component type").arg(displayName));
     layout->addWidget(m_deleteBtn);
     
     // Set minimum height to ensure visibility
-    setMinimumHeight(28);
+    setMinimumHeight(32);
+    
+    // Set transparent background for the widget itself
+    setStyleSheet(
+        "ComponentItemWidget {"
+        "    background: transparent;"
+        "    border: none;"
+        "}"
+    );
     
     connect(m_deleteBtn, &QPushButton::clicked, this, [this]() {
         emit deleteRequested(m_typeId);
@@ -121,7 +142,7 @@ void ComponentList::addComponentItem(const QString& displayName, const QString& 
     
     // Ensure proper size hint with minimum height
     QSize hint = widget->sizeHint();
-    hint.setHeight(qMax(hint.height(), 28));
+    hint.setHeight(qMax(hint.height(), 36));
     item->setSizeHint(hint);
     setItemWidget(item, widget);
 }
