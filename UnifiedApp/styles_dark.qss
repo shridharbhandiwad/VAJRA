@@ -567,6 +567,33 @@ QPushButton#themeToggleBtn:hover {
     color: #e8eaed;
 }
 
+/* Logout Button */
+QPushButton#logoutButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(244, 67, 54, 0.85), stop:1 rgba(211, 47, 47, 0.85));
+    color: #FFFFFF;
+    border: 1px solid rgba(244, 67, 54, 0.4);
+    border-radius: 8px;
+    padding: 8px 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    min-height: 36px;
+}
+
+QPushButton#logoutButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(244, 67, 54, 1), stop:1 rgba(211, 47, 47, 1));
+    border: 1px solid rgba(244, 67, 54, 0.6);
+    color: #FFFFFF;
+}
+
+QPushButton#logoutButton:pressed {
+    background: rgba(183, 28, 28, 0.95);
+    border: 1px solid rgba(244, 67, 54, 0.8);
+}
+
 /* Connect Mode Button */
 QPushButton#connectButton {
     background: rgba(100, 180, 220, 0.15);

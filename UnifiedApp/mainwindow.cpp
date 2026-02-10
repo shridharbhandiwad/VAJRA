@@ -30,6 +30,7 @@ MainWindow::MainWindow(const QString& username, UserRole role, QWidget* parent)
     , m_connectBtn(nullptr)
     , m_connectionTypeCombo(nullptr)
     , m_themeToggleBtn(nullptr)
+    , m_logoutBtn(nullptr)
     , m_saveBtn(nullptr)
     , m_loadBtn(nullptr)
     , m_clearBtn(nullptr)
@@ -55,7 +56,6 @@ MainWindow::MainWindow(const QString& username, UserRole role, QWidget* parent)
     // Set window title based on role
     QString roleStr = (m_role == UserRole::Designer) ? "Designer" : "Monitor";
     setWindowTitle(QString("Radar System - %1").arg(roleStr));
-    resize(1400, 850);
     
     // Connect to theme changes for live updates
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged,
@@ -66,6 +66,10 @@ MainWindow::MainWindow(const QString& username, UserRole role, QWidget* parent)
     
     // Auto-load design if available
     autoLoadDesign();
+    
+    // Open in fullscreen mode for immersive experience
+    showMaximized();
+    setWindowState(Qt::WindowFullScreen);
 }
 
 MainWindow::~MainWindow()
@@ -205,6 +209,15 @@ void MainWindow::setupUI()
     updateThemeButtonText();
     toolbar->addWidget(m_themeToggleBtn);
     
+    toolbar->addSeparator();
+    
+    // Logout button (top right corner)
+    m_logoutBtn = new QPushButton("LOG OFF", this);
+    m_logoutBtn->setObjectName("logoutButton");
+    m_logoutBtn->setCursor(Qt::PointingHandCursor);
+    m_logoutBtn->setToolTip("Log off and switch user/role");
+    toolbar->addWidget(m_logoutBtn);
+    
     // Connect toolbar signals
     connect(m_saveBtn, &QPushButton::clicked, this, &MainWindow::saveDesign);
     connect(m_loadBtn, &QPushButton::clicked, this, &MainWindow::loadDesign);
@@ -216,6 +229,7 @@ void MainWindow::setupUI()
     connect(m_voiceToggleBtn, &QPushButton::clicked, this, &MainWindow::toggleVoiceAlerts);
     connect(testVoiceBtn, &QPushButton::clicked, this, &MainWindow::testVoice);
     connect(m_themeToggleBtn, &QPushButton::clicked, this, &MainWindow::onThemeToggle);
+    connect(m_logoutBtn, &QPushButton::clicked, this, &MainWindow::onLogout);
     
     // ========== MAIN LAYOUT ==========
     QWidget* centralWidget = new QWidget(this);
@@ -756,5 +770,25 @@ void MainWindow::refreshCanvasBackground()
     
     if (m_canvas->scene()) {
         m_canvas->scene()->update();
+    }
+}
+
+// ======================================================================
+// Logout
+// ======================================================================
+
+void MainWindow::onLogout()
+{
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle("Confirm Logout");
+    msgBox.setText("Are you sure you want to log off?");
+    msgBox.setInformativeText("You will be returned to the login screen to switch users or roles.");
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::No);
+    msgBox.setIcon(QMessageBox::Question);
+    
+    if (msgBox.exec() == QMessageBox::Yes) {
+        emit logoutRequested();
+        close();
     }
 }
