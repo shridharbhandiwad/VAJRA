@@ -42,7 +42,7 @@ LoginDialog::LoginDialog(QWidget* parent)
     
     setWindowTitle("Radar System - Access Control");
     setModal(true);
-    setFixedSize(480, 700);
+    setFixedSize(540, 580);
     setObjectName("LoginDialog");
     
     // Standard window frame for professional look
@@ -57,8 +57,8 @@ LoginDialog::LoginDialog(QWidget* parent)
 void LoginDialog::setupUI()
 {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(28, 20, 28, 16);
-    mainLayout->setSpacing(10);
+    mainLayout->setContentsMargins(36, 28, 36, 24);
+    mainLayout->setSpacing(16);
     
     // ========== THEME TOGGLE (top right) ==========
     QHBoxLayout* topBarLayout = new QHBoxLayout();
@@ -75,7 +75,7 @@ void LoginDialog::setupUI()
     
     // ========== HEADER SECTION ==========
     QVBoxLayout* headerLayout = new QVBoxLayout();
-    headerLayout->setSpacing(4);
+    headerLayout->setSpacing(6);
     
     // Title - Main heading
     m_titleLabel = new QLabel("RADAR MONITORING SYSTEM", this);
@@ -102,11 +102,12 @@ void LoginDialog::setupUI()
     inputFrame->setObjectName("inputFrame");
     
     QVBoxLayout* inputLayout = new QVBoxLayout(inputFrame);
-    inputLayout->setSpacing(12);
+    inputLayout->setSpacing(18);
+    inputLayout->setContentsMargins(20, 20, 20, 20);
     
     // Username field
     QVBoxLayout* usernameLayout = new QVBoxLayout();
-    usernameLayout->setSpacing(4);
+    usernameLayout->setSpacing(8);
     
     QLabel* usernameLabel = new QLabel("USERNAME", this);
     usernameLabel->setObjectName("fieldLabel");
@@ -119,7 +120,7 @@ void LoginDialog::setupUI()
     
     // Password field with toggle
     QVBoxLayout* passwordLayout = new QVBoxLayout();
-    passwordLayout->setSpacing(4);
+    passwordLayout->setSpacing(8);
     
     QLabel* passwordLabel = new QLabel("PASSWORD", this);
     passwordLabel->setObjectName("fieldLabel");
@@ -189,26 +190,6 @@ void LoginDialog::setupUI()
     buttonLayout->addWidget(m_loginButton);
     buttonLayout->addWidget(m_cancelButton);
     
-    // ========== INFO PANEL ==========
-    QFrame* infoPanel = new QFrame(this);
-    infoPanel->setObjectName("infoPanel");
-    
-    QVBoxLayout* infoPanelLayout = new QVBoxLayout(infoPanel);
-    
-    QLabel* infoPanelText = new QLabel(
-        "<b>DEFAULT CREDENTIALS</b><br><br>"
-        "Username: <b>Designer</b> / Password: <b>designer</b><br>"
-        "&nbsp;&nbsp;&rarr; Design &amp; monitor on System Overview canvas<br><br>"
-        "Username: <b>User</b> / Password: <b>user</b><br>"
-        "&nbsp;&nbsp;&rarr; Monitor-only (no design, no components panel)",
-        this
-    );
-    infoPanelText->setObjectName("infoPanelText");
-    infoPanelText->setWordWrap(true);
-    infoPanelText->setTextFormat(Qt::RichText);
-    
-    infoPanelLayout->addWidget(infoPanelText);
-    
     // ========== FOOTER ==========
     QLabel* footerLabel = new QLabel("RADAR MONITORING SYSTEM v3.0 | AUTHORIZED ACCESS ONLY", this);
     footerLabel->setObjectName("footerLabel");
@@ -217,14 +198,12 @@ void LoginDialog::setupUI()
     // ========== ASSEMBLE MAIN LAYOUT ==========
     mainLayout->addLayout(topBarLayout);
     mainLayout->addLayout(headerLayout);
-    mainLayout->addSpacing(6);
+    mainLayout->addSpacing(12);
     mainLayout->addWidget(inputFrame);
     mainLayout->addWidget(m_errorLabel);
     mainLayout->addWidget(m_successLabel);
-    mainLayout->addSpacing(4);
-    mainLayout->addLayout(buttonLayout);
     mainLayout->addSpacing(8);
-    mainLayout->addWidget(infoPanel);
+    mainLayout->addLayout(buttonLayout);
     mainLayout->addStretch();
     mainLayout->addWidget(footerLabel);
     
