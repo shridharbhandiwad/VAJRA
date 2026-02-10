@@ -50,6 +50,7 @@ private slots:
     void importSubcomponents();
     void onComponentAdded(const QString& id, const QString& typeId);
     void onComponentLoaded(const QString& id, const QString& typeId);
+    void onComponentRemoved(const QString& id, const QString& typeId);
     void onDesignSubComponentAdded(const QString& parentId, SubComponentType subType);
     void onDropRejected(const QString& reason);
     void onMessageReceived(const QString& componentId, const QString& color, qreal size);

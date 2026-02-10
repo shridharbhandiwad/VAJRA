@@ -354,6 +354,7 @@ void MainWindow::setupUI()
     // ========== CONNECT CANVAS SIGNALS ==========
     connect(m_canvas, &Canvas::componentAdded, this, &MainWindow::onComponentAdded);
     connect(m_canvas, &Canvas::componentLoaded, this, &MainWindow::onComponentLoaded);
+    connect(m_canvas, &Canvas::componentRemoved, this, &MainWindow::onComponentRemoved);
     connect(m_canvas, &Canvas::designSubComponentAdded, this, &MainWindow::onDesignSubComponentAdded);
     connect(m_canvas, &Canvas::dropRejected, this, &MainWindow::onDropRejected);
     connect(m_canvas, &Canvas::modeChanged, this, &MainWindow::onModeChanged);
@@ -676,6 +677,32 @@ void MainWindow::onComponentLoaded(const QString& id, const QString& typeId)
         for (DesignSubComponent* dsub : comp->getDesignSubComponents()) {
             m_analytics->addDesignSubComponent(id, DesignSubComponent::typeToString(dsub->getType()));
         }
+    }
+}
+
+void MainWindow::onComponentRemoved(const QString& id, const QString& typeId)
+{
+    Q_UNUSED(typeId);
+    
+    qDebug() << "[MainWindow] Component removed:" << id;
+    
+    // Remove from analytics
+    m_analytics->removeComponent(id);
+    
+    // Close and remove enlarged view tab if it exists
+    if (m_enlargedViews.contains(id)) {
+        EnlargedComponentView* view = m_enlargedViews[id];
+        
+        // Find and remove the tab
+        for (int i = 0; i < m_tabWidget->count(); ++i) {
+            if (m_tabWidget->widget(i) == view) {
+                m_tabWidget->removeTab(i);
+                break;
+            }
+        }
+        
+        m_enlargedViews.remove(id);
+        delete view;
     }
 }
 

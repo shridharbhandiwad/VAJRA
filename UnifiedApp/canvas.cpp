@@ -36,6 +36,10 @@ Canvas::Canvas(QWidget* parent)
     
     // Enable rubber band selection in select mode
     setDragMode(QGraphicsView::NoDrag);
+    
+    // Connect to registry to handle component type deletion
+    connect(&ComponentRegistry::instance(), &ComponentRegistry::componentUnregistered,
+            this, &Canvas::removeComponentsByType);
 }
 
 Canvas::~Canvas()
@@ -112,6 +116,50 @@ void Canvas::clearCanvas()
     m_connectionSource = nullptr;
     m_pendingLine = nullptr;
     m_isDrawingConnection = false;
+}
+
+void Canvas::removeComponentsByType(const QString& typeId)
+{
+    qDebug() << "[Canvas] Removing all components of type:" << typeId;
+    
+    // Find all components with this type
+    QList<Component*> componentsToRemove;
+    for (auto it = m_componentMap.begin(); it != m_componentMap.end(); ++it) {
+        Component* comp = it.value();
+        if (comp && comp->getTypeId() == typeId) {
+            componentsToRemove.append(comp);
+        }
+    }
+    
+    // Remove connections involving these components first
+    QList<Connection*> connectionsToRemove;
+    for (Component* comp : componentsToRemove) {
+        for (Connection* conn : m_connections) {
+            if (conn->getSource() == comp || conn->getTarget() == comp) {
+                if (!connectionsToRemove.contains(conn)) {
+                    connectionsToRemove.append(conn);
+                }
+            }
+        }
+    }
+    
+    for (Connection* conn : connectionsToRemove) {
+        m_scene->removeItem(conn);
+        m_connections.removeAll(conn);
+        delete conn;
+    }
+    
+    // Remove the components
+    for (Component* comp : componentsToRemove) {
+        QString id = comp->getId();
+        m_componentMap.remove(id);
+        m_scene->removeItem(comp);
+        emit componentRemoved(id, typeId);
+        delete comp;
+    }
+    
+    qDebug() << "[Canvas] Removed" << componentsToRemove.size() 
+             << "components and" << connectionsToRemove.size() << "connections";
 }
 
 void Canvas::setMode(CanvasMode mode)

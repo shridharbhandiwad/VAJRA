@@ -4,6 +4,57 @@
 #include <QMimeData>
 #include <QApplication>
 #include <QDebug>
+#include <QMessageBox>
+
+// ============================================================
+// ComponentItemWidget Implementation
+// ============================================================
+
+ComponentItemWidget::ComponentItemWidget(const QString& displayName, const QString& typeId, QWidget* parent)
+    : QWidget(parent)
+    , m_displayName(displayName)
+    , m_typeId(typeId)
+{
+    QHBoxLayout* layout = new QHBoxLayout(this);
+    layout->setContentsMargins(4, 2, 4, 2);
+    layout->setSpacing(4);
+    
+    // Component name label
+    m_nameLabel = new QLabel(displayName);
+    m_nameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    layout->addWidget(m_nameLabel);
+    
+    // Delete button (small, with × symbol)
+    m_deleteBtn = new QPushButton("×");
+    m_deleteBtn->setFixedSize(20, 20);
+    m_deleteBtn->setStyleSheet(
+        "QPushButton {"
+        "    background-color: rgba(255, 70, 70, 180);"
+        "    color: white;"
+        "    border: none;"
+        "    border-radius: 10px;"
+        "    font-size: 16px;"
+        "    font-weight: bold;"
+        "    padding: 0px;"
+        "}"
+        "QPushButton:hover {"
+        "    background-color: rgba(255, 30, 30, 220);"
+        "}"
+        "QPushButton:pressed {"
+        "    background-color: rgba(200, 0, 0, 255);"
+        "}"
+    );
+    m_deleteBtn->setToolTip(QString("Delete %1 component type").arg(displayName));
+    layout->addWidget(m_deleteBtn);
+    
+    connect(m_deleteBtn, &QPushButton::clicked, this, [this]() {
+        emit deleteRequested(m_typeId);
+    });
+}
+
+// ============================================================
+// ComponentList Implementation
+// ============================================================
 
 ComponentList::ComponentList(QWidget* parent)
     : QListWidget(parent)
@@ -54,12 +105,19 @@ void ComponentList::addComponentItem(const QString& displayName, const QString& 
     Q_UNUSED(imageDir);
     Q_UNUSED(iconColor);
     
-    QListWidgetItem* item = new QListWidgetItem(displayName);
+    QListWidgetItem* item = new QListWidgetItem();
     item->setData(Qt::UserRole, typeId);  // Store typeId for drag-drop
     item->setData(Qt::UserRole + 1, QStringLiteral("component")); // Item category
     item->setToolTip(typeId);
-    
     addItem(item);
+    
+    // Create custom widget with delete button
+    ComponentItemWidget* widget = new ComponentItemWidget(displayName, typeId);
+    connect(widget, &ComponentItemWidget::deleteRequested, 
+            this, &ComponentList::onDeleteComponent);
+    
+    item->setSizeHint(widget->sizeHint());
+    setItemWidget(item, widget);
 }
 
 void ComponentList::addSubComponentItem(const QString& name)
@@ -72,6 +130,53 @@ void ComponentList::addSubComponentItem(const QString& name)
     item->setToolTip(QString("Drag and drop '%1' widget into a component").arg(name));
     
     addItem(item);
+}
+
+void ComponentList::onDeleteComponent(const QString& typeId)
+{
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    ComponentDefinition def = registry.getComponent(typeId);
+    
+    if (def.typeId.isEmpty()) {
+        qWarning() << "[ComponentList] Component type not found:" << typeId;
+        return;
+    }
+    
+    // Confirm deletion
+    QMessageBox::StandardButton reply = QMessageBox::question(
+        this,
+        "Delete Component Type",
+        QString("Are you sure you want to delete the component type '%1'?\n\n"
+                "This will remove:\n"
+                "• The component type definition\n"
+                "• All instances of this component from the canvas\n\n"
+                "This action cannot be undone.")
+            .arg(def.displayName),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No
+    );
+    
+    if (reply != QMessageBox::Yes) {
+        return;
+    }
+    
+    // Remove from registry (this will emit componentUnregistered and registryChanged signals)
+    if (registry.unregisterComponent(typeId)) {
+        qDebug() << "[ComponentList] Deleted component type:" << typeId;
+        
+        // Save registry to persist changes
+        if (registry.saveToFile()) {
+            qDebug() << "[ComponentList] Registry saved after deletion";
+        } else {
+            qWarning() << "[ComponentList] Failed to save registry after deletion";
+        }
+    } else {
+        QMessageBox::warning(
+            this,
+            "Delete Failed",
+            QString("Failed to delete component type '%1'").arg(def.displayName)
+        );
+    }
 }
 
 void ComponentList::mousePressEvent(QMouseEvent* event)
