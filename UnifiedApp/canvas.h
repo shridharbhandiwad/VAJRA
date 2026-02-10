@@ -63,6 +63,9 @@ public:
     QList<Connection*> getConnections() const { return m_connections; }
     void deleteSelectedConnections();
     
+    // Remove all components of a specific type (called when type is deleted from registry)
+    void removeComponentsByType(const QString& typeId);
+    
 signals:
     void componentAdded(const QString& id, const QString& typeId);
     void componentLoaded(const QString& id, const QString& typeId);
@@ -70,6 +73,7 @@ signals:
     void dropRejected(const QString& reason);
     void modeChanged(CanvasMode mode);
     void connectionAdded(Connection* conn);
+    void componentRemoved(const QString& id, const QString& typeId);
     
 protected:
     void dragEnterEvent(QDragEnterEvent* event) override;

@@ -3,6 +3,32 @@
 
 #include <QListWidget>
 #include <QMouseEvent>
+#include <QWidget>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+
+/**
+ * ComponentItemWidget - Custom widget for component list items with delete button
+ */
+class ComponentItemWidget : public QWidget
+{
+    Q_OBJECT
+    
+public:
+    explicit ComponentItemWidget(const QString& displayName, const QString& typeId, QWidget* parent = nullptr);
+    QString getTypeId() const { return m_typeId; }
+    QString getDisplayName() const { return m_displayName; }
+    
+signals:
+    void deleteRequested(const QString& typeId);
+    
+private:
+    QString m_displayName;
+    QString m_typeId;
+    QLabel* m_nameLabel;
+    QPushButton* m_deleteBtn;
+};
 
 /**
  * ComponentList - Dynamically populated component list driven by the ComponentRegistry.
@@ -27,6 +53,9 @@ public:
 protected:
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
+    
+private slots:
+    void onDeleteComponent(const QString& typeId);
     
 private:
     void addComponentItem(const QString& displayName, const QString& typeId, 
