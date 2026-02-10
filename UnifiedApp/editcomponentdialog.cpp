@@ -21,7 +21,7 @@ EditComponentDialog::EditComponentDialog(Component* component, QWidget* parent)
 {
     setWindowTitle("Edit Component");
     setModal(true);
-    resize(700, 450);
+    resize(700, 650);
     
     setupUI();
     applyStyles();
