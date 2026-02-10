@@ -84,8 +84,9 @@ QLabel#fieldLabel {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    padding: 2px 2px;
+    padding: 0px 2px 8px 2px;  /* Add bottom padding for separation */
     font-family: "Inter", "Segoe UI Variable", "SF Pro Display", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+    min-height: 20px;
 }
 
 /* Primary Button */

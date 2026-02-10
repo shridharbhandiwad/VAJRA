@@ -102,35 +102,28 @@ void LoginDialog::setupUI()
     inputFrame->setObjectName("inputFrame");
     
     QVBoxLayout* inputLayout = new QVBoxLayout(inputFrame);
-    inputLayout->setSpacing(24);
+    inputLayout->setSpacing(0);  // We'll control spacing manually
     inputLayout->setContentsMargins(20, 20, 20, 20);
     
     // Username field
-    QVBoxLayout* usernameLayout = new QVBoxLayout();
-    usernameLayout->setSpacing(10);
-    usernameLayout->setContentsMargins(0, 0, 0, 0);
-    
     QLabel* usernameLabel = new QLabel("USERNAME", this);
     usernameLabel->setObjectName("fieldLabel");
+    usernameLabel->setContentsMargins(0, 0, 0, 8);  // Bottom margin for separation
     
     m_usernameEdit = new QLineEdit(this);
     m_usernameEdit->setPlaceholderText("Enter your username");
-    
-    usernameLayout->addWidget(usernameLabel);
-    usernameLayout->addWidget(m_usernameEdit);
+    m_usernameEdit->setContentsMargins(0, 0, 0, 0);
     
     // Password field with toggle
-    QVBoxLayout* passwordLayout = new QVBoxLayout();
-    passwordLayout->setSpacing(10);
-    passwordLayout->setContentsMargins(0, 0, 0, 0);
-    
     QLabel* passwordLabel = new QLabel("PASSWORD", this);
     passwordLabel->setObjectName("fieldLabel");
+    passwordLabel->setContentsMargins(0, 0, 0, 8);  // Bottom margin for separation
     
     // Create a container frame for password input with integrated button
     QFrame* passwordContainer = new QFrame(this);
     passwordContainer->setObjectName("passwordContainer");
     passwordContainer->setMinimumHeight(36);
+    passwordContainer->setContentsMargins(0, 0, 0, 0);
     
     QHBoxLayout* passwordInputLayout = new QHBoxLayout(passwordContainer);
     passwordInputLayout->setContentsMargins(0, 0, 0, 0);
@@ -150,15 +143,18 @@ void LoginDialog::setupUI()
     passwordInputLayout->addWidget(m_passwordEdit);
     passwordInputLayout->addWidget(m_togglePasswordBtn);
     
-    passwordLayout->addWidget(passwordLabel);
-    passwordLayout->addWidget(passwordContainer);
-    
     // Remember me checkbox
     m_rememberMeCheck = new QCheckBox("Remember me on this device", this);
     m_rememberMeCheck->setChecked(false);
+    m_rememberMeCheck->setContentsMargins(0, 0, 0, 0);
     
-    inputLayout->addLayout(usernameLayout);
-    inputLayout->addLayout(passwordLayout);
+    // Add all widgets with explicit spacing
+    inputLayout->addWidget(usernameLabel);
+    inputLayout->addWidget(m_usernameEdit);
+    inputLayout->addSpacing(20);  // Explicit space between username and password
+    inputLayout->addWidget(passwordLabel);
+    inputLayout->addWidget(passwordContainer);
+    inputLayout->addSpacing(16);  // Space before checkbox
     inputLayout->addWidget(m_rememberMeCheck);
     
     // ========== STATUS MESSAGES ==========
