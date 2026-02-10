@@ -801,16 +801,25 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
     }
     
     QAction* editAction = nullptr;
-    // Only show "Edit Component" option for Designer role
+    QAction* duplicateAction = nullptr;
+    QAction* deleteAction = nullptr;
+    
+    // Only show "Edit Component", "Duplicate", and "Delete" options for Designer role
     if (canvas && canvas->getUserRole() == UserRole::Designer) {
         editAction = menu.addAction("✏️ Edit Component...");
         menu.addSeparator();
+        
+        duplicateAction = menu.addAction("📋 Duplicate");
+        menu.addSeparator();
+        
+        deleteAction = menu.addAction("🗑️ Delete");
     }
     
-    QAction* duplicateAction = menu.addAction("📋 Duplicate");
-    menu.addSeparator();
-    
-    QAction* deleteAction = menu.addAction("🗑️ Delete");
+    // Show context menu only if there are actions available
+    if (!editAction && !duplicateAction && !deleteAction) {
+        // No actions available (User mode)
+        return;
+    }
     
     QAction* selected = menu.exec(event->screenPos());
     
@@ -826,10 +835,10 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
                 canvas->notifyComponentEdited(m_id, m_typeId);
             }
         }
-    } else if (selected == duplicateAction) {
+    } else if (duplicateAction && selected == duplicateAction) {
         // TODO: Implement component duplication
         qDebug() << "[Component] Duplicate not yet implemented";
-    } else if (selected == deleteAction) {
+    } else if (deleteAction && selected == deleteAction) {
         // Delete this component
         if (scene()) {
             scene()->removeItem(this);
