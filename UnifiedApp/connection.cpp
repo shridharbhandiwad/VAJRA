@@ -140,7 +140,7 @@ void Connection::paint(QPainter* painter, const QStyleOptionGraphicsItem* option
         painter->rotate(angle);
         
         // Draw label background
-        QFont labelFont("Segoe UI", 8, QFont::Bold);
+        QFont labelFont("Inter", 10, QFont::Bold);
         painter->setFont(labelFont);
         QFontMetrics fm(labelFont);
         QRectF textRect = fm.boundingRect(m_label);

@@ -36,7 +36,7 @@ void ComponentList::refreshFromRegistry()
     separator->setFlags(Qt::NoItemFlags);   // not selectable / draggable
     separator->setBackground(QColor(36, 39, 46));
     separator->setForeground(QColor(120, 125, 135));
-    QFont sepFont("Segoe UI", 8, QFont::Bold);
+    QFont sepFont("Inter", 10, QFont::Bold);
     separator->setFont(sepFont);
     addItem(separator);
     

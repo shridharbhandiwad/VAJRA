@@ -16,9 +16,13 @@ int main(int argc, char *argv[])
     app.setApplicationVersion("3.0");
     app.setOrganizationName("Radar Systems Inc.");
     
-    // Set modern application-wide font
-    QFont appFont("Segoe UI", 10);
+    // Set modern application-wide font (Inter / Segoe UI Variable – latest UI fonts)
+    QFont appFont("Inter", 12);
     appFont.setStyleHint(QFont::SansSerif);
+    // Fallback chain: Inter → Segoe UI Variable → SF Pro Display → Segoe UI → Roboto
+    QStringList fontFamilies;
+    fontFamilies << "Inter" << "Segoe UI Variable" << "SF Pro Display" << "Segoe UI" << "Roboto" << "Helvetica Neue";
+    appFont.setFamilies(fontFamilies);
     app.setFont(appFont);
     
     // Enable high DPI scaling
