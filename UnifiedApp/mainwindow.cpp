@@ -288,8 +288,8 @@ void MainWindow::setupUI()
     leftLayout->addWidget(m_componentList);
     leftLayout->addWidget(addInlineBtn);
     m_leftPanel->setLayout(leftLayout);
-    m_leftPanel->setMaximumWidth(190);
-    m_leftPanel->setMinimumWidth(160);
+    m_leftPanel->setMaximumWidth(280);
+    m_leftPanel->setMinimumWidth(220);
     
     connect(&registry, &ComponentRegistry::registryChanged, this, [countLabel, &registry]() {
         countLabel->setText(QString("%1 types available").arg(registry.componentCount()));
