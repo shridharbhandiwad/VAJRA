@@ -430,9 +430,14 @@ void MainWindow::addComponentTab(Component* comp)
     EnlargedComponentView* view = new EnlargedComponentView(id, typeId, subNames, m_tabWidget);
     m_enlargedViews[id] = view;
     
+    // Get the actual display name from the component (may be customized)
+    QString displayName = comp->getDisplayName();
+    
+    // Update the view with the actual component data (display name and label)
+    view->updateFromComponent(comp);
+    
     view->updateComponentHealth(comp->getColor(), comp->getSize());
     
-    QString displayName = comp->getDisplayName();
     QString tabName = "  " + displayName + "  ";
     m_tabWidget->addTab(view, tabName);
     
@@ -681,29 +686,48 @@ void MainWindow::onComponentLoaded(const QString& id, const QString& typeId)
     }
 }
 
-void MainWindow::onComponentEdited(const QString& id, const QString& typeId)
+void MainWindow::onComponentEdited(const QString& id, const QString& /*typeId*/)
 {
-    ComponentRegistry& registry = ComponentRegistry::instance();
-    QString displayName = typeId;
-    if (registry.hasComponent(typeId)) {
-        displayName = registry.getComponent(typeId).displayName;
+    Component* comp = m_canvas->getComponentById(id);
+    if (!comp) {
+        qWarning() << "[MainWindow] Component" << id << "not found during edit callback";
+        return;
     }
+    
+    // Get the actual display name from the component (may be customized)
+    QString displayName = comp->getDisplayName();
     
     // Refresh the component in analytics (clears old subcomponents)
     m_analytics->refreshComponent(id, displayName);
     
     // Re-add all subcomponents to analytics
-    Component* comp = m_canvas->getComponentById(id);
-    if (comp) {
-        // Add regular SubComponents
-        for (SubComponent* sub : comp->getSubComponents()) {
-            m_analytics->addSubComponent(id, sub->getName());
+    // Add regular SubComponents
+    for (SubComponent* sub : comp->getSubComponents()) {
+        m_analytics->addSubComponent(id, sub->getName());
+    }
+    
+    // Add DesignSubComponents
+    for (DesignSubComponent* dsub : comp->getDesignSubComponents()) {
+        m_analytics->addDesignSubComponent(id, DesignSubComponent::typeToString(dsub->getType()));
+    }
+    
+    // Update the enlarged view tab if it exists
+    if (m_enlargedViews.contains(id)) {
+        EnlargedComponentView* view = m_enlargedViews[id];
+        
+        // Update the view with the updated component data
+        view->updateFromComponent(comp);
+        
+        // Update the tab name
+        for (int i = 0; i < m_tabWidget->count(); ++i) {
+            if (m_tabWidget->widget(i) == view) {
+                QString tabName = "  " + displayName + "  ";
+                m_tabWidget->setTabText(i, tabName);
+                break;
+            }
         }
         
-        // Add DesignSubComponents
-        for (DesignSubComponent* dsub : comp->getDesignSubComponents()) {
-            m_analytics->addDesignSubComponent(id, DesignSubComponent::typeToString(dsub->getType()));
-        }
+        qDebug() << "[MainWindow] Updated enlarged view tab for" << id << "with new display name:" << displayName;
     }
     
     qDebug() << "[MainWindow] Component" << id << "edited and analytics refreshed";
