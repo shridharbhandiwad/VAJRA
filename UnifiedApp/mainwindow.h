@@ -105,6 +105,22 @@ private:
     QPushButton* m_clearBtn;
     QPushButton* m_addTypeBtn;
     
+    // Toolbar QActions (needed to properly hide toolbar items)
+    QAction* m_saveBtnAction;
+    QAction* m_loadBtnAction;
+    QAction* m_clearBtnAction;
+    QAction* m_addTypeBtnAction;
+    QAction* m_connectBtnAction;
+    QAction* m_connectionTypeComboAction;
+    QAction* m_voiceToggleBtnAction;
+    QAction* m_testVoiceBtnAction;
+    // Toolbar separators (hidden for User role to keep toolbar clean)
+    QAction* m_designSep1;   // after Load
+    QAction* m_designSep2;   // after AddType
+    QAction* m_connectSep;   // after connection controls
+    QAction* m_statusSep;    // after status label
+    QAction* m_voiceSep;     // after voice controls
+    
     // Left panel (hidden for User role)
     QWidget* m_leftPanel;
     

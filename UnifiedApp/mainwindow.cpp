@@ -34,6 +34,19 @@ MainWindow::MainWindow(const QString& username, UserRole role, QWidget* parent)
     , m_loadBtn(nullptr)
     , m_clearBtn(nullptr)
     , m_addTypeBtn(nullptr)
+    , m_saveBtnAction(nullptr)
+    , m_loadBtnAction(nullptr)
+    , m_clearBtnAction(nullptr)
+    , m_addTypeBtnAction(nullptr)
+    , m_connectBtnAction(nullptr)
+    , m_connectionTypeComboAction(nullptr)
+    , m_voiceToggleBtnAction(nullptr)
+    , m_testVoiceBtnAction(nullptr)
+    , m_designSep1(nullptr)
+    , m_designSep2(nullptr)
+    , m_connectSep(nullptr)
+    , m_statusSep(nullptr)
+    , m_voiceSep(nullptr)
     , m_leftPanel(nullptr)
     , m_tabWidget(nullptr)
 {
@@ -74,20 +87,34 @@ void MainWindow::applyRoleRestrictions()
         
     } else if (m_role == UserRole::User) {
         // User: Monitor-only. Can load designs to view, but no design tools.
+        // Only visible toolbar items: User label, LOAD DESIGN, STATUS, Theme toggle.
         
         // Hide the left panel (components list)
         if (m_leftPanel) {
             m_leftPanel->setVisible(false);
         }
         
-        // Hide design-only toolbar buttons (keep Load Design visible)
-        if (m_saveBtn)   m_saveBtn->setVisible(false);
-        if (m_clearBtn)  m_clearBtn->setVisible(false);
-        if (m_addTypeBtn) m_addTypeBtn->setVisible(false);
+        // Hide design-only toolbar actions (must hide QAction, not just widget,
+        // for QToolBar to properly collapse the space).
+        // Keep Load Design visible for loading designs to view.
+        if (m_saveBtnAction)   m_saveBtnAction->setVisible(false);
+        if (m_clearBtnAction)  m_clearBtnAction->setVisible(false);
+        if (m_addTypeBtnAction) m_addTypeBtnAction->setVisible(false);
         
         // Hide connection mode controls (design feature)
-        if (m_connectBtn) m_connectBtn->setVisible(false);
-        if (m_connectionTypeCombo) m_connectionTypeCombo->setVisible(false);
+        if (m_connectBtnAction) m_connectBtnAction->setVisible(false);
+        if (m_connectionTypeComboAction) m_connectionTypeComboAction->setVisible(false);
+        
+        // Hide voice controls (not needed for monitor-only view)
+        if (m_voiceToggleBtnAction) m_voiceToggleBtnAction->setVisible(false);
+        if (m_testVoiceBtnAction) m_testVoiceBtnAction->setVisible(false);
+        
+        // Hide separators between hidden items to keep toolbar clean
+        if (m_designSep1)  m_designSep1->setVisible(false);
+        if (m_designSep2)  m_designSep2->setVisible(false);
+        if (m_connectSep)  m_connectSep->setVisible(false);
+        if (m_statusSep)   m_statusSep->setVisible(false);
+        if (m_voiceSep)    m_voiceSep->setVisible(false);
         
         // Set canvas to read-only (no drag-drop, no move, no delete)
         if (m_canvas) {
@@ -127,12 +154,12 @@ void MainWindow::setupUI()
     m_addTypeBtn->setObjectName("addTypeButton");
     m_addTypeBtn->setToolTip("Add a new component type to the registry");
     
-    toolbar->addWidget(m_saveBtn);
-    toolbar->addWidget(m_loadBtn);
-    toolbar->addWidget(m_clearBtn);
-    toolbar->addSeparator();
-    toolbar->addWidget(m_addTypeBtn);
-    toolbar->addSeparator();
+    m_saveBtnAction = toolbar->addWidget(m_saveBtn);
+    m_loadBtnAction = toolbar->addWidget(m_loadBtn);
+    m_clearBtnAction = toolbar->addWidget(m_clearBtn);
+    m_designSep1 = toolbar->addSeparator();
+    m_addTypeBtnAction = toolbar->addWidget(m_addTypeBtn);
+    m_designSep2 = toolbar->addSeparator();
     
     // Connection mode controls
     m_connectBtn = new QPushButton("CONNECT MODE", this);
@@ -146,15 +173,15 @@ void MainWindow::setupUI()
     m_connectionTypeCombo->addItem("Bi-directional", static_cast<int>(ConnectionType::Bidirectional));
     m_connectionTypeCombo->setToolTip("Select connection direction type");
     
-    toolbar->addWidget(m_connectBtn);
-    toolbar->addWidget(m_connectionTypeCombo);
-    toolbar->addSeparator();
+    m_connectBtnAction = toolbar->addWidget(m_connectBtn);
+    m_connectionTypeComboAction = toolbar->addWidget(m_connectionTypeCombo);
+    m_connectSep = toolbar->addSeparator();
     
     // Runtime status & voice controls
     m_statusLabel = new QLabel("STATUS: INITIALIZING", this);
     m_statusLabel->setObjectName("statusLabel");
     toolbar->addWidget(m_statusLabel);
-    toolbar->addSeparator();
+    m_statusSep = toolbar->addSeparator();
     
     m_voiceToggleBtn = new QPushButton("VOICE: ON", this);
     m_voiceToggleBtn->setObjectName("voiceToggleBtn");
@@ -166,9 +193,9 @@ void MainWindow::setupUI()
     testVoiceBtn->setObjectName("testVoiceBtn");
     testVoiceBtn->setToolTip("Test voice output");
     
-    toolbar->addWidget(m_voiceToggleBtn);
-    toolbar->addWidget(testVoiceBtn);
-    toolbar->addSeparator();
+    m_voiceToggleBtnAction = toolbar->addWidget(m_voiceToggleBtn);
+    m_testVoiceBtnAction = toolbar->addWidget(testVoiceBtn);
+    m_voiceSep = toolbar->addSeparator();
     
     // Theme toggle button
     m_themeToggleBtn = new QPushButton(this);
