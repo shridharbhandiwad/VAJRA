@@ -589,6 +589,40 @@ QPushButton#logoutButton:pressed {
     border: 1px solid rgba(183, 28, 28, 0.8);
 }
 
+/* Window Control Buttons */
+QPushButton#minimizeButton,
+QPushButton#maximizeButton,
+QPushButton#closeButton {
+    background: rgba(230, 235, 240, 0.9);
+    color: #4a5568;
+    border: 1px solid rgba(160, 170, 190, 0.5);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+QPushButton#minimizeButton:hover,
+QPushButton#maximizeButton:hover {
+    background: rgba(210, 220, 230, 1);
+    color: #2d3748;
+    border: 1px solid rgba(140, 150, 170, 0.7);
+}
+
+QPushButton#closeButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #F44336, stop:1 #D32F2F);
+    color: #FFFFFF;
+    border: 1px solid rgba(211, 47, 47, 0.6);
+}
+
+QPushButton#minimizeButton:pressed,
+QPushButton#maximizeButton:pressed,
+QPushButton#closeButton:pressed {
+    background: rgba(190, 200, 210, 0.95);
+    border: 1px solid rgba(120, 130, 150, 0.8);
+}
+
 /* Connect Mode Button */
 QPushButton#connectButton {
     background: rgba(0, 137, 181, 0.06);
