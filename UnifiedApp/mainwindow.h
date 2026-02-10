@@ -59,11 +59,6 @@ private slots:
     void toggleVoiceAlerts();
     void testVoice();
     
-    // Window control slots
-    void onMinimizeWindow();
-    void onMaximizeWindow();
-    void onCloseWindow();
-    
     // Connection mode slots
     void toggleConnectionMode();
     void onConnectionTypeChanged(int index);
@@ -112,11 +107,6 @@ private:
     
     // Logout button
     QPushButton* m_logoutBtn;
-    
-    // Window control buttons
-    QPushButton* m_minimizeBtn;
-    QPushButton* m_maximizeBtn;
-    QPushButton* m_closeBtn;
     
     // Design toolbar buttons (Save/Clear/AddType hidden for User role; Load visible for all)
     QPushButton* m_saveBtn;

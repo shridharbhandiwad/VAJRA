@@ -31,9 +31,6 @@ MainWindow::MainWindow(const QString& username, UserRole role, QWidget* parent)
     , m_connectionTypeCombo(nullptr)
     , m_themeToggleBtn(nullptr)
     , m_logoutBtn(nullptr)
-    , m_minimizeBtn(nullptr)
-    , m_maximizeBtn(nullptr)
-    , m_closeBtn(nullptr)
     , m_saveBtn(nullptr)
     , m_loadBtn(nullptr)
     , m_clearBtn(nullptr)
@@ -218,30 +215,6 @@ void MainWindow::setupUI()
     
     toolbar->addSeparator();
     
-    // Window control buttons
-    m_minimizeBtn = new QPushButton("−", this);  // Using minus sign
-    m_minimizeBtn->setObjectName("minimizeButton");
-    m_minimizeBtn->setCursor(Qt::PointingHandCursor);
-    m_minimizeBtn->setToolTip("Minimize window");
-    m_minimizeBtn->setMaximumWidth(40);
-    toolbar->addWidget(m_minimizeBtn);
-    
-    m_maximizeBtn = new QPushButton("□", this);  // Using square
-    m_maximizeBtn->setObjectName("maximizeButton");
-    m_maximizeBtn->setCursor(Qt::PointingHandCursor);
-    m_maximizeBtn->setToolTip("Maximize/Restore window");
-    m_maximizeBtn->setMaximumWidth(40);
-    toolbar->addWidget(m_maximizeBtn);
-    
-    m_closeBtn = new QPushButton("✕", this);  // Using X symbol
-    m_closeBtn->setObjectName("closeButton");
-    m_closeBtn->setCursor(Qt::PointingHandCursor);
-    m_closeBtn->setToolTip("Close window");
-    m_closeBtn->setMaximumWidth(40);
-    toolbar->addWidget(m_closeBtn);
-    
-    toolbar->addSeparator();
-    
     // Logout button (top right corner)
     m_logoutBtn = new QPushButton("LOG OFF", this);
     m_logoutBtn->setObjectName("logoutButton");
@@ -260,9 +233,6 @@ void MainWindow::setupUI()
     connect(m_voiceToggleBtn, &QPushButton::clicked, this, &MainWindow::toggleVoiceAlerts);
     connect(testVoiceBtn, &QPushButton::clicked, this, &MainWindow::testVoice);
     connect(m_themeToggleBtn, &QPushButton::clicked, this, &MainWindow::onThemeToggle);
-    connect(m_minimizeBtn, &QPushButton::clicked, this, &MainWindow::onMinimizeWindow);
-    connect(m_maximizeBtn, &QPushButton::clicked, this, &MainWindow::onMaximizeWindow);
-    connect(m_closeBtn, &QPushButton::clicked, this, &MainWindow::onCloseWindow);
     connect(m_logoutBtn, &QPushButton::clicked, this, &MainWindow::onLogout);
     
     // ========== MAIN LAYOUT ==========
@@ -805,31 +775,6 @@ void MainWindow::refreshCanvasBackground()
     if (m_canvas->scene()) {
         m_canvas->scene()->update();
     }
-}
-
-// ======================================================================
-// Window Controls
-// ======================================================================
-
-void MainWindow::onMinimizeWindow()
-{
-    showMinimized();
-}
-
-void MainWindow::onMaximizeWindow()
-{
-    if (isMaximized() || isFullScreen()) {
-        showNormal();
-        m_maximizeBtn->setToolTip("Maximize window");
-    } else {
-        showMaximized();
-        m_maximizeBtn->setToolTip("Restore window");
-    }
-}
-
-void MainWindow::onCloseWindow()
-{
-    close();
 }
 
 // ======================================================================
