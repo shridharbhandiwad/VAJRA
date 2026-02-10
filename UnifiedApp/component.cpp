@@ -2,6 +2,7 @@
 #include "componentregistry.h"
 #include "thememanager.h"
 #include "editcomponentdialog.h"
+#include "canvas.h"
 #include <QPainter>
 #include <QCursor>
 #include <QFileInfo>
@@ -785,6 +786,14 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
         if (dialog.exec() == QDialog::Accepted && dialog.hasChanges()) {
             // Changes have been applied to the component
             update();
+            
+            // Notify canvas that component has been edited
+            if (scene()) {
+                Canvas* canvas = qobject_cast<Canvas*>(scene()->parent());
+                if (canvas) {
+                    canvas->notifyComponentEdited(m_id, m_typeId);
+                }
+            }
         }
     } else if (selected == duplicateAction) {
         // TODO: Implement component duplication

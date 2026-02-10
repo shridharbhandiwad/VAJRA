@@ -354,6 +354,7 @@ void MainWindow::setupUI()
     // ========== CONNECT CANVAS SIGNALS ==========
     connect(m_canvas, &Canvas::componentAdded, this, &MainWindow::onComponentAdded);
     connect(m_canvas, &Canvas::componentLoaded, this, &MainWindow::onComponentLoaded);
+    connect(m_canvas, &Canvas::componentEdited, this, &MainWindow::onComponentEdited);
     connect(m_canvas, &Canvas::componentRemoved, this, &MainWindow::onComponentRemoved);
     connect(m_canvas, &Canvas::designSubComponentAdded, this, &MainWindow::onDesignSubComponentAdded);
     connect(m_canvas, &Canvas::dropRejected, this, &MainWindow::onDropRejected);
@@ -678,6 +679,34 @@ void MainWindow::onComponentLoaded(const QString& id, const QString& typeId)
             m_analytics->addDesignSubComponent(id, DesignSubComponent::typeToString(dsub->getType()));
         }
     }
+}
+
+void MainWindow::onComponentEdited(const QString& id, const QString& typeId)
+{
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    QString displayName = typeId;
+    if (registry.hasComponent(typeId)) {
+        displayName = registry.getComponent(typeId).displayName;
+    }
+    
+    // Refresh the component in analytics (clears old subcomponents)
+    m_analytics->refreshComponent(id, displayName);
+    
+    // Re-add all subcomponents to analytics
+    Component* comp = m_canvas->getComponentById(id);
+    if (comp) {
+        // Add regular SubComponents
+        for (SubComponent* sub : comp->getSubComponents()) {
+            m_analytics->addSubComponent(id, sub->getName());
+        }
+        
+        // Add DesignSubComponents
+        for (DesignSubComponent* dsub : comp->getDesignSubComponents()) {
+            m_analytics->addDesignSubComponent(id, DesignSubComponent::typeToString(dsub->getType()));
+        }
+    }
+    
+    qDebug() << "[MainWindow] Component" << id << "edited and analytics refreshed";
 }
 
 void MainWindow::onComponentRemoved(const QString& id, const QString& typeId)
