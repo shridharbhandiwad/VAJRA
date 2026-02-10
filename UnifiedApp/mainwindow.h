@@ -99,7 +99,7 @@ private:
     // Theme UI
     QPushButton* m_themeToggleBtn;
     
-    // Design toolbar buttons (hidden for User role)
+    // Design toolbar buttons (Save/Clear/AddType hidden for User role; Load visible for all)
     QPushButton* m_saveBtn;
     QPushButton* m_loadBtn;
     QPushButton* m_clearBtn;

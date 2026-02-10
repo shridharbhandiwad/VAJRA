@@ -73,16 +73,15 @@ void MainWindow::applyRoleRestrictions()
         // No per-component enlarged view tabs (design-focused workflow).
         
     } else if (m_role == UserRole::User) {
-        // User: Monitor-only. No design tools, no components panel.
+        // User: Monitor-only. Can load designs to view, but no design tools.
         
         // Hide the left panel (components list)
         if (m_leftPanel) {
             m_leftPanel->setVisible(false);
         }
         
-        // Hide design toolbar buttons
+        // Hide design-only toolbar buttons (keep Load Design visible)
         if (m_saveBtn)   m_saveBtn->setVisible(false);
-        if (m_loadBtn)   m_loadBtn->setVisible(false);
         if (m_clearBtn)  m_clearBtn->setVisible(false);
         if (m_addTypeBtn) m_addTypeBtn->setVisible(false);
         
