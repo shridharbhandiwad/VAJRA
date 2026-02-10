@@ -1,12 +1,16 @@
 #include "component.h"
 #include "componentregistry.h"
 #include "thememanager.h"
+#include "editcomponentdialog.h"
 #include <QPainter>
 #include <QCursor>
 #include <QFileInfo>
 #include <QDebug>
 #include <QtMath>
 #include <QRandomGenerator>
+#include <QMenu>
+#include <QGraphicsSceneContextMenuEvent>
+#include <QGraphicsScene>
 
 // Out-of-class definitions for static constexpr members (required for ODR-use in C++14)
 constexpr qreal Component::HEADER_HEIGHT;
@@ -754,5 +758,42 @@ void Component::loadSubsystemImage()
                 m_image = m_image.scaled(512, 512, Qt::KeepAspectRatio, Qt::SmoothTransformation);
             }
         }
+    }
+}
+
+// ======================================================================
+// Context menu for component editing
+// ======================================================================
+
+void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
+{
+    QMenu menu;
+    
+    QAction* editAction = menu.addAction("✏️ Edit Component...");
+    menu.addSeparator();
+    
+    QAction* duplicateAction = menu.addAction("📋 Duplicate");
+    menu.addSeparator();
+    
+    QAction* deleteAction = menu.addAction("🗑️ Delete");
+    
+    QAction* selected = menu.exec(event->screenPos());
+    
+    if (selected == editAction) {
+        // Open edit dialog
+        EditComponentDialog dialog(this);
+        if (dialog.exec() == QDialog::Accepted && dialog.hasChanges()) {
+            // Changes have been applied to the component
+            update();
+        }
+    } else if (selected == duplicateAction) {
+        // TODO: Implement component duplication
+        qDebug() << "[Component] Duplicate not yet implemented";
+    } else if (selected == deleteAction) {
+        // Delete this component
+        if (scene()) {
+            scene()->removeItem(this);
+        }
+        delete this;
     }
 }

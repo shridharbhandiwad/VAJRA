@@ -42,6 +42,10 @@ public:
     void loadFromJson(const QString& json);
     QString saveToJson() const;
     
+    // Import/Export single components
+    bool importComponent(const QString& filePath);
+    bool importSubcomponents(const QString& filePath, Component* targetComponent);
+    
     // Read-only mode (disables drag-drop, connection drawing, and component editing)
     void setReadOnly(bool readOnly);
     bool isReadOnly() const { return m_readOnly; }
