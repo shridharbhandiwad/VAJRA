@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     
     // Set application properties
-    app.setApplicationName("Radar System Enterprise");
+    app.setApplicationName("Radar Vital Monitoring System (RVMS)");
     app.setApplicationVersion("3.0");
     app.setOrganizationName("Radar Systems Inc.");
     

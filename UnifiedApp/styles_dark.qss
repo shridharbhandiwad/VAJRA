@@ -28,102 +28,111 @@ QToolTip {
 
 QDialog#LoginDialog {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 #151720, stop:0.5 #1a1d28, stop:1 #1e2130);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 4px;
+        stop:0 #0a0c12, stop:0.3 #151720, stop:0.6 #1a1d28, stop:1 #1e2130);
+    border: none;
+}
+
+QWidget#centerContainer {
+    background: rgba(24, 27, 33, 0.85);
+    border: 1px solid rgba(0, 188, 212, 0.2);
+    border-radius: 16px;
 }
 
 QLabel#titleLabel {
     color: #e8eaed;
-    font-size: 26px;
-    font-weight: 700;
-    padding: 6px 0px;
+    font-size: 42px;
+    font-weight: 800;
+    padding: 10px 0px;
     background: transparent;
-    letter-spacing: 1.2px;
+    letter-spacing: 3px;
 }
 
 QLabel#subtitleLabel {
     color: #00BCD4;
-    font-size: 13px;
-    font-weight: 500;
-    padding: 2px 0px;
+    font-size: 20px;
+    font-weight: 600;
+    padding: 4px 0px;
     background: transparent;
-    letter-spacing: 2.5px;
+    letter-spacing: 6px;
 }
 
 QLabel#welcomeLabel {
-    color: #9aa0a6;
-    font-size: 16px;
-    font-weight: 400;
-    padding: 2px 0px;
+    color: #4DD0E1;
+    font-size: 18px;
+    font-weight: 500;
+    padding: 4px 0px;
     background: transparent;
+    letter-spacing: 2px;
 }
 
 QFrame#inputFrame {
-    background: rgba(36, 39, 46, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 12px;
+    background: rgba(18, 20, 26, 0.9);
+    border: 1px solid rgba(0, 188, 212, 0.15);
+    border-radius: 14px;
     padding: 18px;
 }
 
 QDialog#LoginDialog QLineEdit {
-    background-color: rgba(28, 30, 38, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 15px;
+    background-color: rgba(12, 14, 20, 0.95);
+    border: 1px solid rgba(0, 188, 212, 0.2);
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-size: 16px;
     color: #e8eaed;
     selection-background-color: #00897B;
     selection-color: white;
-    min-height: 36px;
+    min-height: 50px;
 }
 
 QDialog#LoginDialog QLineEdit:focus {
-    background-color: rgba(28, 30, 38, 0.95);
-    border: 1px solid #00BCD4;
+    background-color: rgba(12, 14, 20, 1);
+    border: 2px solid #00BCD4;
+    box-shadow: 0 0 10px rgba(0, 188, 212, 0.3);
 }
 
 QDialog#LoginDialog QLineEdit:hover {
-    background-color: rgba(36, 39, 46, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background-color: rgba(18, 20, 26, 0.95);
+    border: 1px solid rgba(0, 188, 212, 0.4);
 }
 
 QDialog#LoginDialog QLineEdit::placeholder {
     color: #5f6368;
+    font-style: italic;
 }
 
 QLabel#fieldLabel {
-    color: #9aa0a6;
-    font-size: 12px;
-    font-weight: 600;
+    color: #00BCD4;
+    font-size: 13px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    padding: 0px 2px 8px 2px;  /* Add bottom padding for separation */
-    min-height: 20px;
+    letter-spacing: 2px;
+    padding: 0px 4px 8px 4px;
+    min-height: 24px;
 }
 
 /* Primary Login Button */
 QPushButton#loginButton {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 #00897B, stop:1 #00ACC1);
+        stop:0 #00897B, stop:1 #00BCD4);
     color: #ffffff;
     border: none;
-    border-radius: 8px;
-    padding: 14px 32px;
-    font-size: 15px;
-    font-weight: 600;
-    min-width: 130px;
-    letter-spacing: 1.2px;
+    border-radius: 12px;
+    padding: 16px 48px;
+    font-size: 16px;
+    font-weight: 700;
+    min-width: 160px;
+    min-height: 56px;
+    letter-spacing: 2px;
     text-transform: uppercase;
 }
 
 QPushButton#loginButton:hover {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 #00796B, stop:1 #0097A7);
+        stop:0 #00ACC1, stop:1 #26C6DA);
 }
 
 QPushButton#loginButton:pressed {
-    background: #00695C;
+    background: #00796B;
 }
 
 QPushButton#loginButton:disabled {
@@ -132,21 +141,23 @@ QPushButton#loginButton:disabled {
 }
 
 QPushButton#cancelButton {
-    background: rgba(45, 49, 59, 0.8);
-    color: #9aa0a6;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    padding: 14px 32px;
-    font-size: 15px;
-    font-weight: 600;
-    min-width: 130px;
-    letter-spacing: 1.2px;
+    background: rgba(45, 49, 59, 0.7);
+    color: #c4c7cc;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 16px 48px;
+    font-size: 16px;
+    font-weight: 700;
+    min-width: 160px;
+    min-height: 56px;
+    letter-spacing: 2px;
     text-transform: uppercase;
 }
 
 QPushButton#cancelButton:hover {
     background: rgba(52, 56, 63, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(0, 188, 212, 0.3);
+    color: #e8eaed;
 }
 
 QLabel#errorLabel {
@@ -195,11 +206,12 @@ QFrame#divider {
 }
 
 QLabel#footerLabel {
-    color: #3a3f4b;
-    font-size: 11px;
-    padding: 8px;
+    color: #5f6368;
+    font-size: 12px;
+    padding: 12px;
     background: transparent;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
+    font-weight: 500;
 }
 
 QCheckBox {
@@ -248,67 +260,69 @@ QLineEdit#usernameInput:hover {
 }
 
 QFrame#passwordContainer {
-    background-color: rgba(28, 30, 38, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    min-height: 60px;
+    background-color: rgba(12, 14, 20, 0.95);
+    border: 1px solid rgba(0, 188, 212, 0.2);
+    border-radius: 10px;
+    min-height: 50px;
 }
 
 QFrame#passwordContainer:focus-within {
-    border: 1px solid #00BCD4;
+    border: 2px solid #00BCD4;
 }
 
 QLineEdit#passwordInput {
     background-color: transparent;
     border: none;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    border-right: 1px solid rgba(0, 188, 212, 0.15);
     border-radius: 0px;
-    padding: 12px 16px;
-    font-size: 15px;
+    padding: 14px 20px;
+    font-size: 16px;
     color: #e8eaed;
     selection-background-color: #00897B;
     selection-color: white;
+    min-height: 50px;
 }
 
 QLineEdit#passwordInput:focus {
     background-color: transparent;
     border: none;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border-right: 1px solid rgba(0, 188, 212, 0.3);
 }
 
 QPushButton#togglePassword {
     background: transparent;
     border: none;
-    padding: 4px 8px;
+    padding: 8px 12px;
     margin: 0px;
     color: #00BCD4;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.8px;
-    min-width: 60px;
+    letter-spacing: 1px;
+    min-width: 80px;
+    min-height: 50px;
 }
 
 QPushButton#togglePassword:hover {
     color: #4DD0E1;
-    background: rgba(0, 188, 212, 0.08);
+    background: rgba(0, 188, 212, 0.12);
 }
 
 /* Theme toggle on Login */
 QPushButton#themeToggleLogin {
-    background: rgba(45, 49, 59, 0.6);
-    color: #9aa0a6;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
+    background: rgba(24, 27, 33, 0.7);
+    color: #c4c7cc;
+    border: 1px solid rgba(0, 188, 212, 0.2);
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
 }
 
 QPushButton#themeToggleLogin:hover {
-    background: rgba(52, 56, 63, 0.8);
-    color: #e8eaed;
-    border: 1px solid rgba(0, 188, 212, 0.3);
+    background: rgba(0, 188, 212, 0.15);
+    color: #00BCD4;
+    border: 1px solid rgba(0, 188, 212, 0.4);
 }
 
 /* ============================================

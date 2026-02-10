@@ -14,6 +14,9 @@
 #include <QShowEvent>
 #include <QTimer>
 #include <QDebug>
+#include <QScreen>
+#include <QApplication>
+#include <QDesktopWidget>
 
 LoginDialog::LoginDialog(QWidget* parent)
     : QDialog(parent)
@@ -40,29 +43,40 @@ LoginDialog::LoginDialog(QWidget* parent)
     setupUI();
     setupAnimations();
     
-    setWindowTitle("Radar System - Access Control");
+    setWindowTitle("Radar Vital Monitoring System - Access Control");
     setModal(true);
-    setFixedSize(540, 580);
     setObjectName("LoginDialog");
     
-    // Standard window frame for professional look
-    setWindowFlags(Qt::Dialog);
+    // Make it fullscreen - detect screen size
+    QScreen* primaryScreen = QApplication::primaryScreen();
+    if (primaryScreen) {
+        QRect screenGeometry = primaryScreen->geometry();
+        setGeometry(screenGeometry);
+    }
+    
+    // Frameless window for modern fullscreen look
+    setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
     setAttribute(Qt::WA_DeleteOnClose, false);
     
     // Listen for theme changes
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged,
             this, &LoginDialog::onThemeChanged);
+    
+    // Show maximized to ensure full screen
+    showMaximized();
 }
 
 void LoginDialog::setupUI()
 {
+    // Main layout - full screen
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(40, 24, 40, 24);
-    mainLayout->setSpacing(0);  // Control all spacing manually
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
     
     // ========== THEME TOGGLE (top right) ==========
     QHBoxLayout* topBarLayout = new QHBoxLayout();
     topBarLayout->setSpacing(0);
+    topBarLayout->setContentsMargins(30, 20, 30, 0);
     topBarLayout->addStretch();
     
     m_themeToggleBtn = new QPushButton(this);
@@ -75,35 +89,44 @@ void LoginDialog::setupUI()
     topBarLayout->addWidget(m_themeToggleBtn);
     
     mainLayout->addLayout(topBarLayout);
-    mainLayout->addSpacing(16);
+    mainLayout->addStretch(1);
+    
+    // ========== CENTER CONTENT CONTAINER ==========
+    QWidget* centerContainer = new QWidget(this);
+    centerContainer->setObjectName("centerContainer");
+    centerContainer->setMaximumWidth(700);
+    
+    QVBoxLayout* centerLayout = new QVBoxLayout(centerContainer);
+    centerLayout->setSpacing(0);
+    centerLayout->setContentsMargins(60, 40, 60, 40);
     
     // ========== HEADER SECTION ==========
     QVBoxLayout* headerLayout = new QVBoxLayout();
-    headerLayout->setSpacing(4);
+    headerLayout->setSpacing(8);
     
     // Title - Main heading
-    m_titleLabel = new QLabel("RADAR MONITORING SYSTEM", this);
+    m_titleLabel = new QLabel("RADAR VITAL MONITORING SYSTEM", this);
     m_titleLabel->setObjectName("titleLabel");
     m_titleLabel->setAlignment(Qt::AlignCenter);
     
-    // Subtitle
-    m_subtitleLabel = new QLabel("ACCESS CONTROL", this);
+    // Subtitle with RVMS acronym
+    m_subtitleLabel = new QLabel("( R V M S )", this);
     m_subtitleLabel->setObjectName("subtitleLabel");
     m_subtitleLabel->setAlignment(Qt::AlignCenter);
     
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addWidget(m_subtitleLabel);
     
-    mainLayout->addLayout(headerLayout);
-    mainLayout->addSpacing(20);
+    centerLayout->addLayout(headerLayout);
+    centerLayout->addSpacing(30);
     
     // Welcome message
-    m_welcomeLabel = new QLabel("Authentication Required", this);
+    m_welcomeLabel = new QLabel("SECURE ACCESS PORTAL", this);
     m_welcomeLabel->setObjectName("welcomeLabel");
     m_welcomeLabel->setAlignment(Qt::AlignCenter);
     
-    mainLayout->addWidget(m_welcomeLabel);
-    mainLayout->addSpacing(24);
+    centerLayout->addWidget(m_welcomeLabel);
+    centerLayout->addSpacing(40);
     
     // ========== INPUT FRAME ==========
     QFrame* inputFrame = new QFrame(this);
@@ -111,28 +134,29 @@ void LoginDialog::setupUI()
     
     QVBoxLayout* inputLayout = new QVBoxLayout(inputFrame);
     inputLayout->setSpacing(0);
-    inputLayout->setContentsMargins(24, 24, 24, 24);
+    inputLayout->setContentsMargins(40, 40, 40, 40);
     
     // Username section
     QLabel* usernameLabel = new QLabel("USERNAME", this);
     usernameLabel->setObjectName("fieldLabel");
     
     inputLayout->addWidget(usernameLabel);
-    inputLayout->addSpacing(8);
+    inputLayout->addSpacing(12);
     
     m_usernameEdit = new QLineEdit(this);
     m_usernameEdit->setPlaceholderText("Enter your username");
     m_usernameEdit->setObjectName("usernameInput");
+    m_usernameEdit->setMinimumHeight(50);
     
     inputLayout->addWidget(m_usernameEdit);
-    inputLayout->addSpacing(20);
+    inputLayout->addSpacing(28);
     
     // Password section
     QLabel* passwordLabel = new QLabel("PASSWORD", this);
     passwordLabel->setObjectName("fieldLabel");
     
     inputLayout->addWidget(passwordLabel);
-    inputLayout->addSpacing(8);
+    inputLayout->addSpacing(12);
     
     // Password container with integrated show/hide button
     QFrame* passwordContainer = new QFrame(this);
@@ -146,11 +170,12 @@ void LoginDialog::setupUI()
     m_passwordEdit->setPlaceholderText("Enter your password");
     m_passwordEdit->setEchoMode(QLineEdit::Password);
     m_passwordEdit->setObjectName("passwordInput");
+    m_passwordEdit->setMinimumHeight(50);
     
     m_togglePasswordBtn = new QPushButton("SHOW", passwordContainer);
     m_togglePasswordBtn->setObjectName("togglePassword");
-    m_togglePasswordBtn->setFixedHeight(34);
-    m_togglePasswordBtn->setMinimumWidth(60);
+    m_togglePasswordBtn->setMinimumHeight(50);
+    m_togglePasswordBtn->setMinimumWidth(80);
     m_togglePasswordBtn->setCursor(Qt::PointingHandCursor);
     m_togglePasswordBtn->setToolTip("Toggle password visibility");
     
@@ -158,7 +183,7 @@ void LoginDialog::setupUI()
     passwordInputLayout->addWidget(m_togglePasswordBtn);
     
     inputLayout->addWidget(passwordContainer);
-    inputLayout->addSpacing(18);
+    inputLayout->addSpacing(24);
     
     // Remember me checkbox
     m_rememberMeCheck = new QCheckBox("Remember me on this device", this);
@@ -166,8 +191,8 @@ void LoginDialog::setupUI()
     
     inputLayout->addWidget(m_rememberMeCheck);
     
-    mainLayout->addWidget(inputFrame);
-    mainLayout->addSpacing(16);
+    centerLayout->addWidget(inputFrame);
+    centerLayout->addSpacing(24);
     
     // ========== STATUS MESSAGES ==========
     m_errorLabel = new QLabel(this);
@@ -186,35 +211,44 @@ void LoginDialog::setupUI()
     m_successLabel->setMinimumHeight(0);
     m_successLabel->setMaximumHeight(0);
     
-    mainLayout->addWidget(m_errorLabel);
-    mainLayout->addWidget(m_successLabel);
-    mainLayout->addSpacing(16);
+    centerLayout->addWidget(m_errorLabel);
+    centerLayout->addWidget(m_successLabel);
+    centerLayout->addSpacing(24);
     
     // ========== BUTTONS ==========
     QHBoxLayout* buttonLayout = new QHBoxLayout();
-    buttonLayout->setSpacing(12);
+    buttonLayout->setSpacing(16);
     
     m_loginButton = new QPushButton("SIGN IN", this);
     m_loginButton->setObjectName("loginButton");
     m_loginButton->setDefault(true);
     m_loginButton->setCursor(Qt::PointingHandCursor);
-    m_loginButton->setMinimumHeight(44);
+    m_loginButton->setMinimumHeight(56);
     
     m_cancelButton = new QPushButton("CANCEL", this);
     m_cancelButton->setObjectName("cancelButton");
     m_cancelButton->setCursor(Qt::PointingHandCursor);
-    m_cancelButton->setMinimumHeight(44);
+    m_cancelButton->setMinimumHeight(56);
     
     buttonLayout->addWidget(m_loginButton);
     buttonLayout->addWidget(m_cancelButton);
     
-    mainLayout->addLayout(buttonLayout);
-    mainLayout->addStretch();
+    centerLayout->addLayout(buttonLayout);
+    
+    // Center the container horizontally
+    QHBoxLayout* centeringLayout = new QHBoxLayout();
+    centeringLayout->addStretch();
+    centeringLayout->addWidget(centerContainer);
+    centeringLayout->addStretch();
+    
+    mainLayout->addLayout(centeringLayout);
+    mainLayout->addStretch(2);
     
     // ========== FOOTER ==========
-    QLabel* footerLabel = new QLabel("RADAR MONITORING SYSTEM v3.0 | AUTHORIZED ACCESS ONLY", this);
+    QLabel* footerLabel = new QLabel("RADAR VITAL MONITORING SYSTEM (RVMS) v3.0 | AUTHORIZED ACCESS ONLY", this);
     footerLabel->setObjectName("footerLabel");
     footerLabel->setAlignment(Qt::AlignCenter);
+    footerLabel->setContentsMargins(0, 0, 0, 30);
     
     mainLayout->addWidget(footerLabel);
     
@@ -227,7 +261,7 @@ void LoginDialog::setupUI()
     connect(m_togglePasswordBtn, &QPushButton::clicked, this, &LoginDialog::togglePasswordVisibility);
     
     // Set initial focus
-    m_usernameEdit->setFocus();
+    QTimer::singleShot(500, m_usernameEdit, SLOT(setFocus()));
 }
 
 void LoginDialog::setupAnimations()

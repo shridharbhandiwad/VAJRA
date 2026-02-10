@@ -29,74 +29,82 @@ QToolTip {
 
 QDialog#LoginDialog {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 #F0F2F5, stop:0.5 #F5F7FA, stop:1 #FAFBFC);
-    border: 1px solid #D0D5DD;
-    border-radius: 4px;
+        stop:0 #E8EBF0, stop:0.3 #F0F2F5, stop:0.6 #F5F7FA, stop:1 #FAFBFC);
+    border: none;
+}
+
+QWidget#centerContainer {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 151, 167, 0.3);
+    border-radius: 16px;
 }
 
 QLabel#titleLabel {
     color: #1A1D23;
-    font-size: 26px;
-    font-weight: 700;
-    padding: 6px 0px;
+    font-size: 42px;
+    font-weight: 800;
+    padding: 10px 0px;
     background: transparent;
-    letter-spacing: 1.2px;
+    letter-spacing: 3px;
 }
 
 QLabel#subtitleLabel {
     color: #0097A7;
-    font-size: 13px;
-    font-weight: 500;
-    padding: 2px 0px;
+    font-size: 20px;
+    font-weight: 600;
+    padding: 4px 0px;
     background: transparent;
-    letter-spacing: 2.5px;
+    letter-spacing: 6px;
 }
 
 QLabel#welcomeLabel {
-    color: #6B7280;
-    font-size: 16px;
-    font-weight: 400;
-    padding: 2px 0px;
+    color: #00ACC1;
+    font-size: 18px;
+    font-weight: 500;
+    padding: 4px 0px;
     background: transparent;
+    letter-spacing: 2px;
 }
 
 QFrame#inputFrame {
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid #E0E4EA;
-    border-radius: 12px;
+    background: rgba(248, 250, 252, 0.95);
+    border: 1px solid rgba(0, 151, 167, 0.2);
+    border-radius: 14px;
     padding: 18px;
 }
 
 QDialog#LoginDialog QLineEdit {
     background-color: #FFFFFF;
-    border: 1px solid #D0D5DD;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 15px;
+    border: 1px solid rgba(0, 151, 167, 0.3);
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-size: 16px;
     color: #1A1D23;
     selection-background-color: #00897B;
     selection-color: white;
-    min-height: 36px;
+    min-height: 50px;
 }
 
 QDialog#LoginDialog QLineEdit:focus {
     background-color: #FFFFFF;
-    border: 1px solid #00BCD4;
+    border: 2px solid #00BCD4;
+    box-shadow: 0 0 10px rgba(0, 188, 212, 0.2);
 }
 
 QDialog#LoginDialog QLineEdit:hover {
     background-color: #FAFBFC;
-    border: 1px solid #A0A8B5;
+    border: 1px solid rgba(0, 151, 167, 0.5);
 }
 
 QDialog#LoginDialog QLineEdit::placeholder {
     color: #9CA3AF;
+    font-style: italic;
 }
 
 QLabel#fieldLabel {
-    color: #6B7280;
-    font-size: 12px;
-    font-weight: 600;
+    color: #0097A7;
+    font-size: 13px;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     padding: 0px 2px 8px 2px;  /* Add bottom padding for separation */
