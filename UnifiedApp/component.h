@@ -46,6 +46,8 @@ public:
     qreal getSize() const { return m_size; }
     QString getDisplayName() const;
     QString getLabel() const;
+    bool hasCustomDisplayName() const { return !m_displayName.isEmpty(); }
+    bool hasCustomLabel() const { return !m_label.isEmpty(); }
     
     // Mutators
     void setColor(const QColor& color);

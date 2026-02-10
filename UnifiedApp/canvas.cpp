@@ -574,8 +574,15 @@ QString Canvas::saveToJson() const
         QJsonObject compObj;
         compObj["id"] = comp->getId();
         compObj["type"] = comp->getTypeId();
-        compObj["displayName"] = comp->getDisplayName();
-        compObj["label"] = comp->getLabel();
+        
+        // Only save displayName and label if they've been customized
+        if (comp->hasCustomDisplayName()) {
+            compObj["displayName"] = comp->getDisplayName();
+        }
+        if (comp->hasCustomLabel()) {
+            compObj["label"] = comp->getLabel();
+        }
+        
         compObj["x"] = comp->pos().x();
         compObj["y"] = comp->pos().y();
         compObj["color"] = comp->getColor().name();
