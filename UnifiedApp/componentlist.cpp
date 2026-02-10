@@ -47,6 +47,9 @@ ComponentItemWidget::ComponentItemWidget(const QString& displayName, const QStri
     m_deleteBtn->setToolTip(QString("Delete %1 component type").arg(displayName));
     layout->addWidget(m_deleteBtn);
     
+    // Set minimum height to ensure visibility
+    setMinimumHeight(28);
+    
     connect(m_deleteBtn, &QPushButton::clicked, this, [this]() {
         emit deleteRequested(m_typeId);
     });
@@ -116,7 +119,10 @@ void ComponentList::addComponentItem(const QString& displayName, const QString& 
     connect(widget, &ComponentItemWidget::deleteRequested, 
             this, &ComponentList::onDeleteComponent);
     
-    item->setSizeHint(widget->sizeHint());
+    // Ensure proper size hint with minimum height
+    QSize hint = widget->sizeHint();
+    hint.setHeight(qMax(hint.height(), 28));
+    item->setSizeHint(hint);
     setItemWidget(item, widget);
 }
 
