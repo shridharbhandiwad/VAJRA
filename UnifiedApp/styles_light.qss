@@ -226,10 +226,37 @@ QCheckBox::indicator:checked {
     border: 1px solid #0097A7;
 }
 
+QLineEdit#usernameInput {
+    background-color: #FFFFFF;
+    border: 1px solid #D0D5DD;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 15px;
+    color: #1A1D23;
+    selection-background-color: #00897B;
+    selection-color: white;
+    min-height: 36px;
+}
+
+QLineEdit#usernameInput:focus {
+    background-color: #FFFFFF;
+    border: 1px solid #00BCD4;
+}
+
+QLineEdit#usernameInput:hover {
+    background-color: #FAFBFC;
+    border: 1px solid #A0A8B5;
+}
+
 QFrame#passwordContainer {
     background-color: #FFFFFF;
     border: 1px solid #D0D5DD;
     border-radius: 8px;
+    min-height: 60px;
+}
+
+QFrame#passwordContainer:focus-within {
+    border: 1px solid #00BCD4;
 }
 
 QLineEdit#passwordInput {
@@ -238,7 +265,10 @@ QLineEdit#passwordInput {
     border-right: 1px solid #E0E4EA;
     border-radius: 0px;
     padding: 12px 16px;
+    font-size: 15px;
     color: #1A1D23;
+    selection-background-color: #00897B;
+    selection-color: white;
 }
 
 QLineEdit#passwordInput:focus {
@@ -250,16 +280,18 @@ QLineEdit#passwordInput:focus {
 QPushButton#togglePassword {
     background: transparent;
     border: none;
-    padding: 0px;
-    margin: 1px;
+    padding: 4px 8px;
+    margin: 0px;
     color: #0097A7;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    min-width: 60px;
 }
 
 QPushButton#togglePassword:hover {
     color: #00BCD4;
+    background: rgba(0, 151, 167, 0.06);
 }
 
 /* Theme toggle on Login */
