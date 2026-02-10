@@ -794,8 +794,18 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
 {
     QMenu menu;
     
-    QAction* editAction = menu.addAction("✏️ Edit Component...");
-    menu.addSeparator();
+    // Get user role from canvas to determine available options
+    Canvas* canvas = nullptr;
+    if (scene()) {
+        canvas = qobject_cast<Canvas*>(scene()->parent());
+    }
+    
+    QAction* editAction = nullptr;
+    // Only show "Edit Component" option for Designer role
+    if (canvas && canvas->getUserRole() == UserRole::Designer) {
+        editAction = menu.addAction("✏️ Edit Component...");
+        menu.addSeparator();
+    }
     
     QAction* duplicateAction = menu.addAction("📋 Duplicate");
     menu.addSeparator();
@@ -804,7 +814,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
     
     QAction* selected = menu.exec(event->screenPos());
     
-    if (selected == editAction) {
+    if (editAction && selected == editAction) {
         // Open edit dialog
         EditComponentDialog dialog(this);
         if (dialog.exec() == QDialog::Accepted && dialog.hasChanges()) {
@@ -812,11 +822,8 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
             update();
             
             // Notify canvas that component has been edited
-            if (scene()) {
-                Canvas* canvas = qobject_cast<Canvas*>(scene()->parent());
-                if (canvas) {
-                    canvas->notifyComponentEdited(m_id, m_typeId);
-                }
+            if (canvas) {
+                canvas->notifyComponentEdited(m_id, m_typeId);
             }
         }
     } else if (selected == duplicateAction) {

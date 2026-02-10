@@ -8,6 +8,7 @@
 #include "component.h"
 #include "connection.h"
 #include "designsubcomponent.h"
+#include "userrole.h"
 
 /**
  * CanvasMode - Defines the current interaction mode of the canvas.
@@ -49,6 +50,10 @@ public:
     // Read-only mode (disables drag-drop, connection drawing, and component editing)
     void setReadOnly(bool readOnly);
     bool isReadOnly() const { return m_readOnly; }
+    
+    // User role access
+    void setUserRole(UserRole role) { m_userRole = role; }
+    UserRole getUserRole() const { return m_userRole; }
     
     // Connection management
     void setMode(CanvasMode mode);
@@ -96,6 +101,7 @@ private:
     
     QGraphicsScene* m_scene;
     bool m_readOnly;
+    UserRole m_userRole;
     int m_componentCounter;
     int m_connectionCounter;
     QMap<QString, Component*> m_componentMap;
