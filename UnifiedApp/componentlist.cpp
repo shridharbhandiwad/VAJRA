@@ -84,7 +84,7 @@ ComponentList::ComponentList(QWidget* parent)
     : QListWidget(parent)
 {
     setDragEnabled(true);
-    setMaximumWidth(220);
+    setMaximumWidth(300);
     setSpacing(2);
     
     // Populate from registry
