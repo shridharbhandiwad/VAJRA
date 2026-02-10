@@ -409,6 +409,12 @@ void Component::paintContainer(QPainter* painter)
 
 QString Component::getDisplayName() const
 {
+    // If per-component display name is set, use it
+    if (!m_displayName.isEmpty()) {
+        return m_displayName;
+    }
+    
+    // Otherwise, fall back to registry default
     ComponentRegistry& registry = ComponentRegistry::instance();
     if (registry.hasComponent(m_typeId)) {
         return registry.getComponent(m_typeId).displayName;
@@ -418,12 +424,30 @@ QString Component::getDisplayName() const
 
 QString Component::getLabel() const
 {
+    // If per-component label is set, use it
+    if (!m_label.isEmpty()) {
+        return m_label;
+    }
+    
+    // Otherwise, fall back to registry default
     ComponentRegistry& registry = ComponentRegistry::instance();
     if (registry.hasComponent(m_typeId)) {
         return registry.getComponent(m_typeId).label;
     }
     // Generate a short label from typeId
     return m_typeId.left(4).toUpper();
+}
+
+void Component::setDisplayName(const QString& displayName)
+{
+    m_displayName = displayName;
+    update();
+}
+
+void Component::setLabel(const QString& label)
+{
+    m_label = label;
+    update();
 }
 
 void Component::setColor(const QColor& color)

@@ -50,6 +50,8 @@ public:
     // Mutators
     void setColor(const QColor& color);
     void setSize(qreal size);
+    void setDisplayName(const QString& displayName);
+    void setLabel(const QString& label);
     
     // User-resizable dimensions
     void setUserWidth(qreal w);
@@ -127,6 +129,10 @@ private:
     qreal m_size;
     QPixmap m_image;
     bool m_hasImage;
+    
+    // Per-component display name and label (empty = use registry default)
+    QString m_displayName;
+    QString m_label;
     
     // User-resizable dimensions (0 = use auto-computed size)
     qreal m_userWidth;

@@ -574,6 +574,8 @@ QString Canvas::saveToJson() const
         QJsonObject compObj;
         compObj["id"] = comp->getId();
         compObj["type"] = comp->getTypeId();
+        compObj["displayName"] = comp->getDisplayName();
+        compObj["label"] = comp->getLabel();
         compObj["x"] = comp->pos().x();
         compObj["y"] = comp->pos().y();
         compObj["color"] = comp->getColor().name();
@@ -675,6 +677,20 @@ void Canvas::loadFromJson(const QString& json)
         }
         
         Component* comp = Component::fromJson(id, typeId, x, y, QColor(colorStr), size);
+        
+        // Restore per-component display name and label if present
+        if (compObj.contains("displayName")) {
+            QString displayName = compObj["displayName"].toString();
+            if (!displayName.isEmpty()) {
+                comp->setDisplayName(displayName);
+            }
+        }
+        if (compObj.contains("label")) {
+            QString label = compObj["label"].toString();
+            if (!label.isEmpty()) {
+                comp->setLabel(label);
+            }
+        }
         
         // Restore user-defined dimensions if present
         if (compObj.contains("userWidth") && compObj.contains("userHeight")) {

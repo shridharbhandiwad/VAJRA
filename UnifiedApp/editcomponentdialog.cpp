@@ -569,8 +569,16 @@ void EditComponentDialog::applyChanges()
 {
     if (!m_component) return;
     
-    // Note: Display name and label changes would require updating the ComponentRegistry
-    // For now, we'll focus on subsystems and design widgets which can be modified directly
+    // Update display name and label (per-component customization)
+    QString newDisplayName = m_nameEdit->text().trimmed();
+    QString newLabel = m_labelEdit->text().trimmed();
+    
+    if (!newDisplayName.isEmpty()) {
+        m_component->setDisplayName(newDisplayName);
+    }
+    if (!newLabel.isEmpty()) {
+        m_component->setLabel(newLabel);
+    }
     
     // Update subsystems
     // First, remove all existing subsystems
