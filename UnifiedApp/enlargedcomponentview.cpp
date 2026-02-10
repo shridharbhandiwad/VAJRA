@@ -262,6 +262,7 @@ EnlargedComponentView::EnlargedComponentView(const QString& componentId,
     , m_componentView(nullptr)
     , m_componentScene(nullptr)
     , m_displayComponent(nullptr)
+    , m_titleLabel(nullptr)
     , m_healthStatusLabel(nullptr)
     , m_healthValueLabel(nullptr)
     , m_trendChart(nullptr)
@@ -307,8 +308,8 @@ void EnlargedComponentView::setupUI()
     leftLayout->setContentsMargins(8, 8, 8, 8);
 
     // Title
-    QLabel* leftTitle = new QLabel(displayName.toUpper() + "  —  ENLARGED VIEW", leftPanel);
-    leftTitle->setObjectName("enlargedTitle");
+    m_titleLabel = new QLabel(displayName.toUpper() + "  —  ENLARGED VIEW", leftPanel);
+    m_titleLabel->setObjectName("enlargedTitle");
 
     // Component ID subtitle
     QLabel* idLabel = new QLabel("ID: " + m_componentId, leftPanel);
@@ -346,7 +347,7 @@ void EnlargedComponentView::setupUI()
     m_componentView->setFrameShape(QFrame::NoFrame);
     m_componentView->setObjectName("mainCanvas");
 
-    leftLayout->addWidget(leftTitle);
+    leftLayout->addWidget(m_titleLabel);
     leftLayout->addWidget(idLabel);
     leftLayout->addWidget(statusRow);
     leftLayout->addWidget(m_componentView, 1);
@@ -566,6 +567,37 @@ void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal siz
 void EnlargedComponentView::updateSubcomponentHealth(const QString& /*subName*/, qreal /*health*/, const QColor& /*color*/)
 {
     // Subsystem health bars removed from enlarged view
+}
+
+void EnlargedComponentView::updateDisplayName(const QString& newDisplayName)
+{
+    if (m_titleLabel) {
+        m_titleLabel->setText(newDisplayName.toUpper() + "  —  ENLARGED VIEW");
+    }
+    
+    // Update the display name of the enlarged component
+    if (m_displayComponent) {
+        m_displayComponent->setDisplayName(newDisplayName);
+        m_displayComponent->update();
+    }
+}
+
+void EnlargedComponentView::updateFromComponent(Component* sourceComponent)
+{
+    if (!sourceComponent || !m_displayComponent) return;
+    
+    // Copy display name and label from the source component
+    QString displayName = sourceComponent->getDisplayName();
+    QString label = sourceComponent->getLabel();
+    
+    m_displayComponent->setDisplayName(displayName);
+    m_displayComponent->setLabel(label);
+    m_displayComponent->update();
+    
+    // Update title label
+    if (m_titleLabel) {
+        m_titleLabel->setText(displayName.toUpper() + "  —  ENLARGED VIEW");
+    }
 }
 
 QString EnlargedComponentView::healthStatusText(const QColor& color) const

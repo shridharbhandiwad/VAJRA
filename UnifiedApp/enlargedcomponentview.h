@@ -66,6 +66,8 @@ public:
 
     void updateComponentHealth(const QColor& color, qreal size);
     void updateSubcomponentHealth(const QString& subName, qreal health, const QColor& color);
+    void updateDisplayName(const QString& newDisplayName);
+    void updateFromComponent(Component* sourceComponent);
     QString getComponentId() const { return m_componentId; }
     QString getTypeId() const { return m_typeId; }
 
@@ -82,6 +84,7 @@ private:
     QGraphicsView* m_componentView;
     QGraphicsScene* m_componentScene;
     Component* m_displayComponent;
+    QLabel* m_titleLabel;
     QLabel* m_healthStatusLabel;
     QLabel* m_healthValueLabel;
 
