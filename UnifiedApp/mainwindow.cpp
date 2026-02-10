@@ -316,6 +316,7 @@ void MainWindow::setupUI()
     
     m_canvas = new Canvas(overviewTab);
     m_canvas->setObjectName("mainCanvas");
+    m_canvas->setUserRole(m_role);
     
     overviewLayout->addWidget(m_canvas);
     
