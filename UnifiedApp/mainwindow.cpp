@@ -35,10 +35,14 @@ MainWindow::MainWindow(const QString& username, UserRole role, QWidget* parent)
     , m_loadBtn(nullptr)
     , m_clearBtn(nullptr)
     , m_addTypeBtn(nullptr)
+    , m_importComponentBtn(nullptr)
+    , m_importSubcomponentsBtn(nullptr)
     , m_saveBtnAction(nullptr)
     , m_loadBtnAction(nullptr)
     , m_clearBtnAction(nullptr)
     , m_addTypeBtnAction(nullptr)
+    , m_importComponentBtnAction(nullptr)
+    , m_importSubcomponentsBtnAction(nullptr)
     , m_connectBtnAction(nullptr)
     , m_connectionTypeComboAction(nullptr)
     , m_voiceToggleBtnAction(nullptr)
@@ -108,6 +112,8 @@ void MainWindow::applyRoleRestrictions()
         if (m_saveBtnAction)   m_saveBtnAction->setVisible(false);
         if (m_clearBtnAction)  m_clearBtnAction->setVisible(false);
         if (m_addTypeBtnAction) m_addTypeBtnAction->setVisible(false);
+        if (m_importComponentBtnAction) m_importComponentBtnAction->setVisible(false);
+        if (m_importSubcomponentsBtnAction) m_importSubcomponentsBtnAction->setVisible(false);
         
         // Hide connection mode controls (design feature)
         if (m_connectBtnAction) m_connectBtnAction->setVisible(false);
@@ -162,11 +168,21 @@ void MainWindow::setupUI()
     m_addTypeBtn->setObjectName("addTypeButton");
     m_addTypeBtn->setToolTip("Add a new component type to the registry");
     
+    m_importComponentBtn = new QPushButton("📥 IMPORT COMPONENT", this);
+    m_importComponentBtn->setObjectName("importButton");
+    m_importComponentBtn->setToolTip("Import a component from .cmp file");
+    
+    m_importSubcomponentsBtn = new QPushButton("📥 IMPORT WIDGETS", this);
+    m_importSubcomponentsBtn->setObjectName("importButton");
+    m_importSubcomponentsBtn->setToolTip("Import design widgets from .subcmp file into selected component");
+    
     m_saveBtnAction = toolbar->addWidget(m_saveBtn);
     m_loadBtnAction = toolbar->addWidget(m_loadBtn);
     m_clearBtnAction = toolbar->addWidget(m_clearBtn);
     m_designSep1 = toolbar->addSeparator();
     m_addTypeBtnAction = toolbar->addWidget(m_addTypeBtn);
+    m_importComponentBtnAction = toolbar->addWidget(m_importComponentBtn);
+    m_importSubcomponentsBtnAction = toolbar->addWidget(m_importSubcomponentsBtn);
     m_designSep2 = toolbar->addSeparator();
     
     // Connection mode controls
@@ -227,6 +243,8 @@ void MainWindow::setupUI()
     connect(m_loadBtn, &QPushButton::clicked, this, &MainWindow::loadDesign);
     connect(m_clearBtn, &QPushButton::clicked, this, &MainWindow::clearCanvas);
     connect(m_addTypeBtn, &QPushButton::clicked, this, &MainWindow::addNewComponentType);
+    connect(m_importComponentBtn, &QPushButton::clicked, this, &MainWindow::importComponent);
+    connect(m_importSubcomponentsBtn, &QPushButton::clicked, this, &MainWindow::importSubcomponents);
     connect(m_connectBtn, &QPushButton::clicked, this, &MainWindow::toggleConnectionMode);
     connect(m_connectionTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MainWindow::onConnectionTypeChanged);
@@ -508,6 +526,60 @@ void MainWindow::addNewComponentType()
                     "It is now available in the component list for drag-and-drop.\n"
                     "The definition has been saved to components.json.")
                 .arg(def.displayName));
+    }
+}
+
+void MainWindow::importComponent()
+{
+    QString fileName = QFileDialog::getOpenFileName(this,
+                                                    "Import Component",
+                                                    "",
+                                                    "Component Files (*.cmp);;All Files (*)");
+    if (fileName.isEmpty()) return;
+    
+    if (m_canvas && m_canvas->importComponent(fileName)) {
+        QMessageBox::information(this, "Import Successful",
+                                QString("Component imported from:\n%1").arg(fileName));
+    } else {
+        QMessageBox::warning(this, "Import Failed",
+                            QString("Could not import component from:\n%1").arg(fileName));
+    }
+}
+
+void MainWindow::importSubcomponents()
+{
+    // First, get the selected component
+    Component* selectedComponent = nullptr;
+    QList<QGraphicsItem*> selectedItems = m_canvas->scene()->selectedItems();
+    for (QGraphicsItem* item : selectedItems) {
+        Component* comp = dynamic_cast<Component*>(item);
+        if (comp) {
+            selectedComponent = comp;
+            break;
+        }
+    }
+    
+    if (!selectedComponent) {
+        QMessageBox::information(this, "No Component Selected",
+                                "Please select a component on the canvas first.\n\n"
+                                "The imported widgets will be added to the selected component.");
+        return;
+    }
+    
+    QString fileName = QFileDialog::getOpenFileName(this,
+                                                    "Import Design Widgets",
+                                                    "",
+                                                    "Subcomponent Files (*.subcmp);;All Files (*)");
+    if (fileName.isEmpty()) return;
+    
+    if (m_canvas && m_canvas->importSubcomponents(fileName, selectedComponent)) {
+        QMessageBox::information(this, "Import Successful",
+                                QString("Design widgets imported from:\n%1\n\n"
+                                       "into component: %2")
+                                    .arg(fileName, selectedComponent->getDisplayName()));
+    } else {
+        QMessageBox::warning(this, "Import Failed",
+                            QString("Could not import widgets from:\n%1").arg(fileName));
     }
 }
 

@@ -46,6 +46,8 @@ private slots:
     void loadDesign();
     void clearCanvas();
     void addNewComponentType();
+    void importComponent();
+    void importSubcomponents();
     void onComponentAdded(const QString& id, const QString& typeId);
     void onComponentLoaded(const QString& id, const QString& typeId);
     void onDesignSubComponentAdded(const QString& parentId, SubComponentType subType);
@@ -113,12 +115,16 @@ private:
     QPushButton* m_loadBtn;
     QPushButton* m_clearBtn;
     QPushButton* m_addTypeBtn;
+    QPushButton* m_importComponentBtn;
+    QPushButton* m_importSubcomponentsBtn;
     
     // Toolbar QActions (needed to properly hide toolbar items)
     QAction* m_saveBtnAction;
     QAction* m_loadBtnAction;
     QAction* m_clearBtnAction;
     QAction* m_addTypeBtnAction;
+    QAction* m_importComponentBtnAction;
+    QAction* m_importSubcomponentsBtnAction;
     QAction* m_connectBtnAction;
     QAction* m_connectionTypeComboAction;
     QAction* m_voiceToggleBtnAction;

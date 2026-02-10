@@ -21,6 +21,7 @@ SOURCES += \
     messageserver.cpp \
     componentregistry.cpp \
     addcomponentdialog.cpp \
+    editcomponentdialog.cpp \
     voicealertmanager.cpp \
     enlargedcomponentview.cpp \
     thememanager.cpp
@@ -39,6 +40,7 @@ HEADERS += \
     messageserver.h \
     componentregistry.h \
     addcomponentdialog.h \
+    editcomponentdialog.h \
     voicealertmanager.h \
     enlargedcomponentview.h \
     thememanager.h

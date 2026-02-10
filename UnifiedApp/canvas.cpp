@@ -10,6 +10,7 @@
 #include <QJsonArray>
 #include <QDebug>
 #include <QInputDialog>
+#include <QFile>
 
 Canvas::Canvas(QWidget* parent)
     : QGraphicsView(parent)
@@ -724,4 +725,170 @@ void Canvas::loadFromJson(const QString& json)
     
     qDebug() << "[Canvas] loadFromJson complete. Components:" << m_componentMap.size() 
              << "Connections:" << m_connections.size();
+}
+
+// ======================================================================
+// Import/Export single components
+// ======================================================================
+
+bool Canvas::importComponent(const QString& filePath)
+{
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "[Canvas] Could not open component file:" << filePath;
+        return false;
+    }
+    
+    QByteArray data = file.readAll();
+    file.close();
+    
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    if (doc.isNull() || !doc.isObject()) {
+        qWarning() << "[Canvas] Invalid component file format";
+        return false;
+    }
+    
+    QJsonObject json = doc.object();
+    
+    // Verify it's a component file
+    if (json["type"].toString() != "component") {
+        qWarning() << "[Canvas] Not a valid component file";
+        return false;
+    }
+    
+    // Extract component data
+    QString typeId = json["typeId"].toString();
+    QColor color = QColor(json["color"].toString());
+    qreal size = json["size"].toDouble(100.0);
+    qreal userWidth = json["userWidth"].toDouble(0);
+    qreal userHeight = json["userHeight"].toDouble(0);
+    
+    // Verify type exists in registry
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    if (!registry.hasComponent(typeId)) {
+        qWarning() << "[Canvas] Unknown component type:" << typeId;
+        return false;
+    }
+    
+    // Create new component with unique ID
+    QString id = QString("component_%1").arg(++m_componentCounter);
+    Component* comp = new Component(typeId, id);
+    
+    // Set properties
+    comp->setColor(color);
+    comp->setSize(size);
+    if (userWidth > 0) comp->setUserWidth(userWidth);
+    if (userHeight > 0) comp->setUserHeight(userHeight);
+    
+    // Position at center of view
+    QPointF centerPos = mapToScene(viewport()->rect().center());
+    comp->setPos(centerPos);
+    
+    // Clear default subsystems and add imported ones
+    while (comp->subComponentCount() > 0) {
+        comp->removeSubComponent(0);
+    }
+    
+    QJsonArray subsystems = json["subsystems"].toArray();
+    for (const QJsonValue& subVal : subsystems) {
+        QJsonObject subObj = subVal.toObject();
+        QString name = subObj["name"].toString();
+        comp->addSubComponent(name);
+        
+        // Set health and color
+        SubComponent* sub = comp->getSubComponent(name);
+        if (sub) {
+            sub->setHealth(subObj["health"].toDouble(100.0));
+            sub->setColor(QColor(subObj["color"].toString()));
+        }
+    }
+    
+    // Import design widgets
+    QJsonArray widgets = json["designWidgets"].toArray();
+    for (const QJsonValue& widgetVal : widgets) {
+        QJsonObject widgetObj = widgetVal.toObject();
+        SubComponentType subType = DesignSubComponent::stringToType(widgetObj["type"].toString());
+        QString text = widgetObj["text"].toString();
+        qreal x = widgetObj["x"].toDouble();
+        qreal y = widgetObj["y"].toDouble();
+        qreal width = widgetObj["width"].toDouble();
+        qreal height = widgetObj["height"].toDouble();
+        
+        DesignSubComponent* widget = new DesignSubComponent(subType, text);
+        widget->setSize(width, height);
+        comp->addDesignSubComponent(widget);
+        widget->setPos(x, y);
+    }
+    
+    // Add to scene
+    m_scene->addItem(comp);
+    m_componentMap[id] = comp;
+    
+    qDebug() << "[Canvas] Imported component" << id << "from" << filePath;
+    emit componentAdded(id, typeId);
+    
+    return true;
+}
+
+bool Canvas::importSubcomponents(const QString& filePath, Component* targetComponent)
+{
+    if (!targetComponent) {
+        qWarning() << "[Canvas] No target component specified";
+        return false;
+    }
+    
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "[Canvas] Could not open subcomponent file:" << filePath;
+        return false;
+    }
+    
+    QByteArray data = file.readAll();
+    file.close();
+    
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    if (doc.isNull() || !doc.isObject()) {
+        qWarning() << "[Canvas] Invalid subcomponent file format";
+        return false;
+    }
+    
+    QJsonObject json = doc.object();
+    
+    // Verify it's a subcomponents file
+    if (json["type"].toString() != "subcomponents") {
+        qWarning() << "[Canvas] Not a valid subcomponents file";
+        return false;
+    }
+    
+    // Import design widgets
+    QJsonArray widgets = json["widgets"].toArray();
+    int importedCount = 0;
+    
+    for (const QJsonValue& widgetVal : widgets) {
+        QJsonObject widgetObj = widgetVal.toObject();
+        SubComponentType subType = DesignSubComponent::stringToType(widgetObj["type"].toString());
+        QString text = widgetObj["text"].toString();
+        qreal x = widgetObj["x"].toDouble();
+        qreal y = widgetObj["y"].toDouble();
+        qreal width = widgetObj["width"].toDouble();
+        qreal height = widgetObj["height"].toDouble();
+        
+        // Check if this widget type is allowed in the target component
+        if (!targetComponent->canAcceptDesignSubComponent(subType)) {
+            qWarning() << "[Canvas] Widget type" << DesignSubComponent::typeToString(subType)
+                      << "not allowed in component" << targetComponent->getId();
+            continue;
+        }
+        
+        DesignSubComponent* widget = new DesignSubComponent(subType, text);
+        widget->setSize(width, height);
+        targetComponent->addDesignSubComponent(widget);
+        widget->setPos(x, y);
+        importedCount++;
+    }
+    
+    qDebug() << "[Canvas] Imported" << importedCount << "widgets from" << filePath 
+             << "into component" << targetComponent->getId();
+    
+    return importedCount > 0;
 }

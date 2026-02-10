@@ -4,6 +4,7 @@
 #include <QGraphicsItem>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsSceneHoverEvent>
+#include <QGraphicsSceneContextMenuEvent>
 #include <QColor>
 #include <QString>
 #include <QPainter>
@@ -96,6 +97,7 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
     void hoverMoveEvent(QGraphicsSceneHoverEvent* event) override;
     void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
+    void contextMenuEvent(QGraphicsSceneContextMenuEvent* event) override;
 
 private:
     // Resize handle enumeration
