@@ -16,7 +16,6 @@
 #include <QDebug>
 #include <QScreen>
 #include <QApplication>
-#include <QDesktopWidget>
 
 LoginDialog::LoginDialog(QWidget* parent)
     : QDialog(parent)
