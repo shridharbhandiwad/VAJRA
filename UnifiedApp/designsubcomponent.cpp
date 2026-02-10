@@ -104,7 +104,7 @@ void DesignSubComponent::paintLabel(QPainter* painter)
 
     // Text (offset to make room for health indicator bar)
     painter->setPen(tm.isDark() ? QColor(220, 222, 228) : QColor(40, 45, 55));
-    painter->setFont(QFont("Segoe UI", 8));
+    painter->setFont(QFont("Inter", 10));
     painter->drawText(QRectF(HEALTH_BAR_WIDTH + 6, 0, m_width - HEALTH_BAR_WIDTH - 12, m_height),
                       Qt::AlignVCenter | Qt::AlignLeft, m_text);
 }
@@ -128,7 +128,7 @@ void DesignSubComponent::paintLineEdit(QPainter* painter)
 
     // Placeholder text
     painter->setPen(tm.isDark() ? QColor(140, 145, 155) : QColor(160, 165, 175));
-    painter->setFont(QFont("Segoe UI", 8));
+    painter->setFont(QFont("Inter", 10));
     painter->drawText(QRectF(HEALTH_BAR_WIDTH + 8, 0, m_width - HEALTH_BAR_WIDTH - 16, m_height),
                       Qt::AlignVCenter | Qt::AlignLeft, m_text);
 
@@ -156,7 +156,7 @@ void DesignSubComponent::paintButton(QPainter* painter)
 
     // Centered white text
     painter->setPen(Qt::white);
-    painter->setFont(QFont("Segoe UI", 8, QFont::Bold));
+    painter->setFont(QFont("Inter", 10, QFont::Bold));
     painter->drawText(QRectF(0, 0, m_width, m_height),
                       Qt::AlignCenter, m_text);
 }

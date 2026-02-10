@@ -318,13 +318,13 @@ void Component::paintContainer(QPainter* painter)
         
         // Component name next to image
         painter->setPen(headerTextPrimary);
-        painter->setFont(QFont("Segoe UI", 9, QFont::Bold));
+        painter->setFont(QFont("Inter", 11, QFont::Bold));
         QRectF nameRect(6 + imgSize + 6, 2, w - imgSize - 18, HEADER_HEIGHT / 2);
         painter->drawText(nameRect, Qt::AlignVCenter | Qt::AlignLeft, getDisplayName());
         
         // Label/type ID below name
         painter->setPen(headerTextSecondary);
-        painter->setFont(QFont("Segoe UI", 7, QFont::Normal));
+        painter->setFont(QFont("Inter", 9, QFont::Normal));
         QRectF labelRect(6 + imgSize + 6, HEADER_HEIGHT / 2, w - imgSize - 18, HEADER_HEIGHT / 2 - 4);
         painter->drawText(labelRect, Qt::AlignVCenter | Qt::AlignLeft, getLabel());
     } else {
@@ -335,18 +335,18 @@ void Component::paintContainer(QPainter* painter)
         
         // Label inside icon
         painter->setPen(Qt::white);
-        painter->setFont(QFont("Segoe UI", 7, QFont::Bold));
+        painter->setFont(QFont("Inter", 9, QFont::Bold));
         painter->drawText(QRectF(8, 8, 24, 24), Qt::AlignCenter, getLabel());
         
         // Component name
         painter->setPen(headerTextPrimary);
-        painter->setFont(QFont("Segoe UI", 9, QFont::Bold));
+        painter->setFont(QFont("Inter", 11, QFont::Bold));
         QRectF nameRect(38, 2, w - 44, HEADER_HEIGHT / 2);
         painter->drawText(nameRect, Qt::AlignVCenter | Qt::AlignLeft, getDisplayName());
         
         // Health percentage
         painter->setPen(headerTextSecondary);
-        painter->setFont(QFont("Segoe UI", 7, QFont::Bold));
+        painter->setFont(QFont("Inter", 9, QFont::Bold));
         QRectF healthRect(38, HEADER_HEIGHT / 2, w - 44, HEADER_HEIGHT / 2 - 4);
         QString healthText = QString("Health: %1%").arg(qRound(m_size));
         painter->drawText(healthRect, Qt::AlignVCenter | Qt::AlignLeft, healthText);
@@ -368,7 +368,7 @@ void Component::paintContainer(QPainter* painter)
     // Sub-components section label (if there are sub-components)
     if (!m_subComponents.isEmpty()) {
         painter->setPen(tm.componentTextSecondary());
-        painter->setFont(QFont("Segoe UI", 6, QFont::Bold));
+        painter->setFont(QFont("Inter", 8, QFont::Bold));
         QRectF subLabelRect(PADDING, HEADER_HEIGHT + 1, w - PADDING * 2, PADDING - 1);
         painter->drawText(subLabelRect, Qt::AlignVCenter | Qt::AlignLeft, 
                           QString("SUB-SYSTEMS (%1)").arg(m_subComponents.size()));
@@ -385,7 +385,7 @@ void Component::paintContainer(QPainter* painter)
         
         // Header label
         painter->setPen(tm.accentPrimary());
-        painter->setFont(QFont("Segoe UI", 6, QFont::Bold));
+        painter->setFont(QFont("Inter", 8, QFont::Bold));
         painter->drawText(QRectF(dContainer.left() + PADDING, dContainer.top() + 2,
                                  dContainer.width() - PADDING * 2, DESIGN_CONTAINER_HEADER - 2),
                           Qt::AlignVCenter | Qt::AlignLeft,
@@ -397,7 +397,7 @@ void Component::paintContainer(QPainter* painter)
         painter->drawRoundedRect(dContainer.adjusted(2, 0, -2, -2), 4, 4);
         
         painter->setPen(tm.mutedText());
-        painter->setFont(QFont("Segoe UI", 6));
+        painter->setFont(QFont("Inter", 8));
         painter->drawText(dContainer, Qt::AlignCenter, "Drop widgets here");
     }
 }

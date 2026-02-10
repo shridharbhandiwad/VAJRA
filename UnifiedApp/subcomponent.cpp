@@ -44,13 +44,13 @@ void SubComponent::paint(QPainter* painter, const QStyleOptionGraphicsItem* opti
     
     // Sub-component name
     painter->setPen(tm.subcomponentText());
-    painter->setFont(QFont("Segoe UI", 7, QFont::Normal));
+    painter->setFont(QFont("Inter", 9, QFont::Normal));
     QRectF textRect(barWidth + 6, 0, w - barWidth - 40, h);
     painter->drawText(textRect, Qt::AlignVCenter | Qt::AlignLeft, m_name);
     
     // Health percentage on the right
     painter->setPen(m_color);
-    painter->setFont(QFont("Segoe UI", 7, QFont::Bold));
+    painter->setFont(QFont("Inter", 9, QFont::Bold));
     QRectF healthRect(w - 38, 0, 34, h);
     painter->drawText(healthRect, Qt::AlignVCenter | Qt::AlignRight, 
                       QString("%1%").arg(qRound(m_health)));

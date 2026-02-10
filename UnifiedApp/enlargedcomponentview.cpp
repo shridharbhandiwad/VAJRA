@@ -59,7 +59,7 @@ void SubsystemHealthBar::paintEvent(QPaintEvent* /*event*/)
 
     // Subsystem name
     p.setPen(tm.primaryText());
-    p.setFont(QFont("Segoe UI", 9));
+    p.setFont(QFont("Inter", 11));
     QRectF nameRect(margin + 12, 0, w * 0.42, h);
     p.drawText(nameRect, Qt::AlignVCenter | Qt::AlignLeft, m_name);
 
@@ -84,7 +84,7 @@ void SubsystemHealthBar::paintEvent(QPaintEvent* /*event*/)
 
     // Health percentage
     p.setPen(m_color);
-    p.setFont(QFont("Segoe UI", 9, QFont::Bold));
+    p.setFont(QFont("Inter", 11, QFont::Bold));
     QRectF pctRect(w * 0.82, 0, w * 0.16, h);
     p.drawText(pctRect, Qt::AlignVCenter | Qt::AlignRight,
                QString("%1%").arg(qRound(m_health)));
@@ -159,7 +159,7 @@ void HealthTrendChart::paintEvent(QPaintEvent* /*event*/)
         p.drawLine(chartLeft, y, chartRight, y);
         // Y-axis labels
         p.setPen(tm.chartAxisText());
-        p.setFont(QFont("Segoe UI", 7));
+        p.setFont(QFont("Inter", 9));
         p.drawText(QRectF(0, y - 8, chartLeft - 4, 16),
                    Qt::AlignVCenter | Qt::AlignRight,
                    QString("%1").arg(100 - 25 * i));
@@ -168,14 +168,14 @@ void HealthTrendChart::paintEvent(QPaintEvent* /*event*/)
 
     // X-axis label
     p.setPen(tm.chartAxisText());
-    p.setFont(QFont("Segoe UI", 7));
+    p.setFont(QFont("Inter", 9));
     p.drawText(QRectF(chartLeft, chartBottom + 4, chartW, 18),
                Qt::AlignCenter, "Time (updates)");
 
     if (m_dataPoints.isEmpty()) {
         // Placeholder text
         p.setPen(tm.chartPlaceholderText());
-        p.setFont(QFont("Segoe UI", 10));
+        p.setFont(QFont("Inter", 12));
         p.drawText(QRectF(chartLeft, chartTop, chartW, chartH),
                    Qt::AlignCenter, "Waiting for health data...");
         return;
@@ -239,7 +239,7 @@ void HealthTrendChart::paintEvent(QPaintEvent* /*event*/)
     if (n > 0) {
         const DataPoint& last = m_dataPoints.last();
         p.setPen(last.color);
-        p.setFont(QFont("Segoe UI", 11, QFont::Bold));
+        p.setFont(QFont("Inter", 13, QFont::Bold));
         QString valText = QString("%1%").arg(qRound(last.value));
         p.drawText(QRectF(chartRight - 60, chartTop, 60, 20),
                    Qt::AlignRight | Qt::AlignTop, valText);
@@ -438,7 +438,7 @@ void EnlargedComponentView::setupUI()
         QLabel* pct = new QLabel("100%", row);
         pct->setObjectName("pct_" + subName);
         pct->setStyleSheet(
-            "color: #4CAF50; font-size: 10px; font-weight: 700;"
+            "color: #4CAF50; font-size: 12px; font-weight: 700;"
             "background: transparent; border: none;");
 
         rowLayout->addWidget(dot);
@@ -491,8 +491,8 @@ void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal siz
         // Green / Nominal
         QString greenBg = tm.isDark() ? "rgba(46,125,50,0.15)" : "rgba(22,163,74,0.06)";
         m_healthStatusLabel->setStyleSheet(
-            QString("color: %1; font-size: 11px; font-weight: 600;"
-                    "padding: 4px 12px; background: %2;"
+            QString("color: %1; font-size: 13px; font-weight: 600;"
+                    "padding: 6px 14px; background: %2;"
                     "border-radius: 6px; border-left: 3px solid %3;")
             .arg(tm.isDark() ? "#66bb6a" : "#16A34A")
             .arg(greenBg)
@@ -501,8 +501,8 @@ void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal siz
         // Red / Critical
         QString redBg = tm.isDark() ? "rgba(183,28,28,0.15)" : "rgba(220,38,38,0.06)";
         m_healthStatusLabel->setStyleSheet(
-            QString("color: %1; font-size: 11px; font-weight: 600;"
-                    "padding: 4px 12px; background: %2;"
+            QString("color: %1; font-size: 13px; font-weight: 600;"
+                    "padding: 6px 14px; background: %2;"
                     "border-radius: 6px; border-left: 3px solid %3;")
             .arg(tm.isDark() ? "#ef5350" : "#DC2626")
             .arg(redBg)
@@ -511,8 +511,8 @@ void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal siz
         // Orange / Warning
         QString orangeBg = tm.isDark() ? "rgba(230,126,34,0.15)" : "rgba(234,88,12,0.06)";
         m_healthStatusLabel->setStyleSheet(
-            QString("color: %1; font-size: 11px; font-weight: 600;"
-                    "padding: 4px 12px; background: %2;"
+            QString("color: %1; font-size: 13px; font-weight: 600;"
+                    "padding: 6px 14px; background: %2;"
                     "border-radius: 6px; border-left: 3px solid %3;")
             .arg(tm.isDark() ? "#ffb74d" : "#EA580C")
             .arg(orangeBg)
@@ -538,7 +538,7 @@ void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal siz
 
     // Colour the analytics status label
     m_analyticsStatusLabel->setStyleSheet(
-        QString("color: %1; font-size: 18px; font-weight: 700;"
+        QString("color: %1; font-size: 22px; font-weight: 700;"
                 "background: transparent; border: none;").arg(color.name()));
 
     // Update subsystem overview dots/percentages
@@ -557,7 +557,7 @@ void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal siz
         if (pct) {
             pct->setText(QString("%1%").arg(qRound(subHealth)));
             pct->setStyleSheet(
-                QString("color: %1; font-size: 10px; font-weight: 700;"
+                QString("color: %1; font-size: 12px; font-weight: 700;"
                         "background: transparent; border: none;").arg(subColor.name()));
         }
     }

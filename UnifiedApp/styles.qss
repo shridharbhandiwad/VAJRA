@@ -2,6 +2,7 @@
    RADAR SYSTEM v3.0 - Modern Modular UI
    Glass-morphism inspired dark theme with
    teal/cyan accent colors
+   Global Font: Inter / Segoe UI Variable (latest)
    ============================================ */
 
 /* ============================================
@@ -17,27 +18,27 @@ QDialog#LoginDialog {
 
 QLabel#titleLabel {
     color: #e8eaed;
-    font-size: 22px;
-    font-weight: 600;
-    font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
-    padding: 4px 0px;
+    font-size: 26px;
+    font-weight: 700;
+    font-family: "Inter", "Segoe UI Variable", "SF Pro Display", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+    padding: 6px 0px;
     background: transparent;
-    letter-spacing: 1px;
+    letter-spacing: 1.2px;
 }
 
 QLabel#subtitleLabel {
     color: #00BCD4;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 500;
-    font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
+    font-family: "Inter", "Segoe UI Variable", "SF Pro Display", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
     padding: 2px 0px;
     background: transparent;
-    letter-spacing: 2px;
+    letter-spacing: 2.5px;
 }
 
 QLabel#welcomeLabel {
     color: #9aa0a6;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 400;
     padding: 2px 0px;
     background: transparent;
@@ -47,20 +48,20 @@ QFrame#inputFrame {
     background: rgba(36, 39, 46, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 12px;
-    padding: 16px;
+    padding: 18px;
 }
 
 QLineEdit {
     background-color: rgba(28, 30, 38, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 13px;
-    font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-family: "Inter", "Segoe UI Variable", "SF Pro Display", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
     color: #e8eaed;
     selection-background-color: #00897B;
     selection-color: white;
-    min-height: 32px;
+    min-height: 36px;
 }
 
 QLineEdit:focus {
@@ -79,12 +80,12 @@ QLineEdit::placeholder {
 
 QLabel#fieldLabel {
     color: #9aa0a6;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     padding: 2px 2px;
-    font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
+    font-family: "Inter", "Segoe UI Variable", "SF Pro Display", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
 }
 
 /* Primary Button */
@@ -94,12 +95,12 @@ QPushButton#loginButton {
     color: #ffffff;
     border: none;
     border-radius: 8px;
-    padding: 12px 30px;
-    font-size: 13px;
+    padding: 14px 32px;
+    font-size: 15px;
     font-weight: 600;
-    font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
-    min-width: 120px;
-    letter-spacing: 1px;
+    font-family: "Inter", "Segoe UI Variable", "SF Pro Display", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+    min-width: 130px;
+    letter-spacing: 1.2px;
     text-transform: uppercase;
 }
 
@@ -122,12 +123,12 @@ QPushButton#cancelButton {
     color: #9aa0a6;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
-    padding: 12px 30px;
-    font-size: 13px;
+    padding: 14px 32px;
+    font-size: 15px;
     font-weight: 600;
-    font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
-    min-width: 120px;
-    letter-spacing: 1px;
+    font-family: "Inter", "Segoe UI Variable", "SF Pro Display", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+    min-width: 130px;
+    letter-spacing: 1.2px;
     text-transform: uppercase;
 }
 
@@ -138,9 +139,9 @@ QPushButton#cancelButton:hover {
 
 QLabel#errorLabel {
     color: #ef5350;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
-    padding: 10px 14px;
+    padding: 12px 16px;
     background: rgba(198, 40, 40, 0.1);
     border-radius: 8px;
     border-left: 3px solid #c62828;
@@ -148,9 +149,9 @@ QLabel#errorLabel {
 
 QLabel#successLabel {
     color: #4CAF50;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
-    padding: 10px 14px;
+    padding: 12px 16px;
     background: rgba(46, 125, 50, 0.1);
     border-radius: 8px;
     border-left: 3px solid #2e7d32;
@@ -158,7 +159,7 @@ QLabel#successLabel {
 
 QLabel#hintLabel {
     color: #5f6368;
-    font-size: 11px;
+    font-size: 13px;
     padding: 10px;
     background: transparent;
 }
@@ -167,12 +168,12 @@ QFrame#infoPanel {
     background: rgba(0, 188, 212, 0.06);
     border-left: 3px solid #00BCD4;
     border-radius: 8px;
-    padding: 10px;
+    padding: 12px;
 }
 
 QLabel#infoPanelText {
     color: #9aa0a6;
-    font-size: 11px;
+    font-size: 13px;
     line-height: 1.6;
 }
 
@@ -183,7 +184,7 @@ QFrame#divider {
 
 QLabel#footerLabel {
     color: #3a3f4b;
-    font-size: 9px;
+    font-size: 11px;
     padding: 8px;
     background: transparent;
     letter-spacing: 1px;
@@ -191,13 +192,13 @@ QLabel#footerLabel {
 
 QCheckBox {
     color: #9aa0a6;
-    font-size: 12px;
+    font-size: 14px;
     spacing: 8px;
 }
 
 QCheckBox::indicator {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 4px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(45, 49, 59, 0.8);
@@ -218,7 +219,7 @@ QToolTip {
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
     padding: 8px 12px;
-    font-size: 11px;
+    font-size: 13px;
 }
 
 QFrame#passwordContainer {
@@ -232,7 +233,7 @@ QLineEdit#passwordInput {
     border: none;
     border-right: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 0px;
-    padding: 10px 14px;
+    padding: 12px 16px;
 }
 
 QLineEdit#passwordInput:focus {
@@ -247,7 +248,7 @@ QPushButton#togglePassword {
     padding: 0px;
     margin: 1px;
     color: #00BCD4;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.5px;
 }
@@ -273,23 +274,23 @@ QToolBar#mainToolbar {
     background: rgba(24, 27, 33, 0.95);
     border: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    padding: 4px 8px;
-    spacing: 4px;
+    padding: 6px 10px;
+    spacing: 6px;
 }
 
 QToolBar::separator {
     background: rgba(255, 255, 255, 0.06);
     width: 1px;
-    margin: 2px 4px;
+    margin: 2px 6px;
 }
 
 /* User Label */
 QLabel#userLabel {
     color: #e8eaed;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     letter-spacing: 1px;
-    padding: 4px 12px;
+    padding: 6px 14px;
     background: rgba(0, 188, 212, 0.08);
     border-radius: 6px;
     border: 1px solid rgba(0, 188, 212, 0.15);
@@ -300,7 +301,7 @@ QWidget#leftPanel, QWidget#rightPanel, QWidget#centerPanel {
     background: rgba(24, 27, 33, 0.85);
     border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 8px;
-    padding: 4px;
+    padding: 6px;
 }
 
 /* Component List */
@@ -310,7 +311,7 @@ QListWidget#componentList {
     border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 8px;
     padding: 6px;
-    font-size: 12px;
+    font-size: 14px;
     outline: none;
 }
 
@@ -318,7 +319,7 @@ QListWidget#componentList::item {
     background: rgba(36, 39, 46, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 6px;
-    padding: 6px;
+    padding: 8px;
     margin: 2px 0px;
     color: #c4c7cc;
 }
@@ -351,9 +352,9 @@ QTextEdit#analyticsPanel {
     color: #c4c7cc;
     border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 6px;
-    padding: 6px;
-    font-family: "Consolas", "Monaco", "Courier New", monospace;
-    font-size: 11px;
+    padding: 8px;
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", "Monaco", "Courier New", monospace;
+    font-size: 13px;
     selection-background-color: #00897B;
     selection-color: white;
 }
@@ -361,9 +362,9 @@ QTextEdit#analyticsPanel {
 /* Status Label */
 QLabel#statusLabel {
     color: #4CAF50;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 500;
-    padding: 4px 14px;
+    padding: 6px 14px;
     background: rgba(46, 125, 50, 0.08);
     border-radius: 6px;
     border-left: 2px solid #2e7d32;
@@ -373,11 +374,11 @@ QLabel#statusLabel {
 /* Component Label Header */
 QLabel#componentsLabel {
     color: #e8eaed;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 2px;
-    padding: 8px 10px;
+    padding: 10px 12px;
     background: rgba(0, 188, 212, 0.06);
     border-radius: 8px;
     border-left: 3px solid #00BCD4;
@@ -386,7 +387,7 @@ QLabel#componentsLabel {
 /* Count Label */
 QLabel#countLabel {
     color: #5f6368;
-    font-size: 10px;
+    font-size: 12px;
     padding: 4px 10px;
     letter-spacing: 0.5px;
 }
@@ -394,7 +395,7 @@ QLabel#countLabel {
 /* Heading Labels */
 QLabel[heading="true"] {
     color: #e8eaed;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -404,7 +405,7 @@ QLabel[heading="true"] {
 
 QLabel[hint="true"] {
     color: #5f6368;
-    font-size: 10px;
+    font-size: 12px;
     padding: 6px;
     background: transparent;
     letter-spacing: 0.3px;
@@ -416,13 +417,13 @@ QPushButton#saveButton, QPushButton#loadButton, QPushButton#clearButton {
     color: #ffffff;
     border: none;
     border-radius: 6px;
-    padding: 7px 18px;
-    font-size: 10px;
+    padding: 8px 20px;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
-    font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
-    min-height: 28px;
+    font-family: "Inter", "Segoe UI Variable", "SF Pro Display", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+    min-height: 32px;
 }
 
 QPushButton#saveButton:hover, QPushButton#loadButton:hover, QPushButton#clearButton:hover {
@@ -440,12 +441,12 @@ QPushButton#addTypeButton {
     color: #ffffff;
     border: none;
     border-radius: 6px;
-    padding: 7px 18px;
-    font-size: 10px;
+    padding: 8px 20px;
+    font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    min-height: 28px;
+    min-height: 32px;
 }
 
 QPushButton#addTypeButton:hover {
@@ -463,8 +464,8 @@ QPushButton#addInlineButton {
     color: #00BCD4;
     border: 1px dashed rgba(0, 188, 212, 0.3);
     border-radius: 8px;
-    padding: 8px;
-    font-size: 11px;
+    padding: 10px;
+    font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.5px;
 }
@@ -528,11 +529,11 @@ QPushButton#roleButton {
     color: #c4c7cc;
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 8px;
-    padding: 18px;
-    font-size: 13px;
+    padding: 20px;
+    font-size: 15px;
     font-weight: 500;
     text-align: left;
-    min-height: 70px;
+    min-height: 76px;
 }
 
 QPushButton#roleButton:hover {
@@ -550,7 +551,7 @@ QPushButton#linkButton {
     background: transparent;
     color: #00BCD4;
     border: none;
-    font-size: 12px;
+    font-size: 14px;
     text-decoration: underline;
     padding: 5px;
 }
@@ -584,13 +585,13 @@ QTabBar::tab {
     color: #9aa0a6;
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-bottom: none;
-    padding: 6px 14px;
+    padding: 8px 16px;
     margin-right: 2px;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
-    font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
+    font-family: "Inter", "Segoe UI Variable", "SF Pro Display", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
     border-radius: 6px 6px 0 0;
-    min-width: 70px;
+    min-width: 80px;
     letter-spacing: 0.5px;
 }
 
