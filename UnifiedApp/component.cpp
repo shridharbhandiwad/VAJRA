@@ -199,7 +199,34 @@ QString Component::widgetValidationMessage(const QString& typeId, SubComponentTy
 
 qreal Component::containerWidth() const
 {
-    qreal autoWidth = qMax(MIN_WIDTH, SubComponent::defaultWidth() + PADDING * 2);
+    // Calculate width needed for 2-column sub-component layout
+    qreal subWidth = SubComponent::defaultWidth();
+    qreal horizontalSpacing = 15;
+    qreal leftMargin = 15;
+    qreal rightMargin = 15;
+    
+    // Width for 2 columns of sub-components
+    qreal widthFor2Columns = leftMargin + (2 * subWidth) + horizontalSpacing + rightMargin;
+    qreal autoWidth = qMax(MIN_WIDTH, widthFor2Columns);
+    
+    // Check if any subcomponents have been resized or repositioned beyond the default layout
+    for (SubComponent* sub : m_subComponents) {
+        qreal subRight = sub->pos().x() + sub->getWidth();
+        qreal requiredWidth = subRight + rightMargin;
+        if (requiredWidth > autoWidth) {
+            autoWidth = requiredWidth;
+        }
+    }
+    
+    // Also check design sub-components
+    for (DesignSubComponent* dsub : m_designSubComponents) {
+        qreal dsubRight = dsub->pos().x() + dsub->getWidth();
+        qreal requiredWidth = dsubRight + rightMargin;
+        if (requiredWidth > autoWidth) {
+            autoWidth = requiredWidth;
+        }
+    }
+    
     // If user has manually resized, use the larger of auto and user width
     if (m_userWidth > 0) {
         return qMax(autoWidth, m_userWidth);
@@ -216,13 +243,50 @@ qreal Component::containerHeight() const
     
     qreal autoHeight = HEADER_HEIGHT + PADDING;
     
-    // SubComponents section (flexible area for freely positioned subcomponents)
-    autoHeight += 60; // Minimum space for subcomponents
+    // SubComponents section - calculate required height based on actual layout
+    qreal subComponentsHeight = 60; // Minimum space for empty state
+    
+    if (!m_subComponents.isEmpty()) {
+        // Calculate based on 2-column grid layout (matching addSubComponent logic)
+        int numRows = (m_subComponents.size() + 1) / 2; // Ceiling division for 2 columns
+        qreal subHeight = SubComponent::defaultHeight();
+        qreal verticalSpacing = 10;
+        qreal topMargin = 25;
+        qreal bottomMargin = 15;
+        
+        subComponentsHeight = topMargin + (numRows * subHeight) + ((numRows - 1) * verticalSpacing) + bottomMargin;
+        
+        // Also check if any subcomponents have been resized or repositioned beyond the grid
+        for (SubComponent* sub : m_subComponents) {
+            qreal subBottom = sub->pos().y() + sub->getHeight();
+            qreal requiredHeight = subBottom + bottomMargin;
+            if (requiredHeight > subComponentsHeight) {
+                subComponentsHeight = requiredHeight;
+            }
+        }
+    }
+    
+    autoHeight += subComponentsHeight;
     
     // Design container area (always present to serve as drop target)
     autoHeight += 4; // gap
-    autoHeight += m_designSubComponents.isEmpty() ? DESIGN_CONTAINER_MIN_HEIGHT : DESIGN_CONTAINER_FULL_HEIGHT;
+    qreal designContainerHeight = m_designSubComponents.isEmpty() ? DESIGN_CONTAINER_MIN_HEIGHT : DESIGN_CONTAINER_FULL_HEIGHT;
     
+    // Check if any design sub-components extend beyond the default container height
+    if (!m_designSubComponents.isEmpty()) {
+        qreal bottomMargin = 15;
+        for (DesignSubComponent* dsub : m_designSubComponents) {
+            qreal dsubBottom = dsub->pos().y() + dsub->getHeight();
+            // Position is relative to parent, so we need to account for the offset of the design container
+            qreal containerTop = HEADER_HEIGHT + PADDING + subComponentsHeight + 4;
+            qreal requiredHeight = dsubBottom - containerTop + bottomMargin;
+            if (requiredHeight > designContainerHeight) {
+                designContainerHeight = requiredHeight;
+            }
+        }
+    }
+    
+    autoHeight += designContainerHeight;
     autoHeight += FOOTER_HEIGHT;
     
     // If user has manually resized, use the larger of auto and user height
@@ -237,6 +301,12 @@ void Component::layoutSubComponents()
     // No longer auto-layout subcomponents - they are freely positioned by the user
     // This method is kept for API compatibility but does nothing
     // Subcomponents maintain their user-defined positions
+}
+
+void Component::notifySubComponentGeometryChange()
+{
+    prepareGeometryChange();
+    update();
 }
 
 QPointF Component::anchorPoint() const

@@ -106,6 +106,13 @@ void SubComponent::setWidth(qreal w)
 {
     prepareGeometryChange();
     m_width = qMax(minWidth(), w);
+    
+    // Notify parent to recalculate its size
+    Component* parent = parentComponent();
+    if (parent) {
+        parent->notifySubComponentGeometryChange();
+    }
+    
     update();
 }
 
@@ -113,6 +120,13 @@ void SubComponent::setHeight(qreal h)
 {
     prepareGeometryChange();
     m_height = qMax(minHeight(), h);
+    
+    // Notify parent to recalculate its size
+    Component* parent = parentComponent();
+    if (parent) {
+        parent->notifySubComponentGeometryChange();
+    }
+    
     update();
 }
 
@@ -344,11 +358,24 @@ void SubComponent::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
         m_resizing = false;
         m_activeHandle = HandleNone;
         setCursor(Qt::OpenHandCursor);
+        
+        // Notify parent to recalculate its size after resize
+        Component* parent = parentComponent();
+        if (parent) {
+            parent->notifySubComponentGeometryChange();
+        }
+        
         event->accept();
         return;
     }
     if (m_dragging) {
         m_dragging = false;
+        
+        // Notify parent to recalculate its size after move
+        Component* parent = parentComponent();
+        if (parent) {
+            parent->notifySubComponentGeometryChange();
+        }
     }
     setCursor(Qt::OpenHandCursor);
     QGraphicsItem::mouseReleaseEvent(event);
