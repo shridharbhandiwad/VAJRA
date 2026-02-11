@@ -100,7 +100,7 @@ void AnalyticsDashboard::setupUI()
     QHBoxLayout* titleRow = new QHBoxLayout();
     titleRow->setSpacing(12);
     
-    QLabel* titleLabel = new QLabel("⚡ ADVANCED DATA ANALYTICS");
+    QLabel* titleLabel = new QLabel("ADVANCED DATA ANALYTICS");
     titleLabel->setObjectName("dashboardTitle");
     QFont titleFont;
     titleFont.setPointSize(26);
@@ -139,7 +139,7 @@ void AnalyticsDashboard::setupUI()
     
     m_componentFilterCombo = new QComboBox();
     m_componentFilterCombo->setObjectName("dashboardCombo");
-    m_componentFilterCombo->addItem("🌐 ALL COMPONENTS");
+    m_componentFilterCombo->addItem("ALL COMPONENTS");
     m_componentFilterCombo->setFixedWidth(220);
     QFont comboFont;
     comboFont.setPointSize(11);
@@ -155,7 +155,7 @@ void AnalyticsDashboard::setupUI()
     
     m_timeRangeCombo = new QComboBox();
     m_timeRangeCombo->setObjectName("dashboardCombo");
-    m_timeRangeCombo->addItems({"⏱ Last Hour", "⏱ Last 6 Hours", "⏱ Last 24 Hours", "📅 Last Week"});
+    m_timeRangeCombo->addItems({"Last Hour", "Last 6 Hours", "Last 24 Hours", "Last Week"});
     m_timeRangeCombo->setCurrentIndex(2);
     m_timeRangeCombo->setFixedWidth(170);
     m_timeRangeCombo->setFont(comboFont);
@@ -166,7 +166,7 @@ void AnalyticsDashboard::setupUI()
     controlsRow->addWidget(m_timeRangeCombo);
     controlsRow->addStretch();
     
-    m_refreshBtn = new QPushButton("🔄 REFRESH");
+    m_refreshBtn = new QPushButton("REFRESH");
     m_refreshBtn->setObjectName("dashboardRefreshBtn");
     m_refreshBtn->setMinimumWidth(120);
     m_refreshBtn->setFixedHeight(42);
@@ -179,7 +179,7 @@ void AnalyticsDashboard::setupUI()
     m_refreshBtn->setFont(btnFont);
     connect(m_refreshBtn, &QPushButton::clicked, this, &AnalyticsDashboard::refreshDashboard);
     
-    m_exportBtn = new QPushButton("📥 EXPORT PDF");
+    m_exportBtn = new QPushButton("EXPORT PDF");
     m_exportBtn->setObjectName("dashboardExportBtn");
     m_exportBtn->setMinimumWidth(130);
     m_exportBtn->setFixedHeight(42);
@@ -251,10 +251,10 @@ QWidget* AnalyticsDashboard::createKPISection()
     QColor warningOrange = QColor(243, 156, 18);  // Warm orange
     QColor dangerRed = QColor(231, 76, 60);       // Bold red
     
-    QWidget* card1 = createKPICard("📊 COMPONENTS", "0", "Total Monitored", primaryBlue);
-    QWidget* card2 = createKPICard("✅ ACTIVE", "0", "Systems Online", successGreen);
-    QWidget* card3 = createKPICard("💓 HEALTH", "0%", "Average Status", warningOrange);
-    QWidget* card4 = createKPICard("⚠️ ALERTS", "0", "Total Warnings", dangerRed);
+    QWidget* card1 = createKPICard("COMPONENTS", "0", "Total Monitored", primaryBlue);
+    QWidget* card2 = createKPICard("ACTIVE", "0", "Systems Online", successGreen);
+    QWidget* card3 = createKPICard("HEALTH", "0%", "Average Status", warningOrange);
+    QWidget* card4 = createKPICard("ALERTS", "0", "Total Warnings", dangerRed);
     
     kpiLayout->addWidget(card1);
     kpiLayout->addWidget(card2);
@@ -310,10 +310,10 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     valueLabel->setAlignment(Qt::AlignCenter);
     
     // Store label for updates - check for key terms
-    if (title.contains("COMPONENTS") || title.contains("📊")) m_totalComponentsLabel = valueLabel;
-    else if (title.contains("ACTIVE") || title.contains("✅")) m_activeComponentsLabel = valueLabel;
-    else if (title.contains("HEALTH") || title.contains("💓")) m_avgHealthLabel = valueLabel;
-    else if (title.contains("ALERTS") || title.contains("⚠️")) m_totalAlertsLabel = valueLabel;
+    if (title.contains("COMPONENTS")) m_totalComponentsLabel = valueLabel;
+    else if (title.contains("ACTIVE")) m_activeComponentsLabel = valueLabel;
+    else if (title.contains("HEALTH")) m_avgHealthLabel = valueLabel;
+    else if (title.contains("ALERTS")) m_totalAlertsLabel = valueLabel;
     
     // Subtitle with better styling
     QLabel* subtitleLabel = new QLabel(subtitle);
@@ -358,12 +358,6 @@ QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialTyp
     QHBoxLayout* headerLayout = new QHBoxLayout();
     headerLayout->setSpacing(12);
     
-    // Add visual indicator
-    QLabel* chartIcon = new QLabel("📈");
-    QFont iconFont;
-    iconFont.setPointSize(16);
-    chartIcon->setFont(iconFont);
-    
     // Create dropdown for chart type selection
     QComboBox* chartTypeCombo = new QComboBox();
     chartTypeCombo->setObjectName("chartTypeCombo");
@@ -374,12 +368,12 @@ QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialTyp
     comboFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
     comboFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.5);
     chartTypeCombo->setFont(comboFont);
-    chartTypeCombo->addItem("📊 Health Trend", static_cast<int>(ChartType::HealthTrend));
-    chartTypeCombo->addItem("🍰 Component Distribution", static_cast<int>(ChartType::ComponentDistribution));
-    chartTypeCombo->addItem("📈 Subsystem Performance", static_cast<int>(ChartType::SubsystemPerformance));
-    chartTypeCombo->addItem("💬 Message Frequency", static_cast<int>(ChartType::MessageFrequency));
-    chartTypeCombo->addItem("⚠️ Alert History", static_cast<int>(ChartType::AlertHistory));
-    chartTypeCombo->addItem("⚖️ Component Comparison", static_cast<int>(ChartType::ComponentComparison));
+    chartTypeCombo->addItem("Health Trend", static_cast<int>(ChartType::HealthTrend));
+    chartTypeCombo->addItem("Component Distribution", static_cast<int>(ChartType::ComponentDistribution));
+    chartTypeCombo->addItem("Subsystem Performance", static_cast<int>(ChartType::SubsystemPerformance));
+    chartTypeCombo->addItem("Message Frequency", static_cast<int>(ChartType::MessageFrequency));
+    chartTypeCombo->addItem("Alert History", static_cast<int>(ChartType::AlertHistory));
+    chartTypeCombo->addItem("Component Comparison", static_cast<int>(ChartType::ComponentComparison));
     
     // Set initial selection
     chartTypeCombo->setCurrentIndex(static_cast<int>(initialType));
@@ -390,7 +384,6 @@ QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialTyp
                 this->onChartTypeChanged(gridIndex);
             });
     
-    headerLayout->addWidget(chartIcon);
     headerLayout->addWidget(chartTypeCombo, 1);
     
     // Add subtle separator
