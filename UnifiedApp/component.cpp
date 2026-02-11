@@ -711,6 +711,7 @@ Component::ResizeHandle Component::handleAt(const QPointF& pos) const
 
 void Component::paintResizeHandles(QPainter* painter)
 {
+    ThemeManager& tm = ThemeManager::instance();
     qreal w = containerWidth();
     qreal h = containerHeight();
     qreal hs = RESIZE_HANDLE_SIZE;
