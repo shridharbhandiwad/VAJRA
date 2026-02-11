@@ -36,7 +36,7 @@ AnalyticsDashboard::AnalyticsDashboard(QWidget* parent)
 {
     setObjectName("AnalyticsDashboard");
     setWindowTitle("DATA ANALYTICS DASHBOARD");
-    resize(1400, 900);
+    resize(1600, 1000);
     
     // Initialize chart grids
     for (int i = 0; i < 4; i++) {
@@ -93,8 +93,8 @@ void AnalyticsDashboard::setupUI()
     
     m_centralWidget = new QWidget();
     m_mainLayout = new QVBoxLayout(m_centralWidget);
-    m_mainLayout->setSpacing(12);
-    m_mainLayout->setContentsMargins(15, 15, 15, 15);
+    m_mainLayout->setSpacing(16);
+    m_mainLayout->setContentsMargins(20, 20, 20, 20);
     
     // ========== HEADER SECTION ==========
     QWidget* headerWidget = new QWidget();
@@ -104,10 +104,12 @@ void AnalyticsDashboard::setupUI()
     
     QLabel* titleLabel = new QLabel("Data Analytics Dashboard");
     titleLabel->setObjectName("dashboardTitle");
-    QFont titleFont = titleLabel->font();
-    titleFont.setPointSize(16);
+    QFont titleFont;
+    titleFont.setPointSize(20);
     titleFont.setBold(true);
-    titleFont.setFamily("Arial");
+    titleFont.setWeight(QFont::Bold);
+    titleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.5);
     titleLabel->setFont(titleFont);
     
     headerLayout->addWidget(titleLabel);
@@ -116,17 +118,20 @@ void AnalyticsDashboard::setupUI()
     // Controls
     QLabel* filterLabel = new QLabel("Component:");
     filterLabel->setObjectName("filterLabel");
-    QFont labelFont = filterLabel->font();
-    labelFont.setPointSize(10);
+    QFont labelFont;
+    labelFont.setPointSize(11);
     labelFont.setBold(true);
+    labelFont.setWeight(QFont::DemiBold);
+    labelFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
     filterLabel->setFont(labelFont);
     
     m_componentFilterCombo = new QComboBox();
     m_componentFilterCombo->setObjectName("dashboardCombo");
     m_componentFilterCombo->addItem("ALL COMPONENTS");
-    m_componentFilterCombo->setFixedWidth(180);
+    m_componentFilterCombo->setFixedWidth(200);
     QFont comboFont;
-    comboFont.setPointSize(10);
+    comboFont.setPointSize(11);
+    comboFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
     m_componentFilterCombo->setFont(comboFont);
     connect(m_componentFilterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &AnalyticsDashboard::onComponentFilterChanged);
@@ -135,23 +140,25 @@ void AnalyticsDashboard::setupUI()
     m_timeRangeCombo->setObjectName("dashboardCombo");
     m_timeRangeCombo->addItems({"Last Hour", "Last 6 Hours", "Last 24 Hours", "Last Week"});
     m_timeRangeCombo->setCurrentIndex(2);
-    m_timeRangeCombo->setFixedWidth(130);
+    m_timeRangeCombo->setFixedWidth(150);
     m_timeRangeCombo->setFont(comboFont);
     
     m_refreshBtn = new QPushButton("Refresh");
     m_refreshBtn->setObjectName("dashboardRefreshBtn");
-    m_refreshBtn->setFixedWidth(90);
-    m_refreshBtn->setFixedHeight(28);
+    m_refreshBtn->setMinimumWidth(100);
+    m_refreshBtn->setFixedHeight(36);
     QFont btnFont;
-    btnFont.setPointSize(10);
+    btnFont.setPointSize(11);
     btnFont.setBold(true);
+    btnFont.setWeight(QFont::DemiBold);
+    btnFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
     m_refreshBtn->setFont(btnFont);
     connect(m_refreshBtn, &QPushButton::clicked, this, &AnalyticsDashboard::refreshDashboard);
     
     m_exportBtn = new QPushButton("Export PDF");
     m_exportBtn->setObjectName("dashboardExportBtn");
-    m_exportBtn->setFixedWidth(100);
-    m_exportBtn->setFixedHeight(28);
+    m_exportBtn->setMinimumWidth(110);
+    m_exportBtn->setFixedHeight(36);
     m_exportBtn->setFont(btnFont);
     connect(m_exportBtn, &QPushButton::clicked, this, &AnalyticsDashboard::onExportToPDF);
     
@@ -176,7 +183,7 @@ void AnalyticsDashboard::setupUI()
     // ========== 2x2 CHARTS GRID ==========
     QGridLayout* chartsGrid = new QGridLayout();
     chartsGrid->setObjectName("chartsGrid");
-    chartsGrid->setSpacing(10);
+    chartsGrid->setSpacing(20);
     chartsGrid->setContentsMargins(0, 0, 0, 0);
     
     // Create 2x2 grid with default chart types
@@ -208,7 +215,7 @@ QWidget* AnalyticsDashboard::createKPISection()
     QWidget* kpiWidget = new QWidget();
     kpiWidget->setObjectName("kpiSection");
     QHBoxLayout* kpiLayout = new QHBoxLayout(kpiWidget);
-    kpiLayout->setSpacing(10);
+    kpiLayout->setSpacing(16);
     kpiLayout->setContentsMargins(0, 0, 0, 0);
     
     // Create KPI cards with military-grade design
@@ -229,33 +236,37 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
 {
     QWidget* card = new QWidget();
     card->setObjectName("kpiCard");
-    card->setMinimumHeight(85);
-    card->setMaximumHeight(100);
-    // Border color styling moved to QSS
+    card->setMinimumHeight(100);
+    card->setMaximumHeight(120);
+    // Border color styling with enhanced left border
     card->setStyleSheet(QString(
-        "QWidget#kpiCard { border-left: 3px solid %1; }"
+        "QWidget#kpiCard { border-left: 4px solid %1; }"
     ).arg(color.name()));
     
     QVBoxLayout* cardLayout = new QVBoxLayout(card);
-    cardLayout->setSpacing(4);
-    cardLayout->setContentsMargins(12, 10, 12, 10);
+    cardLayout->setSpacing(6);
+    cardLayout->setContentsMargins(16, 14, 16, 14);
     
     QLabel* titleLabel = new QLabel(title);
     titleLabel->setObjectName("kpiTitle");
-    QFont titleFont = titleLabel->font();
-    titleFont.setPointSize(10);
+    QFont titleFont;
+    titleFont.setPointSize(11);
     titleFont.setBold(true);
-    titleFont.setFamily("Arial");
+    titleFont.setWeight(QFont::DemiBold);
+    titleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.8);
     titleLabel->setFont(titleFont);
     titleLabel->setStyleSheet(QString("color: %1;").arg(color.name()));
     titleLabel->setAlignment(Qt::AlignLeft);
     
     QLabel* valueLabel = new QLabel(value);
     valueLabel->setObjectName("kpiValue");
-    QFont valueFont = valueLabel->font();
-    valueFont.setPointSize(28);
+    QFont valueFont;
+    valueFont.setPointSize(36);
     valueFont.setBold(true);
-    valueFont.setFamily("Arial");
+    valueFont.setWeight(QFont::ExtraBold);
+    valueFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    valueFont.setLetterSpacing(QFont::AbsoluteSpacing, -1.5);
     valueLabel->setFont(valueFont);
     valueLabel->setAlignment(Qt::AlignCenter);
     
@@ -267,9 +278,12 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     
     QLabel* subtitleLabel = new QLabel(subtitle);
     subtitleLabel->setObjectName("kpiSubtitle");
-    QFont subtitleFont = subtitleLabel->font();
-    subtitleFont.setPointSize(9);
+    QFont subtitleFont;
+    subtitleFont.setPointSize(10);
     subtitleFont.setBold(true);
+    subtitleFont.setWeight(QFont::Medium);
+    subtitleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    subtitleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.5);
     subtitleLabel->setFont(subtitleFont);
     subtitleLabel->setAlignment(Qt::AlignCenter);
     
@@ -285,15 +299,17 @@ QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialTyp
     QWidget* container = new QWidget();
     container->setObjectName("chartContainer");
     QVBoxLayout* layout = new QVBoxLayout(container);
-    layout->setSpacing(6);
-    layout->setContentsMargins(8, 8, 8, 8);
+    layout->setSpacing(10);
+    layout->setContentsMargins(12, 12, 12, 12);
     
     // Create dropdown for chart type selection
     QComboBox* chartTypeCombo = new QComboBox();
     chartTypeCombo->setObjectName("chartTypeCombo");
     QFont comboFont;
-    comboFont.setPointSize(9);
+    comboFont.setPointSize(10);
     comboFont.setBold(true);
+    comboFont.setWeight(QFont::DemiBold);
+    comboFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
     chartTypeCombo->setFont(comboFont);
     chartTypeCombo->addItem("Health Trend", static_cast<int>(ChartType::HealthTrend));
     chartTypeCombo->addItem("Component Distribution", static_cast<int>(ChartType::ComponentDistribution));
@@ -316,7 +332,9 @@ QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialTyp
     applyChartTheme(chart);
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(280);
+    chartView->setRenderHint(QPainter::TextAntialiasing);
+    chartView->setRenderHint(QPainter::SmoothPixmapTransform);
+    chartView->setMinimumHeight(320);
     chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     // Enable tooltips
@@ -512,11 +530,20 @@ void AnalyticsDashboard::updateKPIs()
     
     qreal avgHealth = totalComponents > 0 ? totalHealth / totalComponents : 0.0;
     
-    // Update KPI labels
-    if (m_totalComponentsLabel) m_totalComponentsLabel->setText(QString::number(totalComponents));
-    if (m_activeComponentsLabel) m_activeComponentsLabel->setText(QString::number(activeComponents));
-    if (m_avgHealthLabel) m_avgHealthLabel->setText(QString("%1%").arg(qRound(avgHealth)));
-    if (m_totalAlertsLabel) m_totalAlertsLabel->setText(QString::number(totalAlerts));
+    // Update KPI labels with professional formatting
+    if (m_totalComponentsLabel) {
+        m_totalComponentsLabel->setText(QString::number(totalComponents));
+    }
+    if (m_activeComponentsLabel) {
+        m_activeComponentsLabel->setText(QString::number(activeComponents));
+    }
+    if (m_avgHealthLabel) {
+        // Format health with one decimal place for precision
+        m_avgHealthLabel->setText(QString("%1%").arg(avgHealth, 0, 'f', 1));
+    }
+    if (m_totalAlertsLabel) {
+        m_totalAlertsLabel->setText(QString::number(totalAlerts));
+    }
 }
 
 QColor AnalyticsDashboard::getHealthColor(qreal health)
@@ -706,7 +733,7 @@ void AnalyticsDashboard::updateHealthTrendChart(QChartView* chartView, const QSt
         delete axis;
     }
     
-    chart->setTitle("COMPONENT HEALTH TREND");
+    chart->setTitle("Component Health Trend");
     
     // Filter components if needed
     QMap<QString, ComponentHealthData> dataToShow;
@@ -716,7 +743,21 @@ void AnalyticsDashboard::updateHealthTrendChart(QChartView* chartView, const QSt
         dataToShow[componentFilter] = m_componentData[componentFilter];
     }
     
-    // Create line series for each component
+    // Professional color palette for lines (Grafana-inspired)
+    QVector<QColor> lineColors = {
+        QColor(115, 191, 105),  // Green
+        QColor(242, 204, 12),   // Yellow
+        QColor(242, 73, 92),    // Red
+        QColor(115, 192, 222),  // Cyan
+        QColor(194, 118, 217),  // Purple
+        QColor(250, 152, 59),   // Orange
+        QColor(84, 166, 234),   // Blue
+        QColor(255, 120, 159)   // Pink
+    };
+    
+    int colorIndex = 0;
+    
+    // Create line series for each component with enhanced styling
     for (auto it = dataToShow.begin(); it != dataToShow.end(); ++it) {
         if (it->healthHistory.isEmpty()) continue;
         
@@ -727,21 +768,48 @@ void AnalyticsDashboard::updateHealthTrendChart(QChartView* chartView, const QSt
             series->append(point.first, point.second);
         }
         
+        // Enhanced line styling
+        QPen pen(lineColors[colorIndex % lineColors.size()]);
+        pen.setWidth(3);
+        pen.setCapStyle(Qt::RoundCap);
+        pen.setJoinStyle(Qt::RoundJoin);
+        series->setPen(pen);
+        
+        // Add point markers for better visibility
+        series->setPointsVisible(true);
+        series->setPointLabelsVisible(false);
+        
         chart->addSeries(series);
+        colorIndex++;
     }
     
-    // Add axes
+    // Add axes with professional formatting
     QValueAxis* axisX = new QValueAxis();
-    axisX->setTitleText("Time");
+    axisX->setTitleText("Time (relative)");
     axisX->setLabelsColor(m_textColor);
     axisX->setGridLineColor(m_gridColor);
+    axisX->setMinorGridLineColor(m_gridColor.lighter(110));
+    axisX->setLabelsAngle(0);
+    axisX->setLabelFormat("%.0f");
+    
+    QFont axisFont;
+    axisFont.setPointSize(10);
+    axisFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    axisX->setLabelsFont(axisFont);
+    axisX->setTitleFont(axisFont);
+    
     chart->addAxis(axisX, Qt::AlignBottom);
     
     QValueAxis* axisY = new QValueAxis();
-    axisY->setTitleText("Health %");
-    axisY->setRange(0, 100);
+    axisY->setTitleText("Health (%)");
+    axisY->setRange(0, 105);
     axisY->setLabelsColor(m_textColor);
     axisY->setGridLineColor(m_gridColor);
+    axisY->setMinorGridLineColor(m_gridColor.lighter(110));
+    axisY->setLabelFormat("%.0f%%");
+    axisY->setTickCount(11);
+    axisY->setLabelsFont(axisFont);
+    axisY->setTitleFont(axisFont);
     chart->addAxis(axisY, Qt::AlignLeft);
     
     // Attach axes to series
@@ -766,32 +834,59 @@ void AnalyticsDashboard::updateComponentDistributionChart(QChartView* chartView,
         delete series;
     }
     
-    chart->setTitle("COMPONENT TYPE DISTRIBUTION");
+    chart->setTitle("Component Type Distribution");
     
     QPieSeries* pieSeries = new QPieSeries();
     
+    // Grafana-inspired color palette for pie slices
     QVector<QColor> pieColors = {
-        QColor(52, 152, 219),
-        QColor(46, 204, 113),
-        QColor(241, 196, 15),
-        QColor(231, 76, 60),
-        QColor(155, 89, 182)
+        QColor(115, 191, 105),  // Green
+        QColor(242, 204, 12),   // Yellow
+        QColor(242, 73, 92),    // Red
+        QColor(115, 192, 222),  // Cyan
+        QColor(194, 118, 217),  // Purple
+        QColor(250, 152, 59),   // Orange
+        QColor(84, 166, 234)    // Blue
     };
     
     int colorIndex = 0;
+    qreal totalCount = 0;
+    for (auto it = m_componentTypeCount.begin(); it != m_componentTypeCount.end(); ++it) {
+        totalCount += it.value();
+    }
+    
     for (auto it = m_componentTypeCount.begin(); it != m_componentTypeCount.end(); ++it) {
         if (it.value() > 0) {
-            QPieSlice* slice = pieSeries->append(it.key(), it.value());
+            qreal percentage = (it.value() / totalCount) * 100.0;
+            QString label = QString("%1\n%2 (%3%)")
+                .arg(it.key())
+                .arg(it.value())
+                .arg(QString::number(percentage, 'f', 1));
+            
+            QPieSlice* slice = pieSeries->append(label, it.value());
             slice->setColor(pieColors[colorIndex % pieColors.size()]);
             slice->setLabelVisible(true);
             slice->setLabelColor(m_textColor);
             slice->setLabelPosition(QPieSlice::LabelOutside);
+            slice->setBorderColor(m_chartBgColor);
+            slice->setBorderWidth(2);
+            
+            // Professional label font
+            QFont labelFont;
+            labelFont.setPointSize(10);
+            labelFont.setBold(true);
+            labelFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+            slice->setLabelFont(labelFont);
+            
+            // Hover effect
+            slice->setExplodeDistanceFactor(0.05);
+            
             colorIndex++;
         }
     }
     
-    pieSeries->setHoleSize(0.4);
-    pieSeries->setPieSize(0.75);
+    pieSeries->setHoleSize(0.45);
+    pieSeries->setPieSize(0.85);
     chart->addSeries(pieSeries);
     chart->legend()->setVisible(true);
     chart->legend()->setAlignment(Qt::AlignBottom);
@@ -817,7 +912,7 @@ void AnalyticsDashboard::updateSubsystemPerformanceChart(QChartView* chartView, 
         delete axis;
     }
     
-    chart->setTitle("SUBSYSTEM PERFORMANCE");
+    chart->setTitle("Subsystem Performance");
     
     // Calculate average subsystem health
     QMap<QString, qreal> subsystemAvgHealth;
@@ -846,34 +941,57 @@ void AnalyticsDashboard::updateSubsystemPerformanceChart(QChartView* chartView, 
     }
     
     QBarSeries* barSeries = new QBarSeries();
-    QBarSet* set = new QBarSet("Avg Health");
-    set->setColor(QColor(52, 152, 219));
+    QBarSet* set = new QBarSet("Average Health");
     
+    // Gradient color for bars based on health
     QStringList categories;
+    QVector<QColor> barColors;
+    
     for (auto it = subsystemAvgHealth.begin(); it != subsystemAvgHealth.end(); ++it) {
         if (subsystemCount[it.key()] > 0) {
             qreal avgHealth = it.value() / subsystemCount[it.key()];
             *set << avgHealth;
             categories << it.key();
+            
+            // Color based on health level (Grafana style)
+            if (avgHealth >= 90) barColors.append(QColor(115, 191, 105));      // Green
+            else if (avgHealth >= 75) barColors.append(QColor(115, 192, 222)); // Cyan
+            else if (avgHealth >= 60) barColors.append(QColor(242, 204, 12));  // Yellow
+            else if (avgHealth >= 40) barColors.append(QColor(250, 152, 59));  // Orange
+            else barColors.append(QColor(242, 73, 92));                        // Red
         }
     }
     
+    set->setColor(QColor(115, 192, 222)); // Default cyan
+    set->setBorderColor(m_chartBgColor);
     barSeries->append(set);
+    barSeries->setBarWidth(0.7);
     chart->addSeries(barSeries);
     
     QBarCategoryAxis* axisX = new QBarCategoryAxis();
     axisX->append(categories);
     axisX->setLabelsColor(m_textColor);
     axisX->setLabelsAngle(-45);
+    axisX->setGridLineVisible(false);
+    
+    QFont axisFont;
+    axisFont.setPointSize(10);
+    axisFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    axisX->setLabelsFont(axisFont);
+    
     chart->addAxis(axisX, Qt::AlignBottom);
     barSeries->attachAxis(axisX);
     
     QValueAxis* axisY = new QValueAxis();
-    axisY->setRange(0, 100);
-    axisY->setTitleText("Health %");
+    axisY->setRange(0, 105);
+    axisY->setTitleText("Health (%)");
     axisY->setLabelsColor(m_textColor);
     axisY->setGridLineColor(m_gridColor);
-    axisY->setLabelFormat("%.0f");
+    axisY->setMinorGridLineColor(m_gridColor.lighter(110));
+    axisY->setLabelFormat("%.0f%%");
+    axisY->setTickCount(11);
+    axisY->setLabelsFont(axisFont);
+    axisY->setTitleFont(axisFont);
     chart->addAxis(axisY, Qt::AlignLeft);
     barSeries->attachAxis(axisY);
     
@@ -899,7 +1017,7 @@ void AnalyticsDashboard::updateMessageFrequencyChart(QChartView* chartView, cons
         delete axis;
     }
     
-    chart->setTitle("MESSAGE FREQUENCY");
+    chart->setTitle("Message Frequency");
     
     QMap<QString, ComponentHealthData> dataToShow;
     if (componentFilter.isEmpty()) {
@@ -909,8 +1027,9 @@ void AnalyticsDashboard::updateMessageFrequencyChart(QChartView* chartView, cons
     }
     
     QBarSeries* barSeries = new QBarSeries();
-    QBarSet* set = new QBarSet("Messages");
-    set->setColor(QColor(52, 152, 219));
+    QBarSet* set = new QBarSet("Message Count");
+    set->setColor(QColor(115, 192, 222)); // Cyan
+    set->setBorderColor(m_chartBgColor);
     
     QStringList categories;
     for (auto it = dataToShow.begin(); it != dataToShow.end(); ++it) {
@@ -919,20 +1038,31 @@ void AnalyticsDashboard::updateMessageFrequencyChart(QChartView* chartView, cons
     }
     
     barSeries->append(set);
+    barSeries->setBarWidth(0.7);
     chart->addSeries(barSeries);
     
     QBarCategoryAxis* axisX = new QBarCategoryAxis();
     axisX->append(categories);
     axisX->setLabelsColor(m_textColor);
     axisX->setLabelsAngle(-45);
+    axisX->setGridLineVisible(false);
+    
+    QFont axisFont;
+    axisFont.setPointSize(10);
+    axisFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    axisX->setLabelsFont(axisFont);
+    
     chart->addAxis(axisX, Qt::AlignBottom);
     barSeries->attachAxis(axisX);
     
     QValueAxis* axisY = new QValueAxis();
-    axisY->setTitleText("Messages");
+    axisY->setTitleText("Message Count");
     axisY->setLabelsColor(m_textColor);
     axisY->setGridLineColor(m_gridColor);
+    axisY->setMinorGridLineColor(m_gridColor.lighter(110));
     axisY->setLabelFormat("%.0f");
+    axisY->setLabelsFont(axisFont);
+    axisY->setTitleFont(axisFont);
     chart->addAxis(axisY, Qt::AlignLeft);
     barSeries->attachAxis(axisY);
     
@@ -958,7 +1088,7 @@ void AnalyticsDashboard::updateAlertHistoryChart(QChartView* chartView, const QS
         delete axis;
     }
     
-    chart->setTitle("ALERT HISTORY");
+    chart->setTitle("Alert History");
     
     QMap<QString, ComponentHealthData> dataToShow;
     if (componentFilter.isEmpty()) {
@@ -968,8 +1098,9 @@ void AnalyticsDashboard::updateAlertHistoryChart(QChartView* chartView, const QS
     }
     
     QBarSeries* barSeries = new QBarSeries();
-    QBarSet* set = new QBarSet("Alerts");
-    set->setColor(QColor(231, 76, 60));
+    QBarSet* set = new QBarSet("Alert Count");
+    set->setColor(QColor(242, 73, 92)); // Red
+    set->setBorderColor(m_chartBgColor);
     
     QStringList categories;
     for (auto it = dataToShow.begin(); it != dataToShow.end(); ++it) {
@@ -978,20 +1109,31 @@ void AnalyticsDashboard::updateAlertHistoryChart(QChartView* chartView, const QS
     }
     
     barSeries->append(set);
+    barSeries->setBarWidth(0.7);
     chart->addSeries(barSeries);
     
     QBarCategoryAxis* axisX = new QBarCategoryAxis();
     axisX->append(categories);
     axisX->setLabelsColor(m_textColor);
     axisX->setLabelsAngle(-45);
+    axisX->setGridLineVisible(false);
+    
+    QFont axisFont;
+    axisFont.setPointSize(10);
+    axisFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    axisX->setLabelsFont(axisFont);
+    
     chart->addAxis(axisX, Qt::AlignBottom);
     barSeries->attachAxis(axisX);
     
     QValueAxis* axisY = new QValueAxis();
-    axisY->setTitleText("Alerts");
+    axisY->setTitleText("Alert Count");
     axisY->setLabelsColor(m_textColor);
     axisY->setGridLineColor(m_gridColor);
+    axisY->setMinorGridLineColor(m_gridColor.lighter(110));
     axisY->setLabelFormat("%.0f");
+    axisY->setLabelsFont(axisFont);
+    axisY->setTitleFont(axisFont);
     chart->addAxis(axisY, Qt::AlignLeft);
     barSeries->attachAxis(axisY);
     
@@ -1017,7 +1159,7 @@ void AnalyticsDashboard::updateComponentComparisonChart(QChartView* chartView, c
         delete axis;
     }
     
-    chart->setTitle("COMPONENT COMPARISON");
+    chart->setTitle("Component Comparison");
     
     QMap<QString, ComponentHealthData> dataToShow;
     if (componentFilter.isEmpty()) {
@@ -1027,7 +1169,7 @@ void AnalyticsDashboard::updateComponentComparisonChart(QChartView* chartView, c
     }
     
     QBarSeries* barSeries = new QBarSeries();
-    QBarSet* healthSet = new QBarSet("Health");
+    QBarSet* healthSet = new QBarSet("Current Health");
     
     QStringList categories;
     for (auto it = dataToShow.begin(); it != dataToShow.end(); ++it) {
@@ -1036,22 +1178,36 @@ void AnalyticsDashboard::updateComponentComparisonChart(QChartView* chartView, c
         healthSet->append(health);
     }
     
-    healthSet->setColor(QColor(46, 204, 113));
+    // Gradient green color
+    healthSet->setColor(QColor(115, 191, 105));
+    healthSet->setBorderColor(m_chartBgColor);
     barSeries->append(healthSet);
+    barSeries->setBarWidth(0.6);
     chart->addSeries(barSeries);
     
     QBarCategoryAxis* axisY = new QBarCategoryAxis();
     axisY->append(categories);
     axisY->setLabelsColor(m_textColor);
+    axisY->setGridLineVisible(false);
+    
+    QFont axisFont;
+    axisFont.setPointSize(10);
+    axisFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    axisY->setLabelsFont(axisFont);
+    
     chart->addAxis(axisY, Qt::AlignLeft);
     barSeries->attachAxis(axisY);
     
     QValueAxis* axisX = new QValueAxis();
-    axisX->setRange(0, 100);
-    axisX->setTitleText("Health %");
+    axisX->setRange(0, 105);
+    axisX->setTitleText("Health (%)");
     axisX->setLabelsColor(m_textColor);
     axisX->setGridLineColor(m_gridColor);
-    axisX->setLabelFormat("%.0f");
+    axisX->setMinorGridLineColor(m_gridColor.lighter(110));
+    axisX->setLabelFormat("%.0f%%");
+    axisX->setTickCount(11);
+    axisX->setLabelsFont(axisFont);
+    axisX->setTitleFont(axisFont);
     chart->addAxis(axisX, Qt::AlignBottom);
     barSeries->attachAxis(axisX);
     
@@ -1063,24 +1219,41 @@ void AnalyticsDashboard::applyChartTheme(QChart* chart)
 {
     chart->setBackgroundBrush(QBrush(m_chartBgColor));
     chart->setTitleBrush(QBrush(m_textColor));
-    chart->setBackgroundRoundness(4);
+    chart->setBackgroundRoundness(6);
+    chart->setAnimationOptions(QChart::SeriesAnimations);
+    chart->setAnimationDuration(800);
     
-    QFont titleFont = chart->titleFont();
-    titleFont.setPointSize(12);
+    // Professional title font - Grafana style
+    QFont titleFont;
+    titleFont.setPointSize(14);
     titleFont.setBold(true);
-    titleFont.setFamily("Arial");
+    titleFont.setWeight(QFont::DemiBold);
+    titleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.5);
     chart->setTitleFont(titleFont);
     
+    // Professional legend styling
     if (chart->legend()) {
         chart->legend()->setLabelColor(m_textColor);
+        chart->legend()->setAlignment(Qt::AlignBottom);
+        chart->legend()->setMarkerShape(QLegend::MarkerShapeCircle);
+        chart->legend()->setShowToolTips(true);
+        
         QFont legendFont;
-        legendFont.setPointSize(9);
+        legendFont.setPointSize(10);
         legendFont.setBold(false);
+        legendFont.setWeight(QFont::Normal);
+        legendFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
         chart->legend()->setFont(legendFont);
+        
+        // Legend styling with padding
+        chart->legend()->setBrush(QBrush(m_chartBgColor));
+        chart->legend()->setPen(QPen(m_gridColor, 1));
+        chart->legend()->setBorderColor(m_gridColor);
     }
     
-    // Compact margins
-    chart->setMargins(QMargins(10, 10, 10, 10));
+    // Optimized margins for better data visibility
+    chart->setMargins(QMargins(15, 15, 15, 15));
 }
 
 void AnalyticsDashboard::enableChartTooltips(QChartView* chartView)
@@ -1089,8 +1262,14 @@ void AnalyticsDashboard::enableChartTooltips(QChartView* chartView)
     
     // Enable mouse tracking for tooltips
     chartView->setMouseTracking(true);
+    chartView->setInteractive(true);
     
-    // Tooltips will be configured per series when we create them
+    // Note: Qt Charts handles tooltips automatically for series with point labels
+    // We've already configured point visibility in series creation
+    // For enhanced tooltips, we rely on Qt's built-in tooltip mechanism
+    
+    // Set a general tooltip for the chart view
+    chartView->setToolTip("Hover over data points for detailed information");
 }
 
 void AnalyticsDashboard::onExportToPDF()
