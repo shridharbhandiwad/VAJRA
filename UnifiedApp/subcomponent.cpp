@@ -200,10 +200,6 @@ QPointF SubComponent::constrainToBoundary(const QPointF& proposedPos) const
     Component* parent = parentComponent();
     if (!parent) return proposedPos;
     
-    // Get parent's container dimensions
-    qreal parentW = parent->containerWidth();
-    qreal parentH = parent->containerHeight();
-    
     // Get the design container area where subcomponents should stay
     QRectF containerRect = parent->designContainerRect();
     

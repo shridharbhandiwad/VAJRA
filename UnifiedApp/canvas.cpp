@@ -115,7 +115,7 @@ void Canvas::clearCanvas()
     m_componentCounter = 0;
     m_connectionCounter = 0;
     m_componentMap.clear();
-    m_connectionSource = nullptr;
+    m_connectionSourceItem = nullptr;
     m_pendingLine = nullptr;
     m_isDrawingConnection = false;
 }
