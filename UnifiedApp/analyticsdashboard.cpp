@@ -1071,21 +1071,3 @@ void AnalyticsDashboard::enableChartTooltips(QChartView* chartView)
     
     // Tooltips will be configured per series when we create them
 }
-
-QColor AnalyticsDashboard::getHealthColor(qreal health)
-{
-    if (health >= 90) return QColor(46, 204, 113);  // Green
-    if (health >= 75) return QColor(52, 152, 219);  // Blue
-    if (health >= 60) return QColor(241, 196, 15);  // Yellow
-    if (health >= 40) return QColor(230, 126, 34);  // Orange
-    return QColor(231, 76, 60);  // Red
-}
-
-QString AnalyticsDashboard::getHealthStatus(qreal health)
-{
-    if (health >= 90) return "EXCELLENT";
-    if (health >= 75) return "GOOD";
-    if (health >= 60) return "FAIR";
-    if (health >= 40) return "POOR";
-    return "CRITICAL";
-}
