@@ -88,6 +88,9 @@ public:
     qreal containerWidth() const;
     qreal containerHeight() const;
     
+    // Notify that sub-component geometry has changed
+    void notifySubComponentGeometryChange();
+    
     // Connection anchor point (center of the component)
     QPointF anchorPoint() const;
     
