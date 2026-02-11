@@ -1071,3 +1071,60 @@ void AnalyticsDashboard::enableChartTooltips(QChartView* chartView)
     
     // Tooltips will be configured per series when we create them
 }
+
+void AnalyticsDashboard::onExportToPDF()
+{
+    // Open file dialog to select where to save the PDF
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                     "Export Dashboard to PDF",
+                                                     "analytics_dashboard.pdf",
+                                                     "PDF Files (*.pdf)");
+    
+    if (fileName.isEmpty()) {
+        return; // User cancelled
+    }
+    
+    // Ensure .pdf extension
+    if (!fileName.endsWith(".pdf", Qt::CaseInsensitive)) {
+        fileName += ".pdf";
+    }
+    
+    // Create printer for PDF export
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setOutputFileName(fileName);
+    printer.setPageOrientation(QPageLayout::Landscape);
+    printer.setPageSize(QPageSize::A4);
+    
+    // Create painter
+    QPainter painter;
+    if (!painter.begin(&printer)) {
+        QMessageBox::warning(this, "Export Failed", "Unable to create PDF file.");
+        return;
+    }
+    
+    // Get the page rectangle
+    QRect pageRect = printer.pageRect(QPrinter::DevicePixel).toRect();
+    int pageWidth = pageRect.width();
+    int pageHeight = pageRect.height();
+    
+    // Render the entire dashboard widget to the PDF
+    // We'll capture the central widget as a pixmap and then render it
+    QPixmap dashboardPixmap(m_centralWidget->size());
+    m_centralWidget->render(&dashboardPixmap);
+    
+    // Scale to fit the page while maintaining aspect ratio
+    QPixmap scaledPixmap = dashboardPixmap.scaled(pageWidth, pageHeight, 
+                                                    Qt::KeepAspectRatio, 
+                                                    Qt::SmoothTransformation);
+    
+    // Center the image on the page
+    int x = (pageWidth - scaledPixmap.width()) / 2;
+    int y = (pageHeight - scaledPixmap.height()) / 2;
+    
+    painter.drawPixmap(x, y, scaledPixmap);
+    painter.end();
+    
+    QMessageBox::information(this, "Export Successful", 
+                              QString("Dashboard exported successfully to:\n%1").arg(fileName));
+}
