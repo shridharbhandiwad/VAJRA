@@ -34,6 +34,7 @@ AnalyticsDashboard::AnalyticsDashboard(QWidget* parent)
     , m_exportBtn(nullptr)
     , m_updateTimer(nullptr)
 {
+    setObjectName("AnalyticsDashboard");
     setWindowTitle("DATA ANALYTICS DASHBOARD");
     resize(1600, 1000);
     
@@ -86,6 +87,7 @@ void AnalyticsDashboard::setupUI()
     
     // Create scroll area for dashboard
     m_scrollArea = new QScrollArea(this);
+    m_scrollArea->setObjectName("dashboardScrollArea");
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setFrameShape(QFrame::NoFrame);
     
@@ -100,25 +102,26 @@ void AnalyticsDashboard::setupUI()
     headerLayout->setSpacing(15);
     
     QLabel* titleLabel = new QLabel("DATA ANALYTICS DASHBOARD");
+    titleLabel->setObjectName("dashboardTitle");
     QFont titleFont = titleLabel->font();
     titleFont.setPointSize(26);
     titleFont.setBold(true);
     titleFont.setFamily("Arial");
     titleLabel->setFont(titleFont);
-    titleLabel->setStyleSheet(QString("color: %1; letter-spacing: 2px;").arg(m_textColor.name()));
     
     headerLayout->addWidget(titleLabel);
     headerLayout->addStretch();
     
     // Controls
     QLabel* filterLabel = new QLabel("COMPONENT:");
+    filterLabel->setObjectName("filterLabel");
     QFont labelFont = filterLabel->font();
     labelFont.setPointSize(11);
     labelFont.setBold(true);
     filterLabel->setFont(labelFont);
-    filterLabel->setStyleSheet(QString("color: %1;").arg(m_textColor.name()));
     
     m_componentFilterCombo = new QComboBox();
+    m_componentFilterCombo->setObjectName("dashboardCombo");
     m_componentFilterCombo->addItem("ALL COMPONENTS");
     m_componentFilterCombo->setFixedWidth(200);
     QFont comboFont;
@@ -128,12 +131,14 @@ void AnalyticsDashboard::setupUI()
             this, &AnalyticsDashboard::onComponentFilterChanged);
     
     m_timeRangeCombo = new QComboBox();
+    m_timeRangeCombo->setObjectName("dashboardCombo");
     m_timeRangeCombo->addItems({"LAST HOUR", "LAST 6 HOURS", "LAST 24 HOURS", "LAST WEEK"});
     m_timeRangeCombo->setCurrentIndex(2);
     m_timeRangeCombo->setFixedWidth(150);
     m_timeRangeCombo->setFont(comboFont);
     
     m_refreshBtn = new QPushButton("REFRESH");
+    m_refreshBtn->setObjectName("dashboardRefreshBtn");
     m_refreshBtn->setFixedWidth(110);
     m_refreshBtn->setFixedHeight(32);
     QFont btnFont;
@@ -143,6 +148,7 @@ void AnalyticsDashboard::setupUI()
     connect(m_refreshBtn, &QPushButton::clicked, this, &AnalyticsDashboard::refreshDashboard);
     
     m_exportBtn = new QPushButton("EXPORT PDF");
+    m_exportBtn->setObjectName("dashboardExportBtn");
     m_exportBtn->setFixedWidth(120);
     m_exportBtn->setFixedHeight(32);
     m_exportBtn->setFont(btnFont);
@@ -159,9 +165,17 @@ void AnalyticsDashboard::setupUI()
     // ========== KPI SECTION ==========
     m_mainLayout->addWidget(createKPISection());
     
+    // Add a subtle divider
+    QFrame* divider = new QFrame();
+    divider->setObjectName("dashboardDivider");
+    divider->setFrameShape(QFrame::HLine);
+    divider->setFixedHeight(2);
+    m_mainLayout->addWidget(divider);
+    
     // ========== 2x2 CHARTS GRID ==========
     QGridLayout* chartsGrid = new QGridLayout();
-    chartsGrid->setSpacing(15);
+    chartsGrid->setObjectName("chartsGrid");
+    chartsGrid->setSpacing(18);
     chartsGrid->setContentsMargins(0, 0, 0, 0);
     
     // Create 2x2 grid with default chart types
@@ -191,6 +205,7 @@ void AnalyticsDashboard::setupUI()
 QWidget* AnalyticsDashboard::createKPISection()
 {
     QWidget* kpiWidget = new QWidget();
+    kpiWidget->setObjectName("kpiSection");
     QHBoxLayout* kpiLayout = new QHBoxLayout(kpiWidget);
     kpiLayout->setSpacing(15);
     kpiLayout->setContentsMargins(0, 0, 0, 0);
@@ -212,32 +227,35 @@ QWidget* AnalyticsDashboard::createKPISection()
 QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& value, const QString& subtitle, const QColor& color)
 {
     QWidget* card = new QWidget();
+    card->setObjectName("kpiCard");
     card->setMinimumHeight(130);
     card->setMaximumHeight(150);
+    // Border color styling moved to QSS
     card->setStyleSheet(QString(
-        "QWidget { background-color: %1; border: 2px solid %2; border-radius: 4px; }"
-    ).arg(m_chartBgColor.name()).arg(color.name()));
+        "QWidget#kpiCard { border-left: 4px solid %1; }"
+    ).arg(color.name()));
     
     QVBoxLayout* cardLayout = new QVBoxLayout(card);
     cardLayout->setSpacing(8);
-    cardLayout->setContentsMargins(15, 15, 15, 15);
+    cardLayout->setContentsMargins(18, 18, 18, 18);
     
     QLabel* titleLabel = new QLabel(title);
+    titleLabel->setObjectName("kpiTitle");
     QFont titleFont = titleLabel->font();
     titleFont.setPointSize(13);
     titleFont.setBold(true);
     titleFont.setFamily("Arial");
     titleLabel->setFont(titleFont);
-    titleLabel->setStyleSheet(QString("color: %1; letter-spacing: 1px;").arg(color.name()));
+    titleLabel->setStyleSheet(QString("color: %1;").arg(color.name()));
     titleLabel->setAlignment(Qt::AlignLeft);
     
     QLabel* valueLabel = new QLabel(value);
+    valueLabel->setObjectName("kpiValue");
     QFont valueFont = valueLabel->font();
     valueFont.setPointSize(38);
     valueFont.setBold(true);
     valueFont.setFamily("Arial");
     valueLabel->setFont(valueFont);
-    valueLabel->setStyleSheet(QString("color: %1;").arg(m_textColor.name()));
     valueLabel->setAlignment(Qt::AlignCenter);
     
     // Store label for updates
@@ -247,11 +265,11 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     else if (title == "ALERTS") m_totalAlertsLabel = valueLabel;
     
     QLabel* subtitleLabel = new QLabel(subtitle);
+    subtitleLabel->setObjectName("kpiSubtitle");
     QFont subtitleFont = subtitleLabel->font();
     subtitleFont.setPointSize(11);
     subtitleFont.setBold(true);
     subtitleLabel->setFont(subtitleFont);
-    subtitleLabel->setStyleSheet(QString("color: %1;").arg(m_textColor.lighter(140).name()));
     subtitleLabel->setAlignment(Qt::AlignCenter);
     
     cardLayout->addWidget(titleLabel);
@@ -264,12 +282,14 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
 QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialType)
 {
     QWidget* container = new QWidget();
+    container->setObjectName("chartContainer");
     QVBoxLayout* layout = new QVBoxLayout(container);
     layout->setSpacing(10);
     layout->setContentsMargins(5, 5, 5, 5);
     
     // Create dropdown for chart type selection
     QComboBox* chartTypeCombo = new QComboBox();
+    chartTypeCombo->setObjectName("chartTypeCombo");
     QFont comboFont;
     comboFont.setPointSize(11);
     comboFont.setBold(true);

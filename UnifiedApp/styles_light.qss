@@ -1263,3 +1263,360 @@ QFileDialog {
     background: #FFFFFF;
     color: #1A1D23;
 }
+
+/* ============================================
+   ANALYTICS DASHBOARD STYLING - LIGHT THEME
+   ============================================ */
+
+/* Main Dashboard Window */
+QMainWindow#AnalyticsDashboard {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+        stop:0 #E8EBF0, stop:0.3 #F0F2F5, stop:0.6 #F5F7FA, stop:1 #FAFBFC);
+}
+
+/* Dashboard Scroll Area */
+QScrollArea#dashboardScrollArea {
+    background: transparent;
+    border: none;
+}
+
+/* Dashboard Title */
+QLabel#dashboardTitle {
+    color: #0097A7;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #00838F, stop:0.5 #0097A7, stop:1 #00ACC1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    padding: 8px 0px;
+}
+
+/* Dashboard Filter Label */
+QLabel#filterLabel {
+    color: #1A1D23;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    background: transparent;
+}
+
+/* Dashboard ComboBoxes */
+QComboBox#dashboardCombo {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #FFFFFF, stop:1 #FAFBFC);
+    color: #1A1D23;
+    border: 1px solid rgba(0, 151, 167, 0.3);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    min-height: 36px;
+}
+
+QComboBox#dashboardCombo:hover {
+    background: #FAFBFC;
+    border: 1px solid rgba(0, 151, 167, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 151, 167, 0.12);
+}
+
+QComboBox#dashboardCombo:focus {
+    border: 2px solid #00BCD4;
+}
+
+QComboBox#dashboardCombo::drop-down {
+    border: none;
+    width: 30px;
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    padding-right: 8px;
+}
+
+QComboBox#dashboardCombo::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #00BCD4;
+    width: 0;
+    height: 0;
+}
+
+QComboBox#dashboardCombo QAbstractItemView {
+    background: #FFFFFF;
+    color: #1A1D23;
+    border: 1px solid rgba(0, 151, 167, 0.3);
+    border-radius: 8px;
+    selection-background-color: rgba(0, 151, 167, 0.12);
+    selection-color: #1A1D23;
+    padding: 6px;
+    outline: none;
+}
+
+QComboBox#dashboardCombo QAbstractItemView::item {
+    padding: 10px 14px;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+QComboBox#dashboardCombo QAbstractItemView::item:hover {
+    background: rgba(0, 151, 167, 0.08);
+}
+
+/* Dashboard Buttons */
+QPushButton#dashboardRefreshBtn,
+QPushButton#dashboardExportBtn {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #00897B, stop:0.5 #00ACC1, stop:1 #00897B);
+    color: #ffffff;
+    border: 1px solid rgba(0, 151, 167, 0.35);
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    min-height: 36px;
+}
+
+QPushButton#dashboardRefreshBtn:hover,
+QPushButton#dashboardExportBtn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #00796B, stop:0.5 #00ACC1, stop:1 #00796B);
+    border: 1px solid rgba(0, 151, 167, 0.5);
+    box-shadow: 0 4px 16px rgba(0, 151, 167, 0.25);
+}
+
+QPushButton#dashboardRefreshBtn:pressed,
+QPushButton#dashboardExportBtn:pressed {
+    background: #00695C;
+    border: 1px solid rgba(0, 151, 167, 0.6);
+    transform: scale(0.98);
+}
+
+/* KPI Cards Container */
+QWidget#kpiSection {
+    background: transparent;
+}
+
+/* Individual KPI Card */
+QWidget#kpiCard {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #FFFFFF, stop:1 #F7F8FA);
+    border: 1px solid rgba(0, 151, 167, 0.2);
+    border-radius: 14px;
+    padding: 0px;
+}
+
+QWidget#kpiCard:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #FFFFFF, stop:1 #F0F2F5);
+    border: 1px solid rgba(0, 151, 167, 0.35);
+    box-shadow: 0 6px 24px rgba(0, 151, 167, 0.12);
+}
+
+/* KPI Card Labels */
+QLabel#kpiTitle {
+    color: #0097A7;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    background: transparent;
+}
+
+QLabel#kpiValue {
+    color: #1A1D23;
+    font-size: 44px;
+    font-weight: 800;
+    background: transparent;
+    letter-spacing: -2px;
+}
+
+QLabel#kpiSubtitle {
+    color: #6B7280;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    background: transparent;
+}
+
+/* Chart Container */
+QWidget#chartContainer {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #FFFFFF, stop:1 #FAFBFC);
+    border: 1px solid rgba(0, 151, 167, 0.15);
+    border-radius: 14px;
+    padding: 14px;
+}
+
+QWidget#chartContainer:hover {
+    border: 1px solid rgba(0, 151, 167, 0.28);
+    box-shadow: 0 4px 18px rgba(0, 151, 167, 0.1);
+}
+
+/* Chart Type Combo */
+QComboBox#chartTypeCombo {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #FAFBFC, stop:1 #F3F4F6);
+    color: #0097A7;
+    border: 1px solid rgba(0, 151, 167, 0.3);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    min-height: 32px;
+}
+
+QComboBox#chartTypeCombo:hover {
+    background: #F7F8FA;
+    border: 1px solid rgba(0, 151, 167, 0.5);
+    box-shadow: 0 2px 10px rgba(0, 151, 167, 0.12);
+}
+
+QComboBox#chartTypeCombo:focus {
+    border: 2px solid #00BCD4;
+}
+
+QComboBox#chartTypeCombo::drop-down {
+    border: none;
+    width: 28px;
+}
+
+QComboBox#chartTypeCombo::down-arrow {
+    image: none;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid #00BCD4;
+    width: 0;
+    height: 0;
+}
+
+QComboBox#chartTypeCombo QAbstractItemView {
+    background: #FFFFFF;
+    color: #1A1D23;
+    border: 1px solid rgba(0, 151, 167, 0.3);
+    border-radius: 8px;
+    selection-background-color: rgba(0, 151, 167, 0.12);
+    selection-color: #1A1D23;
+    padding: 6px;
+}
+
+QComboBox#chartTypeCombo QAbstractItemView::item {
+    padding: 10px 14px;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+QComboBox#chartTypeCombo QAbstractItemView::item:hover {
+    background: rgba(0, 151, 167, 0.1);
+}
+
+/* Chart View */
+QChartView {
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+}
+
+/* Status Indicators */
+QLabel#statusHealthy {
+    color: #16A34A;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(22, 163, 74, 0.12), stop:1 rgba(22, 163, 74, 0.06));
+    border-left: 4px solid #16A34A;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+QLabel#statusWarning {
+    color: #D97706;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(217, 119, 6, 0.12), stop:1 rgba(217, 119, 6, 0.06));
+    border-left: 4px solid #D97706;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+QLabel#statusCritical {
+    color: #DC2626;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(220, 38, 38, 0.12), stop:1 rgba(220, 38, 38, 0.06));
+    border-left: 4px solid #DC2626;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+/* Dashboard Grid */
+QGridLayout#chartsGrid {
+    spacing: 18px;
+}
+
+/* Separator Lines with Gradient */
+QFrame#dashboardDivider {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(0, 151, 167, 0), 
+        stop:0.3 rgba(0, 151, 167, 0.25), 
+        stop:0.5 rgba(0, 151, 167, 0.35),
+        stop:0.7 rgba(0, 151, 167, 0.25), 
+        stop:1 rgba(0, 151, 167, 0));
+    max-height: 2px;
+    border: none;
+}
+
+/* Loading Indicator */
+QLabel#loadingIndicator {
+    color: #0097A7;
+    font-size: 15px;
+    font-weight: 600;
+    background: rgba(0, 151, 167, 0.06);
+    border: 1px dashed rgba(0, 151, 167, 0.3);
+    border-radius: 10px;
+    padding: 24px;
+    letter-spacing: 1.2px;
+}
+
+/* No Data Message */
+QLabel#noDataMessage {
+    color: #9CA3AF;
+    font-size: 16px;
+    font-weight: 500;
+    font-style: italic;
+    background: transparent;
+    padding: 40px;
+    letter-spacing: 0.8px;
+}
+
+/* Time Range Badge */
+QLabel#timeRangeBadge {
+    color: #0097A7;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: rgba(0, 151, 167, 0.08);
+    border: 1px solid rgba(0, 151, 167, 0.25);
+    border-radius: 6px;
+    padding: 6px 12px;
+}
+
+/* Metric Label */
+QLabel#metricLabel {
+    color: #6B7280;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: transparent;
+}
