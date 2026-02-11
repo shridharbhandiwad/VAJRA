@@ -427,11 +427,14 @@ void EnlargedComponentView::setupUI()
         rowLayout->setSpacing(8);
 
         // Colour dot
+        ThemeManager& tm = ThemeManager::instance();
+        
         QLabel* dot = new QLabel(row);
         dot->setFixedSize(8, 8);
         dot->setObjectName("dot_" + subName);
         dot->setStyleSheet(
-            QString("background: #4CAF50; border-radius: 4px; border: none;"));
+            QString("background: %1; border-radius: 4px; border: none;")
+            .arg(tm.accentSuccess().name()));
 
         QLabel* name = new QLabel(subName, row);
         name->setObjectName("subNameLabel");
@@ -439,8 +442,9 @@ void EnlargedComponentView::setupUI()
         QLabel* pct = new QLabel("100%", row);
         pct->setObjectName("pct_" + subName);
         pct->setStyleSheet(
-            "color: #4CAF50; font-size: 12px; font-weight: 700;"
-            "background: transparent; border: none;");
+            QString("color: %1; font-size: 12px; font-weight: 700;"
+            "background: transparent; border: none;")
+            .arg(tm.accentSuccess().name()));
 
         rowLayout->addWidget(dot);
         rowLayout->addWidget(name, 1);
@@ -487,37 +491,40 @@ void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal siz
     QString statusText = healthStatusText(color);
     m_healthStatusLabel->setText("STATUS: " + statusText);
 
-    // Colour-code the status label dynamically
+    // Colour-code the status label dynamically using theme colors
     if (color.green() > 150 && color.red() < 150) {
         // Green / Nominal
-        QString greenBg = tm.isDark() ? "rgba(46,125,50,0.15)" : "rgba(22,163,74,0.06)";
+        QColor successColor = tm.accentSuccess();
+        QString greenBg = QString("rgba(%1,%2,%3,0.15)").arg(successColor.red()).arg(successColor.green()).arg(successColor.blue());
         m_healthStatusLabel->setStyleSheet(
             QString("color: %1; font-size: 13px; font-weight: 600;"
                     "padding: 6px 14px; background: %2;"
                     "border-radius: 6px; border-left: 3px solid %3;")
-            .arg(tm.isDark() ? "#66bb6a" : "#16A34A")
+            .arg(successColor.lighter(tm.isDark() ? 110 : 90).name())
             .arg(greenBg)
-            .arg(tm.isDark() ? "#4CAF50" : "#16A34A"));
+            .arg(successColor.name()));
     } else if (color.red() > 200 && color.green() < 100) {
         // Red / Critical
-        QString redBg = tm.isDark() ? "rgba(183,28,28,0.15)" : "rgba(220,38,38,0.06)";
+        QColor dangerColor = tm.accentDanger();
+        QString redBg = QString("rgba(%1,%2,%3,0.15)").arg(dangerColor.red()).arg(dangerColor.green()).arg(dangerColor.blue());
         m_healthStatusLabel->setStyleSheet(
             QString("color: %1; font-size: 13px; font-weight: 600;"
                     "padding: 6px 14px; background: %2;"
                     "border-radius: 6px; border-left: 3px solid %3;")
-            .arg(tm.isDark() ? "#ef5350" : "#DC2626")
+            .arg(dangerColor.lighter(tm.isDark() ? 110 : 90).name())
             .arg(redBg)
-            .arg(tm.isDark() ? "#f44336" : "#DC2626"));
+            .arg(dangerColor.name()));
     } else {
         // Orange / Warning
-        QString orangeBg = tm.isDark() ? "rgba(230,126,34,0.15)" : "rgba(234,88,12,0.06)";
+        QColor warningColor = tm.accentWarning();
+        QString orangeBg = QString("rgba(%1,%2,%3,0.15)").arg(warningColor.red()).arg(warningColor.green()).arg(warningColor.blue());
         m_healthStatusLabel->setStyleSheet(
             QString("color: %1; font-size: 13px; font-weight: 600;"
                     "padding: 6px 14px; background: %2;"
                     "border-radius: 6px; border-left: 3px solid %3;")
-            .arg(tm.isDark() ? "#ffb74d" : "#EA580C")
+            .arg(warningColor.lighter(tm.isDark() ? 110 : 90).name())
             .arg(orangeBg)
-            .arg(tm.isDark() ? "#FF9800" : "#EA580C"));
+            .arg(warningColor.name()));
     }
 
     m_healthValueLabel->setText(QString("HEALTH: %1%").arg(qRound(size)));
@@ -602,22 +609,29 @@ void EnlargedComponentView::updateFromComponent(Component* sourceComponent)
 
 QString EnlargedComponentView::healthStatusText(const QColor& color) const
 {
-    // Map colour to health status
+    // Map colour to health status using both theme colors and legacy colors
+    ThemeManager& tm = ThemeManager::instance();
     QString name = color.name().toLower();
-    if (name == "#4caf50" || name == "#66bb6a" || name == "#00ff00" ||
+    
+    // Check theme colors first
+    if (name == tm.accentSuccess().name().toLower() || 
+        name == "#4caf50" || name == "#66bb6a" || name == "#00ff00" ||
         (color.green() > 150 && color.red() < 120))
         return "NOMINAL";
-    if (name == "#ffc107" || name == "#ffb74d" || name == "#ffff00" ||
+    if (name == tm.accentWarning().name().toLower() ||
+        name == "#ffc107" || name == "#ffb74d" || name == "#ffff00" ||
         (color.red() > 200 && color.green() > 150))
         return "WARNING";
     if (name == "#ff9800" || name == "#e65100" || name == "#ffa500")
         return "DEGRADED";
-    if (name == "#f44336" || name == "#d32f2f" || name == "#ff0000" ||
+    if (name == tm.accentDanger().name().toLower() ||
+        name == "#f44336" || name == "#d32f2f" || name == "#ff0000" ||
         (color.red() > 200 && color.green() < 80))
         return "CRITICAL";
     if (name == "#808080" || name == "#9e9e9e")
         return "OFFLINE";
-    if (name == "#03a9f4" || name == "#2196f3" || name == "#00bcd4")
+    if (name == tm.accentPrimary().name().toLower() ||
+        name == "#03a9f4" || name == "#2196f3" || name == "#00bcd4")
         return "NOMINAL";
     return "ACTIVE";
 }

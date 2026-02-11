@@ -348,7 +348,7 @@ void AddComponentDialog::onAddClicked()
     m_result.label = label.toUpper();
     m_result.description = m_descriptionEdit->toPlainText().trimmed();
     m_result.imageDir = m_imagePathEdit->text().trimmed();
-    m_result.iconColor = QColor("#00BCD4"); // Default teal
+    m_result.iconColor = ThemeManager::instance().accentPrimary(); // Default primary accent
     
     // Parse subsystems
     QStringList subsystems;

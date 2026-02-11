@@ -71,19 +71,11 @@ void AnalyticsDashboard::setupUI()
 {
     // Apply theme colors
     ThemeManager& tm = ThemeManager::instance();
-    AppTheme theme = tm.currentTheme();
     
-    if (theme == AppTheme::Dark) {
-        m_bgColor = QColor(30, 30, 30);
-        m_textColor = QColor(220, 220, 220);
-        m_gridColor = QColor(60, 60, 60);
-        m_chartBgColor = QColor(45, 45, 45);
-    } else {
-        m_bgColor = QColor(245, 245, 245);
-        m_textColor = QColor(40, 40, 40);
-        m_gridColor = QColor(200, 200, 200);
-        m_chartBgColor = QColor(255, 255, 255);
-    }
+    m_bgColor = tm.windowBackground();
+    m_textColor = tm.primaryText();
+    m_gridColor = tm.chartGridLine();
+    m_chartBgColor = tm.chartBackground();
     
     // Create scroll area for dashboard
     m_scrollArea = new QScrollArea(this);
@@ -212,17 +204,19 @@ void AnalyticsDashboard::setupUI()
 
 QWidget* AnalyticsDashboard::createKPISection()
 {
+    ThemeManager& tm = ThemeManager::instance();
+    
     QWidget* kpiWidget = new QWidget();
     kpiWidget->setObjectName("kpiSection");
     QHBoxLayout* kpiLayout = new QHBoxLayout(kpiWidget);
     kpiLayout->setSpacing(16);
     kpiLayout->setContentsMargins(0, 0, 0, 0);
     
-    // Create KPI cards with military-grade design
-    QWidget* card1 = createKPICard("TOTAL COMPONENTS", "0", "MONITORED", QColor(52, 152, 219));
-    QWidget* card2 = createKPICard("ACTIVE", "0", "ONLINE", QColor(46, 204, 113));
-    QWidget* card3 = createKPICard("AVG HEALTH", "0%", "SYSTEM-WIDE", QColor(241, 196, 15));
-    QWidget* card4 = createKPICard("ALERTS", "0", "TOTAL COUNT", QColor(231, 76, 60));
+    // Create KPI cards with military-grade design using theme colors
+    QWidget* card1 = createKPICard("TOTAL COMPONENTS", "0", "MONITORED", tm.accentPrimary());
+    QWidget* card2 = createKPICard("ACTIVE", "0", "ONLINE", tm.accentSuccess());
+    QWidget* card3 = createKPICard("AVG HEALTH", "0%", "SYSTEM-WIDE", tm.accentWarning());
+    QWidget* card4 = createKPICard("ALERTS", "0", "TOTAL COUNT", tm.accentDanger());
     
     kpiLayout->addWidget(card1);
     kpiLayout->addWidget(card2);
@@ -548,11 +542,12 @@ void AnalyticsDashboard::updateKPIs()
 
 QColor AnalyticsDashboard::getHealthColor(qreal health)
 {
-    if (health >= 90) return QColor(46, 204, 113);  // Green
-    if (health >= 75) return QColor(52, 152, 219);  // Blue
-    if (health >= 60) return QColor(241, 196, 15);  // Yellow
-    if (health >= 40) return QColor(230, 126, 34);  // Orange
-    return QColor(231, 76, 60);  // Red
+    ThemeManager& tm = ThemeManager::instance();
+    if (health >= 90) return tm.accentSuccess();
+    if (health >= 75) return tm.accentPrimary();
+    if (health >= 60) return tm.accentWarning();
+    if (health >= 40) return tm.accentWarning().darker(120);
+    return tm.accentDanger();
 }
 
 QString AnalyticsDashboard::getHealthStatus(qreal health)
@@ -562,6 +557,21 @@ QString AnalyticsDashboard::getHealthStatus(qreal health)
     if (health >= 60) return "FAIR";
     if (health >= 40) return "POOR";
     return "CRITICAL";
+}
+
+QVector<QColor> AnalyticsDashboard::getChartPalette() const
+{
+    ThemeManager& tm = ThemeManager::instance();
+    return QVector<QColor>{
+        tm.accentSuccess(),
+        tm.accentWarning(),
+        tm.accentDanger(),
+        tm.accentPrimary(),
+        tm.accentSecondary(),
+        tm.accentTertiary(),
+        tm.accentPrimary().lighter(120),
+        tm.accentSecondary().lighter(120)
+    };
 }
 
 void AnalyticsDashboard::recordComponentHealth(const QString& componentId, const QString& color, qreal health, qint64 timestamp)
@@ -678,19 +688,11 @@ void AnalyticsDashboard::onThemeChanged()
 {
     // Update theme colors
     ThemeManager& tm = ThemeManager::instance();
-    AppTheme theme = tm.currentTheme();
     
-    if (theme == AppTheme::Dark) {
-        m_bgColor = QColor(30, 30, 30);
-        m_textColor = QColor(220, 220, 220);
-        m_gridColor = QColor(60, 60, 60);
-        m_chartBgColor = QColor(45, 45, 45);
-    } else {
-        m_bgColor = QColor(245, 245, 245);
-        m_textColor = QColor(40, 40, 40);
-        m_gridColor = QColor(200, 200, 200);
-        m_chartBgColor = QColor(255, 255, 255);
-    }
+    m_bgColor = tm.windowBackground();
+    m_textColor = tm.primaryText();
+    m_gridColor = tm.chartGridLine();
+    m_chartBgColor = tm.chartBackground();
     
     // Refresh all charts with new theme
     updateAllCharts();
@@ -743,17 +745,8 @@ void AnalyticsDashboard::updateHealthTrendChart(QChartView* chartView, const QSt
         dataToShow[componentFilter] = m_componentData[componentFilter];
     }
     
-    // Professional color palette for lines (Grafana-inspired)
-    QVector<QColor> lineColors = {
-        QColor(115, 191, 105),  // Green
-        QColor(242, 204, 12),   // Yellow
-        QColor(242, 73, 92),    // Red
-        QColor(115, 192, 222),  // Cyan
-        QColor(194, 118, 217),  // Purple
-        QColor(250, 152, 59),   // Orange
-        QColor(84, 166, 234),   // Blue
-        QColor(255, 120, 159)   // Pink
-    };
+    // Professional color palette for lines using theme colors
+    QVector<QColor> lineColors = getChartPalette();
     
     int colorIndex = 0;
     
@@ -838,16 +831,8 @@ void AnalyticsDashboard::updateComponentDistributionChart(QChartView* chartView,
     
     QPieSeries* pieSeries = new QPieSeries();
     
-    // Grafana-inspired color palette for pie slices
-    QVector<QColor> pieColors = {
-        QColor(115, 191, 105),  // Green
-        QColor(242, 204, 12),   // Yellow
-        QColor(242, 73, 92),    // Red
-        QColor(115, 192, 222),  // Cyan
-        QColor(194, 118, 217),  // Purple
-        QColor(250, 152, 59),   // Orange
-        QColor(84, 166, 234)    // Blue
-    };
+    // Color palette for pie slices using theme colors
+    QVector<QColor> pieColors = getChartPalette();
     
     int colorIndex = 0;
     qreal totalCount = 0;
@@ -953,16 +938,13 @@ void AnalyticsDashboard::updateSubsystemPerformanceChart(QChartView* chartView, 
             *set << avgHealth;
             categories << it.key();
             
-            // Color based on health level (Grafana style)
-            if (avgHealth >= 90) barColors.append(QColor(115, 191, 105));      // Green
-            else if (avgHealth >= 75) barColors.append(QColor(115, 192, 222)); // Cyan
-            else if (avgHealth >= 60) barColors.append(QColor(242, 204, 12));  // Yellow
-            else if (avgHealth >= 40) barColors.append(QColor(250, 152, 59));  // Orange
-            else barColors.append(QColor(242, 73, 92));                        // Red
+            // Color based on health level using theme colors
+            barColors.append(getHealthColor(avgHealth));
         }
     }
     
-    set->setColor(QColor(115, 192, 222)); // Default cyan
+    ThemeManager& tm = ThemeManager::instance();
+    set->setColor(tm.accentPrimary()); // Default primary accent color
     set->setBorderColor(m_chartBgColor);
     barSeries->append(set);
     barSeries->setBarWidth(0.7);
@@ -1028,7 +1010,8 @@ void AnalyticsDashboard::updateMessageFrequencyChart(QChartView* chartView, cons
     
     QBarSeries* barSeries = new QBarSeries();
     QBarSet* set = new QBarSet("Message Count");
-    set->setColor(QColor(115, 192, 222)); // Cyan
+    ThemeManager& tm = ThemeManager::instance();
+    set->setColor(tm.accentPrimary());
     set->setBorderColor(m_chartBgColor);
     
     QStringList categories;
@@ -1099,7 +1082,8 @@ void AnalyticsDashboard::updateAlertHistoryChart(QChartView* chartView, const QS
     
     QBarSeries* barSeries = new QBarSeries();
     QBarSet* set = new QBarSet("Alert Count");
-    set->setColor(QColor(242, 73, 92)); // Red
+    ThemeManager& tm = ThemeManager::instance();
+    set->setColor(tm.accentDanger());
     set->setBorderColor(m_chartBgColor);
     
     QStringList categories;
@@ -1178,8 +1162,9 @@ void AnalyticsDashboard::updateComponentComparisonChart(QChartView* chartView, c
         healthSet->append(health);
     }
     
-    // Gradient green color
-    healthSet->setColor(QColor(115, 191, 105));
+    // Use theme success color for health
+    ThemeManager& tm = ThemeManager::instance();
+    healthSet->setColor(tm.accentSuccess());
     healthSet->setBorderColor(m_chartBgColor);
     barSeries->append(healthSet);
     barSeries->setBarWidth(0.6);

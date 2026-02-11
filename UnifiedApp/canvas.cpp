@@ -488,10 +488,13 @@ void Canvas::mousePressEvent(QMouseEvent* event)
             m_isDrawingConnection = true;
             
             // Create a temporary line to show the pending connection
+            ThemeManager& tm = ThemeManager::instance();
             QPointF startPos = item->sceneBoundingRect().center();
+            QColor pendingColor = tm.connectionDefaultColor();
+            pendingColor.setAlpha(150);
             m_pendingLine = m_scene->addLine(
                 QLineF(startPos, startPos),
-                QPen(QColor(100, 180, 220, 150), 2, Qt::DashLine));
+                QPen(pendingColor, 2, Qt::DashLine));
             m_pendingLine->setZValue(-2);
             
             return;  // Don't pass to base class

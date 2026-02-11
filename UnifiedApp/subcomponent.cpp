@@ -11,7 +11,7 @@ constexpr qreal SubComponent::RESIZE_HANDLE_SIZE;
 SubComponent::SubComponent(const QString& name, int index, QGraphicsItem* parent)
     : QGraphicsItem(parent)
     , m_name(name)
-    , m_color(QColor("#4CAF50"))  // Default green (healthy)
+    , m_color(ThemeManager::instance().accentSuccess())  // Default success color (healthy)
     , m_health(100.0)
     , m_index(index)
     , m_width(defaultWidth())
@@ -184,18 +184,19 @@ SubComponent::ResizeHandle SubComponent::handleAt(const QPointF& pos) const
 
 void SubComponent::paintResizeHandles(QPainter* painter)
 {
+    ThemeManager& tm = ThemeManager::instance();
     qreal w = m_width;
     qreal h = m_height;
     qreal hs = RESIZE_HANDLE_SIZE;
     
-    // Selection dashed border
-    painter->setPen(QPen(QColor("#00BCD4"), 1.5, Qt::DashLine));
+    // Selection dashed border using theme accent
+    painter->setPen(QPen(tm.accentPrimary(), 1.5, Qt::DashLine));
     painter->setBrush(Qt::NoBrush);
     painter->drawRoundedRect(QRectF(0, 0, w, h), 4, 4);
     
     // Draw handle squares at corners and edges
-    painter->setPen(QPen(Qt::white, 0.5));
-    painter->setBrush(QColor("#00BCD4"));
+    painter->setPen(QPen(tm.invertedText(), 0.5));
+    painter->setBrush(tm.accentPrimary());
     
     QRectF handles[] = {
         QRectF(-hs / 2, -hs / 2, hs, hs),                          // TopLeft

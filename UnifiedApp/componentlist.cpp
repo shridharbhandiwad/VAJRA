@@ -1,5 +1,6 @@
 #include "componentlist.h"
 #include "componentregistry.h"
+#include "thememanager.h"
 #include <QDrag>
 #include <QMimeData>
 #include <QApplication>
@@ -15,6 +16,8 @@ ComponentItemWidget::ComponentItemWidget(const QString& displayName, const QStri
     , m_displayName(displayName)
     , m_typeId(typeId)
 {
+    ThemeManager& tm = ThemeManager::instance();
+    
     QHBoxLayout* layout = new QHBoxLayout(this);
     layout->setContentsMargins(8, 4, 8, 4);
     layout->setSpacing(8);
@@ -22,26 +25,26 @@ ComponentItemWidget::ComponentItemWidget(const QString& displayName, const QStri
     // Component name label
     m_nameLabel = new QLabel(displayName);
     m_nameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    m_nameLabel->setStyleSheet(
+    m_nameLabel->setStyleSheet(QString(
         "QLabel {"
-        "    color: #c4c7cc;"
+        "    color: %1;"
         "    font-size: 13px;"
         "    font-weight: 500;"
         "    background: transparent;"
         "    border: none;"
         "}"
-    );
+    ).arg(tm.primaryText().name()));
     layout->addWidget(m_nameLabel);
     
     // Delete button (circular, with × symbol)
     m_deleteBtn = new QPushButton("×");
     m_deleteBtn->setFixedSize(24, 24);
     m_deleteBtn->setCursor(Qt::PointingHandCursor);
-    m_deleteBtn->setStyleSheet(
+    m_deleteBtn->setStyleSheet(QString(
         "QPushButton {"
-        "    background-color: #ef5350;"
+        "    background-color: %1;"
         "    color: white;"
-        "    border: 1px solid #d32f2f;"
+        "    border: 1px solid %2;"
         "    border-radius: 12px;"
         "    font-size: 18px;"
         "    font-weight: bold;"
@@ -49,14 +52,18 @@ ComponentItemWidget::ComponentItemWidget(const QString& displayName, const QStri
         "    margin: 0px;"
         "}"
         "QPushButton:hover {"
-        "    background-color: #f44336;"
-        "    border: 1px solid #c62828;"
+        "    background-color: %3;"
+        "    border: 1px solid %4;"
         "}"
         "QPushButton:pressed {"
-        "    background-color: #c62828;"
-        "    border: 1px solid #b71c1c;"
+        "    background-color: %4;"
+        "    border: 1px solid %5;"
         "}"
-    );
+    ).arg(tm.accentDanger().lighter(110).name())
+     .arg(tm.accentDanger().name())
+     .arg(tm.accentDanger().name())
+     .arg(tm.accentDanger().darker(110).name())
+     .arg(tm.accentDanger().darker(130).name()));
     m_deleteBtn->setToolTip(QString("Delete %1 component type").arg(displayName));
     layout->addWidget(m_deleteBtn);
     
@@ -99,6 +106,7 @@ void ComponentList::refreshFromRegistry()
 {
     clear();
     
+    ThemeManager& tm = ThemeManager::instance();
     ComponentRegistry& registry = ComponentRegistry::instance();
     QList<ComponentDefinition> components = registry.getAllComponents();
     
@@ -109,8 +117,8 @@ void ComponentList::refreshFromRegistry()
     // --- Separator ---
     QListWidgetItem* separator = new QListWidgetItem("  ─── Sub-Components ───");
     separator->setFlags(Qt::NoItemFlags);   // not selectable / draggable
-    separator->setBackground(QColor(36, 39, 46));
-    separator->setForeground(QColor(120, 125, 135));
+    separator->setBackground(tm.cardBackground());
+    separator->setForeground(tm.secondaryText());
     QFont sepFont("Inter", 10, QFont::Bold);
     separator->setFont(sepFont);
     addItem(separator);

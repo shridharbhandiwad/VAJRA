@@ -150,13 +150,15 @@ void Analytics::updateDisplay()
     QString html;
     html += tm.analyticsStyleBlock();
     
-    // Add custom styles for expand/collapse
-    html += "<style>"
-            "a.component-toggle { color: #7fb3d5; text-decoration: none; cursor: pointer; }"
-            "a.component-toggle:hover { color: #9fc9e8; text-decoration: underline; }"
+    // Add custom styles for expand/collapse using theme colors
+    html += QString("<style>"
+            "a.component-toggle { color: %1; text-decoration: none; cursor: pointer; }"
+            "a.component-toggle:hover { color: %2; text-decoration: underline; }"
             ".expand-icon { display: inline-block; width: 12px; font-weight: bold; }"
             ".subcomponent-item { margin-left: 20px; font-size: 11px; padding: 2px 0; }"
-            "</style>";
+            "</style>")
+            .arg(tm.accentPrimary().name())
+            .arg(tm.accentPrimary().lighter(120).name());
     
     if (m_stats.isEmpty()) {
         html += "<div class='header'>SYSTEM OVERVIEW</div>";
@@ -217,24 +219,26 @@ void Analytics::updateDisplay()
                 html += QString("<div class='stat'>Subcomponents: <span class='count'>%1</span></div>")
                         .arg(subs.size());
             } else {
-                html += "<div class='stat' style='color: #888;'>No subcomponents</div>";
+                html += QString("<div class='stat' style='color: %1;'>No subcomponents</div>")
+                        .arg(tm.mutedText().name());
             }
             
             // Show subcomponents if expanded
             if (isExpanded && !subs.isEmpty()) {
                 html += "<div style='margin-top: 6px;'>";
                 for (const auto& sub : subs) {
-                    QString subTypeColor = "#7fb3d5";
-                    if (sub.type == "Label") subTypeColor = "#88c0d0";
-                    else if (sub.type == "LineEdit") subTypeColor = "#a3be8c";
-                    else if (sub.type == "Button") subTypeColor = "#ebcb8b";
+                    QString subTypeColor = tm.accentPrimary().name();
+                    if (sub.type == "Label") subTypeColor = tm.accentSecondary().name();
+                    else if (sub.type == "LineEdit") subTypeColor = tm.accentSuccess().name();
+                    else if (sub.type == "Button") subTypeColor = tm.accentWarning().name();
                     
                     html += QString("<div class='subcomponent-item'>"
                                     "&#8226; <span style='color: %1;'>%2</span> "
-                                    "<span style='color: #888;'>(%3)</span>"
+                                    "<span style='color: %3;'>(%4)</span>"
                                     "</div>")
                             .arg(subTypeColor)
                             .arg(sub.name)
+                            .arg(tm.mutedText().name())
                             .arg(sub.type);
                 }
                 html += "</div>";

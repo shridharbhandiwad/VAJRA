@@ -155,7 +155,8 @@ void Connection::paint(QPainter* painter, const QStyleOptionGraphicsItem* option
     
     updatePosition();
     
-    QColor lineColor = isSelected() ? QColor("#00BCD4") : m_color;
+    ThemeManager& tm = ThemeManager::instance();
+    QColor lineColor = isSelected() ? tm.accentPrimary() : m_color;
     qreal lineWidth = isSelected() ? 2.5 : 1.8;
     
     // Draw the main line
@@ -218,8 +219,9 @@ void Connection::paint(QPainter* painter, const QStyleOptionGraphicsItem* option
     
     // Draw selection indicators
     if (isSelected()) {
+        ThemeManager& tm = ThemeManager::instance();
         painter->setPen(Qt::NoPen);
-        painter->setBrush(QColor("#00BCD4"));
+        painter->setBrush(tm.accentPrimary());
         painter->drawEllipse(m_sourcePoint, 4, 4);
         painter->drawEllipse(m_targetPoint, 4, 4);
     }
@@ -235,7 +237,8 @@ void Connection::drawArrowHead(QPainter* painter, const QPointF& tip, const QPoi
     QPointF arrowP2 = tip - QPointF(size * qCos(angle + M_PI / 7),
                                      -size * qSin(angle + M_PI / 7));
     
-    QColor arrowColor = isSelected() ? QColor("#00BCD4") : m_color;
+    ThemeManager& tm = ThemeManager::instance();
+    QColor arrowColor = isSelected() ? tm.accentPrimary() : m_color;
     
     painter->setPen(Qt::NoPen);
     painter->setBrush(arrowColor);

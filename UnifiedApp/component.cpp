@@ -394,8 +394,8 @@ void Component::paintContainer(QPainter* painter)
     painter->setBrush(m_color);
     painter->drawRoundedRect(0, 0, w, 3, 2, 2);
     
-    // Text colours for component header
-    QColor headerTextPrimary = tm.isDark() ? QColor(230, 232, 237) : QColor(30, 35, 45);
+    // Text colours for component header using theme
+    QColor headerTextPrimary = tm.componentTextPrimary();
     QColor headerTextSecondary = tm.isDark() ? m_color.lighter(150) : m_color.darker(140);
     
     // Component icon/thumbnail in header
@@ -503,9 +503,9 @@ void Component::paintMinimizeButton(QPainter* painter)
     qreal buttonY = (HEADER_HEIGHT - buttonSize) / 2;
     QRectF buttonRect(buttonX, buttonY, buttonSize, buttonSize);
     
-    // Button background
-    QColor buttonBg = tm.isDark() ? QColor(255, 255, 255, 30) : QColor(0, 0, 0, 20);
-    QColor buttonBorder = tm.isDark() ? QColor(255, 255, 255, 50) : QColor(0, 0, 0, 40);
+    // Button background using theme
+    QColor buttonBg = tm.componentHeaderOverlay();
+    QColor buttonBorder = tm.borderLight();
     
     painter->setPen(QPen(buttonBorder, 1));
     painter->setBrush(buttonBg);
@@ -715,14 +715,14 @@ void Component::paintResizeHandles(QPainter* painter)
     qreal h = containerHeight();
     qreal hs = RESIZE_HANDLE_SIZE;
     
-    // Selection dashed border
-    painter->setPen(QPen(QColor("#00BCD4"), 2, Qt::DashLine));
+    // Selection dashed border using theme accent
+    painter->setPen(QPen(tm.accentPrimary(), 2, Qt::DashLine));
     painter->setBrush(Qt::NoBrush);
     painter->drawRoundedRect(QRectF(0, 0, w, h), 8, 8);
     
     // Draw handle squares at corners and edges
-    painter->setPen(QPen(Qt::white, 1));
-    painter->setBrush(QColor("#00BCD4"));
+    painter->setPen(QPen(tm.invertedText(), 1));
+    painter->setBrush(tm.accentPrimary());
     
     QRectF handles[] = {
         QRectF(-hs / 2, -hs / 2, hs, hs),                          // TopLeft
