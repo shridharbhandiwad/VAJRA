@@ -648,277 +648,394 @@ void AnalyticsDashboard::onThemeChanged()
     updateAllCharts();
 }
 
-// Old methods removed - now using new 2x2 grid architecture
-/*
-OLD CODE REMOVED:
-- createHealthTrendChart()
-- createComponentDistributionChart()
-- createSubsystemPerformanceChart()
-- createMessageFrequencyChart()
-- createAlertHistoryChart()
-- createComponentComparisonChart()
-- Old updateAllCharts() implementation
+void AnalyticsDashboard::updateAllCharts()
+{
+    // Update all charts in the 2x2 grid based on their current type
+    for (int i = 0; i < 4; i++) {
+        if (m_chartGrids[i].chartView) {
+            QString componentFilter = m_componentFilterCombo->currentText();
+            if (componentFilter == "ALL COMPONENTS") {
+                componentFilter = "";
+            }
+            updateChart(m_chartGrids[i].chartView, m_chartGrids[i].currentChartType, componentFilter);
+        }
+    }
+    
+    // Also update KPIs
+    updateKPIs();
+}
 
-New architecture uses:
-- createChartGrid() for each grid cell
-- updateChart() to update based on chart type
-- Component filtering support
-- Enhanced tooltips and military-grade styling
-*/
-        
-        // Clean up old series
-        QList<QAbstractSeries*> oldSeries = chart->series();
-        for (QAbstractSeries* series : oldSeries) {
-            chart->removeSeries(series);
-            delete series;
-        }
-        
-        QPieSeries* series = new QPieSeries();
-        
-        QVector<QColor> pieColors = {
-            QColor(52, 152, 219),
-            QColor(46, 204, 113),
-            QColor(241, 196, 15),
-            QColor(231, 76, 60),
-            QColor(155, 89, 182)
-        };
-        
-        int colorIndex = 0;
-        for (auto it = m_componentTypeCount.begin(); it != m_componentTypeCount.end(); ++it) {
-            if (it.value() > 0) {
-                QPieSlice* slice = series->append(it.key(), it.value());
-                slice->setColor(pieColors[colorIndex % pieColors.size()]);
-                slice->setLabelVisible(true);
-                slice->setLabelColor(m_textColor);
-                slice->setLabelPosition(QPieSlice::LabelOutside);
-                colorIndex++;
-            }
-        }
-        
-        series->setHoleSize(0.4); // Donut chart
-        series->setPieSize(0.75);  // Smaller pie to make room for labels
-        chart->addSeries(series);
-        chart->legend()->setVisible(true);
-        chart->legend()->setAlignment(Qt::AlignBottom);
-        chart->legend()->setLabelColor(m_textColor);
+void AnalyticsDashboard::updateHealthTrendChart(QChartView* chartView, const QString& componentFilter)
+{
+    if (!chartView) return;
+    
+    QChart* chart = chartView->chart();
+    
+    // Clear existing series
+    QList<QAbstractSeries*> oldSeries = chart->series();
+    for (QAbstractSeries* series : oldSeries) {
+        chart->removeSeries(series);
+        delete series;
     }
     
-    // Update Subsystem Performance Chart (Bar Chart)
-    if (m_subsystemPerfChart) {
-        QChart* chart = m_subsystemPerfChart->chart();
+    // Clear existing axes
+    QList<QAbstractAxis*> oldAxes = chart->axes();
+    for (QAbstractAxis* axis : oldAxes) {
+        chart->removeAxis(axis);
+        delete axis;
+    }
+    
+    chart->setTitle("COMPONENT HEALTH TREND");
+    
+    // Filter components if needed
+    QMap<QString, ComponentHealthData> dataToShow;
+    if (componentFilter.isEmpty()) {
+        dataToShow = m_componentData;
+    } else if (m_componentData.contains(componentFilter)) {
+        dataToShow[componentFilter] = m_componentData[componentFilter];
+    }
+    
+    // Create line series for each component
+    for (auto it = dataToShow.begin(); it != dataToShow.end(); ++it) {
+        if (it->healthHistory.isEmpty()) continue;
         
-        // Clean up old series and axes
-        QList<QAbstractSeries*> oldSeries = chart->series();
-        for (QAbstractSeries* series : oldSeries) {
-            chart->removeSeries(series);
-            delete series;
+        QLineSeries* series = new QLineSeries();
+        series->setName(it->componentId);
+        
+        for (const auto& point : it->healthHistory) {
+            series->append(point.first, point.second);
         }
-        QList<QAbstractAxis*> oldAxes = chart->axes();
-        for (QAbstractAxis* axis : oldAxes) {
-            chart->removeAxis(axis);
-            delete axis;
+        
+        chart->addSeries(series);
+    }
+    
+    // Add axes
+    QValueAxis* axisX = new QValueAxis();
+    axisX->setTitleText("Time");
+    axisX->setLabelsColor(m_textColor);
+    axisX->setGridLineColor(m_gridColor);
+    chart->addAxis(axisX, Qt::AlignBottom);
+    
+    QValueAxis* axisY = new QValueAxis();
+    axisY->setTitleText("Health %");
+    axisY->setRange(0, 100);
+    axisY->setLabelsColor(m_textColor);
+    axisY->setGridLineColor(m_gridColor);
+    chart->addAxis(axisY, Qt::AlignLeft);
+    
+    // Attach axes to series
+    for (QAbstractSeries* series : chart->series()) {
+        series->attachAxis(axisX);
+        series->attachAxis(axisY);
+    }
+    
+    applyChartTheme(chart);
+}
+
+void AnalyticsDashboard::updateComponentDistributionChart(QChartView* chartView, const QString& componentFilter)
+{
+    if (!chartView) return;
+    
+    QChart* chart = chartView->chart();
+    
+    // Clear existing series
+    QList<QAbstractSeries*> oldSeries = chart->series();
+    for (QAbstractSeries* series : oldSeries) {
+        chart->removeSeries(series);
+        delete series;
+    }
+    
+    chart->setTitle("COMPONENT TYPE DISTRIBUTION");
+    
+    QPieSeries* pieSeries = new QPieSeries();
+    
+    QVector<QColor> pieColors = {
+        QColor(52, 152, 219),
+        QColor(46, 204, 113),
+        QColor(241, 196, 15),
+        QColor(231, 76, 60),
+        QColor(155, 89, 182)
+    };
+    
+    int colorIndex = 0;
+    for (auto it = m_componentTypeCount.begin(); it != m_componentTypeCount.end(); ++it) {
+        if (it.value() > 0) {
+            QPieSlice* slice = pieSeries->append(it.key(), it.value());
+            slice->setColor(pieColors[colorIndex % pieColors.size()]);
+            slice->setLabelVisible(true);
+            slice->setLabelColor(m_textColor);
+            slice->setLabelPosition(QPieSlice::LabelOutside);
+            colorIndex++;
         }
-        
-        QBarSeries* series = new QBarSeries();
-        
-        // Average subsystem health across all components
-        QMap<QString, qreal> subsystemAvgHealth;
-        QMap<QString, int> subsystemCount;
-        
-        for (const auto& compData : m_componentData) {
-            for (auto it = compData.subsystemHealth.begin(); it != compData.subsystemHealth.end(); ++it) {
-                if (!it.value().isEmpty()) {
-                    qreal avg = 0.0;
-                    for (qreal val : it.value()) {
-                        avg += val;
-                    }
-                    avg /= it.value().size();
-                    
-                    subsystemAvgHealth[it.key()] += avg;
-                    subsystemCount[it.key()]++;
+    }
+    
+    pieSeries->setHoleSize(0.4);
+    pieSeries->setPieSize(0.75);
+    chart->addSeries(pieSeries);
+    chart->legend()->setVisible(true);
+    chart->legend()->setAlignment(Qt::AlignBottom);
+    
+    applyChartTheme(chart);
+}
+
+void AnalyticsDashboard::updateSubsystemPerformanceChart(QChartView* chartView, const QString& componentFilter)
+{
+    if (!chartView) return;
+    
+    QChart* chart = chartView->chart();
+    
+    // Clear existing series and axes
+    QList<QAbstractSeries*> oldSeries = chart->series();
+    for (QAbstractSeries* series : oldSeries) {
+        chart->removeSeries(series);
+        delete series;
+    }
+    QList<QAbstractAxis*> oldAxes = chart->axes();
+    for (QAbstractAxis* axis : oldAxes) {
+        chart->removeAxis(axis);
+        delete axis;
+    }
+    
+    chart->setTitle("SUBSYSTEM PERFORMANCE");
+    
+    // Calculate average subsystem health
+    QMap<QString, qreal> subsystemAvgHealth;
+    QMap<QString, int> subsystemCount;
+    
+    QMap<QString, ComponentHealthData> dataToShow;
+    if (componentFilter.isEmpty()) {
+        dataToShow = m_componentData;
+    } else if (m_componentData.contains(componentFilter)) {
+        dataToShow[componentFilter] = m_componentData[componentFilter];
+    }
+    
+    for (const auto& compData : dataToShow) {
+        for (auto it = compData.subsystemHealth.begin(); it != compData.subsystemHealth.end(); ++it) {
+            if (!it.value().isEmpty()) {
+                qreal avg = 0.0;
+                for (qreal val : it.value()) {
+                    avg += val;
                 }
+                avg /= it.value().size();
+                
+                subsystemAvgHealth[it.key()] += avg;
+                subsystemCount[it.key()]++;
             }
         }
-        
-        QBarSet* set = new QBarSet("Avg Health");
-        set->setColor(QColor(52, 152, 219));
-        
-        QStringList categories;
-        for (auto it = subsystemAvgHealth.begin(); it != subsystemAvgHealth.end(); ++it) {
-            if (subsystemCount[it.key()] > 0) {
-                qreal avgHealth = it.value() / subsystemCount[it.key()];
-                *set << avgHealth;
-                categories << it.key();
-            }
-        }
-        
-        series->append(set);
-        chart->addSeries(series);
-        
-        QBarCategoryAxis* axisX = new QBarCategoryAxis();
-        axisX->append(categories);
-        axisX->setLabelsColor(m_textColor);
-        axisX->setLabelsAngle(-45);  // Angle labels to prevent overlap
-        chart->addAxis(axisX, Qt::AlignBottom);
-        series->attachAxis(axisX);
-        
-        QValueAxis* axisY = new QValueAxis();
-        axisY->setRange(0, 100);
-        axisY->setTitleText("Health %");
-        axisY->setLabelsColor(m_textColor);
-        axisY->setGridLineColor(m_gridColor);
-        axisY->setLabelFormat("%.0f");
-        chart->addAxis(axisY, Qt::AlignLeft);
-        series->attachAxis(axisY);
-        
-        chart->legend()->setVisible(false);
     }
     
-    // Update Message Frequency Chart (Bar Chart)
-    if (m_messageFreqChart) {
-        QChart* chart = m_messageFreqChart->chart();
-        
-        // Clean up
-        QList<QAbstractSeries*> oldSeries = chart->series();
-        for (QAbstractSeries* series : oldSeries) {
-            chart->removeSeries(series);
-            delete series;
-        }
-        QList<QAbstractAxis*> oldAxes = chart->axes();
-        for (QAbstractAxis* axis : oldAxes) {
-            chart->removeAxis(axis);
-            delete axis;
-        }
-        
-        QBarSeries* series = new QBarSeries();
-        QBarSet* set = new QBarSet("Messages");
-        set->setColor(QColor(52, 152, 219));
-        
-        QStringList categories;
-        for (auto it = m_componentData.begin(); it != m_componentData.end(); ++it) {
+    QBarSeries* barSeries = new QBarSeries();
+    QBarSet* set = new QBarSet("Avg Health");
+    set->setColor(QColor(52, 152, 219));
+    
+    QStringList categories;
+    for (auto it = subsystemAvgHealth.begin(); it != subsystemAvgHealth.end(); ++it) {
+        if (subsystemCount[it.key()] > 0) {
+            qreal avgHealth = it.value() / subsystemCount[it.key()];
+            *set << avgHealth;
             categories << it.key();
-            *set << it->totalMessages;
         }
-        
-        series->append(set);
-        chart->addSeries(series);
-        
-        QBarCategoryAxis* axisX = new QBarCategoryAxis();
-        axisX->append(categories);
-        axisX->setLabelsColor(m_textColor);
-        axisX->setLabelsAngle(-45);  // Angle labels to prevent overlap
-        chart->addAxis(axisX, Qt::AlignBottom);
-        series->attachAxis(axisX);
-        
-        QValueAxis* axisY = new QValueAxis();
-        axisY->setTitleText("Messages");
-        axisY->setLabelsColor(m_textColor);
-        axisY->setGridLineColor(m_gridColor);
-        axisY->setLabelFormat("%.0f");
-        chart->addAxis(axisY, Qt::AlignLeft);
-        series->attachAxis(axisY);
-        
-        chart->legend()->setVisible(false);
     }
     
-    // Update Alert History Chart (Bar Chart)
-    if (m_alertHistoryChart) {
-        QChart* chart = m_alertHistoryChart->chart();
-        
-        // Clean up
-        QList<QAbstractSeries*> oldSeries = chart->series();
-        for (QAbstractSeries* series : oldSeries) {
-            chart->removeSeries(series);
-            delete series;
-        }
-        QList<QAbstractAxis*> oldAxes = chart->axes();
-        for (QAbstractAxis* axis : oldAxes) {
-            chart->removeAxis(axis);
-            delete axis;
-        }
-        
-        QBarSeries* series = new QBarSeries();
-        QBarSet* set = new QBarSet("Alerts");
-        set->setColor(QColor(231, 76, 60));
-        
-        QStringList categories;
-        for (auto it = m_componentData.begin(); it != m_componentData.end(); ++it) {
-            categories << it.key();
-            *set << it->alertCount;
-        }
-        
-        series->append(set);
-        chart->addSeries(series);
-        
-        QBarCategoryAxis* axisX = new QBarCategoryAxis();
-        axisX->append(categories);
-        axisX->setLabelsColor(m_textColor);
-        axisX->setLabelsAngle(-45);  // Angle labels to prevent overlap
-        chart->addAxis(axisX, Qt::AlignBottom);
-        series->attachAxis(axisX);
-        
-        QValueAxis* axisY = new QValueAxis();
-        axisY->setTitleText("Alerts");
-        axisY->setLabelsColor(m_textColor);
-        axisY->setGridLineColor(m_gridColor);
-        axisY->setLabelFormat("%.0f");
-        chart->addAxis(axisY, Qt::AlignLeft);
-        series->attachAxis(axisY);
-        
-        chart->legend()->setVisible(false);
+    barSeries->append(set);
+    chart->addSeries(barSeries);
+    
+    QBarCategoryAxis* axisX = new QBarCategoryAxis();
+    axisX->append(categories);
+    axisX->setLabelsColor(m_textColor);
+    axisX->setLabelsAngle(-45);
+    chart->addAxis(axisX, Qt::AlignBottom);
+    barSeries->attachAxis(axisX);
+    
+    QValueAxis* axisY = new QValueAxis();
+    axisY->setRange(0, 100);
+    axisY->setTitleText("Health %");
+    axisY->setLabelsColor(m_textColor);
+    axisY->setGridLineColor(m_gridColor);
+    axisY->setLabelFormat("%.0f");
+    chart->addAxis(axisY, Qt::AlignLeft);
+    barSeries->attachAxis(axisY);
+    
+    chart->legend()->setVisible(false);
+    applyChartTheme(chart);
+}
+
+void AnalyticsDashboard::updateMessageFrequencyChart(QChartView* chartView, const QString& componentFilter)
+{
+    if (!chartView) return;
+    
+    QChart* chart = chartView->chart();
+    
+    // Clear existing series and axes
+    QList<QAbstractSeries*> oldSeries = chart->series();
+    for (QAbstractSeries* series : oldSeries) {
+        chart->removeSeries(series);
+        delete series;
+    }
+    QList<QAbstractAxis*> oldAxes = chart->axes();
+    for (QAbstractAxis* axis : oldAxes) {
+        chart->removeAxis(axis);
+        delete axis;
     }
     
-    // Update Component Comparison Chart (Horizontal Bar)
-    if (m_comparisonChart) {
-        QChart* chart = m_comparisonChart->chart();
-        
-        // Clean up
-        QList<QAbstractSeries*> oldSeries = chart->series();
-        for (QAbstractSeries* series : oldSeries) {
-            chart->removeSeries(series);
-            delete series;
-        }
-        QList<QAbstractAxis*> oldAxes = chart->axes();
-        for (QAbstractAxis* axis : oldAxes) {
-            chart->removeAxis(axis);
-            delete axis;
-        }
-        
-        QBarSeries* series = new QBarSeries();
-        QBarSet* healthSet = new QBarSet("Health");
-        
-        QStringList categories;
-        for (auto it = m_componentData.begin(); it != m_componentData.end(); ++it) {
-            categories << it.key();
-            qreal health = it->currentHealth;
-            healthSet->append(health);
-            
-            // Color-code based on health
-            QColor color = getHealthColor(health);
-            // Note: Individual bar coloring would require separate sets
-        }
-        
-        healthSet->setColor(QColor(46, 204, 113));
-        series->append(healthSet);
-        chart->addSeries(series);
-        
-        QBarCategoryAxis* axisY = new QBarCategoryAxis();
-        axisY->append(categories);
-        axisY->setLabelsColor(m_textColor);
-        chart->addAxis(axisY, Qt::AlignLeft);
-        series->attachAxis(axisY);
-        
-        QValueAxis* axisX = new QValueAxis();
-        axisX->setRange(0, 100);
-        axisX->setTitleText("Health %");
-        axisX->setLabelsColor(m_textColor);
-        axisX->setGridLineColor(m_gridColor);
-        axisX->setLabelFormat("%.0f");
-        chart->addAxis(axisX, Qt::AlignBottom);
-        series->attachAxis(axisX);
-        
-        chart->legend()->setVisible(false);
+    chart->setTitle("MESSAGE FREQUENCY");
+    
+    QMap<QString, ComponentHealthData> dataToShow;
+    if (componentFilter.isEmpty()) {
+        dataToShow = m_componentData;
+    } else if (m_componentData.contains(componentFilter)) {
+        dataToShow[componentFilter] = m_componentData[componentFilter];
     }
+    
+    QBarSeries* barSeries = new QBarSeries();
+    QBarSet* set = new QBarSet("Messages");
+    set->setColor(QColor(52, 152, 219));
+    
+    QStringList categories;
+    for (auto it = dataToShow.begin(); it != dataToShow.end(); ++it) {
+        categories << it.key();
+        *set << it->totalMessages;
+    }
+    
+    barSeries->append(set);
+    chart->addSeries(barSeries);
+    
+    QBarCategoryAxis* axisX = new QBarCategoryAxis();
+    axisX->append(categories);
+    axisX->setLabelsColor(m_textColor);
+    axisX->setLabelsAngle(-45);
+    chart->addAxis(axisX, Qt::AlignBottom);
+    barSeries->attachAxis(axisX);
+    
+    QValueAxis* axisY = new QValueAxis();
+    axisY->setTitleText("Messages");
+    axisY->setLabelsColor(m_textColor);
+    axisY->setGridLineColor(m_gridColor);
+    axisY->setLabelFormat("%.0f");
+    chart->addAxis(axisY, Qt::AlignLeft);
+    barSeries->attachAxis(axisY);
+    
+    chart->legend()->setVisible(false);
+    applyChartTheme(chart);
+}
+
+void AnalyticsDashboard::updateAlertHistoryChart(QChartView* chartView, const QString& componentFilter)
+{
+    if (!chartView) return;
+    
+    QChart* chart = chartView->chart();
+    
+    // Clear existing series and axes
+    QList<QAbstractSeries*> oldSeries = chart->series();
+    for (QAbstractSeries* series : oldSeries) {
+        chart->removeSeries(series);
+        delete series;
+    }
+    QList<QAbstractAxis*> oldAxes = chart->axes();
+    for (QAbstractAxis* axis : oldAxes) {
+        chart->removeAxis(axis);
+        delete axis;
+    }
+    
+    chart->setTitle("ALERT HISTORY");
+    
+    QMap<QString, ComponentHealthData> dataToShow;
+    if (componentFilter.isEmpty()) {
+        dataToShow = m_componentData;
+    } else if (m_componentData.contains(componentFilter)) {
+        dataToShow[componentFilter] = m_componentData[componentFilter];
+    }
+    
+    QBarSeries* barSeries = new QBarSeries();
+    QBarSet* set = new QBarSet("Alerts");
+    set->setColor(QColor(231, 76, 60));
+    
+    QStringList categories;
+    for (auto it = dataToShow.begin(); it != dataToShow.end(); ++it) {
+        categories << it.key();
+        *set << it->alertCount;
+    }
+    
+    barSeries->append(set);
+    chart->addSeries(barSeries);
+    
+    QBarCategoryAxis* axisX = new QBarCategoryAxis();
+    axisX->append(categories);
+    axisX->setLabelsColor(m_textColor);
+    axisX->setLabelsAngle(-45);
+    chart->addAxis(axisX, Qt::AlignBottom);
+    barSeries->attachAxis(axisX);
+    
+    QValueAxis* axisY = new QValueAxis();
+    axisY->setTitleText("Alerts");
+    axisY->setLabelsColor(m_textColor);
+    axisY->setGridLineColor(m_gridColor);
+    axisY->setLabelFormat("%.0f");
+    chart->addAxis(axisY, Qt::AlignLeft);
+    barSeries->attachAxis(axisY);
+    
+    chart->legend()->setVisible(false);
+    applyChartTheme(chart);
+}
+
+void AnalyticsDashboard::updateComponentComparisonChart(QChartView* chartView, const QString& componentFilter)
+{
+    if (!chartView) return;
+    
+    QChart* chart = chartView->chart();
+    
+    // Clear existing series and axes
+    QList<QAbstractSeries*> oldSeries = chart->series();
+    for (QAbstractSeries* series : oldSeries) {
+        chart->removeSeries(series);
+        delete series;
+    }
+    QList<QAbstractAxis*> oldAxes = chart->axes();
+    for (QAbstractAxis* axis : oldAxes) {
+        chart->removeAxis(axis);
+        delete axis;
+    }
+    
+    chart->setTitle("COMPONENT COMPARISON");
+    
+    QMap<QString, ComponentHealthData> dataToShow;
+    if (componentFilter.isEmpty()) {
+        dataToShow = m_componentData;
+    } else if (m_componentData.contains(componentFilter)) {
+        dataToShow[componentFilter] = m_componentData[componentFilter];
+    }
+    
+    QBarSeries* barSeries = new QBarSeries();
+    QBarSet* healthSet = new QBarSet("Health");
+    
+    QStringList categories;
+    for (auto it = dataToShow.begin(); it != dataToShow.end(); ++it) {
+        categories << it.key();
+        qreal health = it->currentHealth;
+        healthSet->append(health);
+    }
+    
+    healthSet->setColor(QColor(46, 204, 113));
+    barSeries->append(healthSet);
+    chart->addSeries(barSeries);
+    
+    QBarCategoryAxis* axisY = new QBarCategoryAxis();
+    axisY->append(categories);
+    axisY->setLabelsColor(m_textColor);
+    chart->addAxis(axisY, Qt::AlignLeft);
+    barSeries->attachAxis(axisY);
+    
+    QValueAxis* axisX = new QValueAxis();
+    axisX->setRange(0, 100);
+    axisX->setTitleText("Health %");
+    axisX->setLabelsColor(m_textColor);
+    axisX->setGridLineColor(m_gridColor);
+    axisX->setLabelFormat("%.0f");
+    chart->addAxis(axisX, Qt::AlignBottom);
+    barSeries->attachAxis(axisX);
+    
+    chart->legend()->setVisible(false);
+    applyChartTheme(chart);
 }
 
 void AnalyticsDashboard::applyChartTheme(QChart* chart)
@@ -971,138 +1088,4 @@ QString AnalyticsDashboard::getHealthStatus(qreal health)
     if (health >= 60) return "FAIR";
     if (health >= 40) return "POOR";
     return "CRITICAL";
-}
-
-void AnalyticsDashboard::recordComponentHealth(const QString& componentId, const QString& color, qreal health, qint64 timestamp)
-{
-    if (!m_componentData.contains(componentId)) {
-        ComponentHealthData data;
-        data.componentId = componentId;
-        data.type = "Unknown";
-        data.currentHealth = health;
-        data.currentStatus = getHealthStatus(health);
-        data.totalMessages = 0;
-        data.alertCount = 0;
-        data.lastUpdateTime = timestamp;
-        m_componentData[componentId] = data;
-    }
-    
-    ComponentHealthData& data = m_componentData[componentId];
-    data.healthHistory.append(qMakePair(timestamp, health));
-    data.currentHealth = health;
-    data.currentStatus = getHealthStatus(health);
-    data.lastUpdateTime = timestamp;
-    
-    // Limit history size
-    if (data.healthHistory.size() > 1000) {
-        data.healthHistory.remove(0, 500);
-    }
-    
-    // Count as alert if health is low
-    if (health < 60) {
-        data.alertCount++;
-    }
-}
-
-void AnalyticsDashboard::recordSubsystemHealth(const QString& componentId, const QString& subsystem, qreal health)
-{
-    if (m_componentData.contains(componentId)) {
-        m_componentData[componentId].subsystemHealth[subsystem].append(health);
-        
-        // Limit subsystem history
-        if (m_componentData[componentId].subsystemHealth[subsystem].size() > 500) {
-            m_componentData[componentId].subsystemHealth[subsystem].remove(0, 250);
-        }
-    }
-}
-
-void AnalyticsDashboard::recordMessage(const QString& componentId, qint64 timestamp)
-{
-    if (m_componentData.contains(componentId)) {
-        m_componentData[componentId].messageTimestamps.append(timestamp);
-        m_componentData[componentId].totalMessages++;
-        
-        // Limit message history
-        if (m_componentData[componentId].messageTimestamps.size() > 1000) {
-            m_componentData[componentId].messageTimestamps.remove(0, 500);
-        }
-    }
-}
-
-void AnalyticsDashboard::addComponent(const QString& componentId, const QString& type)
-{
-    if (!m_componentData.contains(componentId)) {
-        ComponentHealthData data;
-        data.componentId = componentId;
-        data.type = type;
-        data.currentHealth = 100.0;
-        data.currentStatus = "EXCELLENT";
-        data.totalMessages = 0;
-        data.alertCount = 0;
-        data.lastUpdateTime = QDateTime::currentMSecsSinceEpoch();
-        m_componentData[componentId] = data;
-        
-        m_componentTypeCount[type]++;
-        m_componentFilterCombo->addItem(componentId);
-    }
-}
-
-void AnalyticsDashboard::removeComponent(const QString& componentId)
-{
-    if (m_componentData.contains(componentId)) {
-        QString type = m_componentData[componentId].type;
-        m_componentData.remove(componentId);
-        
-        m_componentTypeCount[type]--;
-        if (m_componentTypeCount[type] <= 0) {
-            m_componentTypeCount.remove(type);
-        }
-        
-        // Remove from filter combo
-        for (int i = 0; i < m_componentFilterCombo->count(); i++) {
-            if (m_componentFilterCombo->itemText(i) == componentId) {
-                m_componentFilterCombo->removeItem(i);
-                break;
-            }
-        }
-    }
-}
-
-void AnalyticsDashboard::clear()
-{
-    m_componentData.clear();
-    m_componentTypeCount.clear();
-    m_componentFilterCombo->clear();
-    m_componentFilterCombo->addItem("All Components");
-    updateAllCharts();
-}
-
-void AnalyticsDashboard::refreshDashboard()
-{
-    // Update all charts when refresh button is clicked
-    updateAllCharts();
-    // Also update the real-time chart
-    updateHealthTrendChart();
-}
-
-void AnalyticsDashboard::onThemeChanged()
-{
-    // Update theme colors
-    ThemeManager& tm = ThemeManager::instance();
-    AppTheme theme = tm.currentTheme();
-    
-    if (theme == AppTheme::Dark) {
-        m_bgColor = QColor(30, 30, 30);
-        m_textColor = QColor(220, 220, 220);
-        m_gridColor = QColor(60, 60, 60);
-        m_chartBgColor = QColor(45, 45, 45);
-    } else {
-        m_bgColor = QColor(245, 245, 245);
-        m_textColor = QColor(40, 40, 40);
-        m_gridColor = QColor(200, 200, 200);
-        m_chartBgColor = QColor(255, 255, 255);
-    }
-    
-    // Refresh all charts with new theme
-    updateAllCharts();
 }
