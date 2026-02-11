@@ -727,6 +727,7 @@ QString Canvas::saveToJson() const
         compObj["size"] = comp->getSize();
         compObj["userWidth"] = comp->getUserWidth();
         compObj["userHeight"] = comp->getUserHeight();
+        compObj["minimized"] = comp->isMinimized();
         
         // Save sub-components (health-tracking subsystems)
         QJsonArray subArray;
@@ -888,6 +889,12 @@ void Canvas::loadFromJson(const QString& json)
             qreal uh = compObj["userHeight"].toDouble();
             if (uw > 0) comp->setUserWidth(uw);
             if (uh > 0) comp->setUserHeight(uh);
+        }
+        
+        // Restore minimized state if present
+        if (compObj.contains("minimized")) {
+            bool minimized = compObj["minimized"].toBool();
+            comp->setMinimized(minimized);
         }
         
         m_scene->addItem(comp);

@@ -35,6 +35,7 @@ Component::Component(const QString& typeId, const QString& id, QGraphicsItem* pa
     , m_userHeight(0)
     , m_activeHandle(HandleNone)
     , m_resizing(false)
+    , m_minimized(false)
 {
     setFlag(QGraphicsItem::ItemIsMovable);
     setFlag(QGraphicsItem::ItemIsSelectable);
@@ -198,6 +199,11 @@ qreal Component::containerWidth() const
 
 qreal Component::containerHeight() const
 {
+    // If minimized, only show the header
+    if (m_minimized) {
+        return HEADER_HEIGHT;
+    }
+    
     qreal autoHeight = HEADER_HEIGHT + PADDING;
     
     // SubComponents section (flexible area for freely positioned subcomponents)
@@ -248,8 +254,11 @@ void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
     
     paintContainer(painter);
     
+    // Draw minimize/maximize button
+    paintMinimizeButton(painter);
+    
     // Draw resize handles when selected and in Designer mode only
-    if (isSelected()) {
+    if (isSelected() && !m_minimized) {
         Canvas* canvas = nullptr;
         if (scene()) {
             canvas = qobject_cast<Canvas*>(scene()->parent());
@@ -280,8 +289,10 @@ void Component::paintContainer(QPainter* painter)
     // Header background with component color
     QPainterPath headerPath;
     headerPath.addRoundedRect(0, 0, w, HEADER_HEIGHT, 8, 8);
-    // Clip bottom corners of header
-    headerPath.addRect(0, HEADER_HEIGHT - 8, w, 8);
+    // Clip bottom corners of header only if not minimized
+    if (!m_minimized) {
+        headerPath.addRect(0, HEADER_HEIGHT - 8, w, 8);
+    }
     
     QLinearGradient headerGrad(0, 0, w, 0);
     if (tm.isDark()) {
@@ -317,16 +328,16 @@ void Component::paintContainer(QPainter* painter)
         painter->drawPixmap(imgRect.toRect(), m_image);
         painter->setClipping(false);
         
-        // Component name next to image
+        // Component name next to image (adjust width to leave room for button)
         painter->setPen(headerTextPrimary);
         painter->setFont(QFont("Inter", 11, QFont::Bold));
-        QRectF nameRect(6 + imgSize + 6, 2, w - imgSize - 18, HEADER_HEIGHT / 2);
+        QRectF nameRect(6 + imgSize + 6, 2, w - imgSize - 50, HEADER_HEIGHT / 2);
         painter->drawText(nameRect, Qt::AlignVCenter | Qt::AlignLeft, getDisplayName());
         
         // Label/type ID below name
         painter->setPen(headerTextSecondary);
         painter->setFont(QFont("Inter", 9, QFont::Normal));
-        QRectF labelRect(6 + imgSize + 6, HEADER_HEIGHT / 2, w - imgSize - 18, HEADER_HEIGHT / 2 - 4);
+        QRectF labelRect(6 + imgSize + 6, HEADER_HEIGHT / 2, w - imgSize - 50, HEADER_HEIGHT / 2 - 4);
         painter->drawText(labelRect, Qt::AlignVCenter | Qt::AlignLeft, getLabel());
     } else {
         // Geometric icon
@@ -339,64 +350,112 @@ void Component::paintContainer(QPainter* painter)
         painter->setFont(QFont("Inter", 9, QFont::Bold));
         painter->drawText(QRectF(8, 8, 24, 24), Qt::AlignCenter, getLabel());
         
-        // Component name
+        // Component name (adjust width to leave room for button)
         painter->setPen(headerTextPrimary);
         painter->setFont(QFont("Inter", 11, QFont::Bold));
-        QRectF nameRect(38, 2, w - 44, HEADER_HEIGHT / 2);
+        QRectF nameRect(38, 2, w - 76, HEADER_HEIGHT / 2);
         painter->drawText(nameRect, Qt::AlignVCenter | Qt::AlignLeft, getDisplayName());
         
         // Health percentage
         painter->setPen(headerTextSecondary);
         painter->setFont(QFont("Inter", 9, QFont::Bold));
-        QRectF healthRect(38, HEADER_HEIGHT / 2, w - 44, HEADER_HEIGHT / 2 - 4);
+        QRectF healthRect(38, HEADER_HEIGHT / 2, w - 76, HEADER_HEIGHT / 2 - 4);
         QString healthText = QString("Health: %1%").arg(qRound(m_size));
         painter->drawText(healthRect, Qt::AlignVCenter | Qt::AlignLeft, healthText);
     }
     
-    // Health indicator bar below header
-    qreal barY = HEADER_HEIGHT - 1;
-    qreal barWidth = w;
-    qreal barHeight = 3;
-    
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(tm.healthBarBackground());
-    painter->drawRect(0, barY, barWidth, barHeight);
-    
-    qreal healthFraction = qBound(0.0, m_size / 100.0, 1.0);
-    painter->setBrush(m_color);
-    painter->drawRect(0, barY, barWidth * healthFraction, barHeight);
-    
-    // Workspace container area (for freely positioned subcomponents and widgets)
-    QRectF dContainer = designContainerRect();
-    
-    // Draw a subtle container border
-    painter->setPen(QPen(tm.borderSubtle(), 1, Qt::DotLine));
-    painter->setBrush(Qt::NoBrush);
-    painter->drawRoundedRect(dContainer.adjusted(2, 0, -2, -2), 4, 4);
-    
-    // Header label showing count of subcomponents and widgets
-    int totalItems = m_subComponents.size() + m_designSubComponents.size();
-    if (totalItems > 0) {
-        painter->setPen(tm.componentTextSecondary());
-        painter->setFont(QFont("Inter", 8, QFont::Bold));
-        QRectF labelRect(PADDING, HEADER_HEIGHT + 1, w - PADDING * 2, PADDING - 1);
-        QString label = QString("COMPONENTS (%1)").arg(totalItems);
-        if (m_subComponents.size() > 0 && m_designSubComponents.size() > 0) {
-            label = QString("SUB-SYSTEMS (%1) | WIDGETS (%2)")
-                    .arg(m_subComponents.size())
-                    .arg(m_designSubComponents.size());
-        } else if (m_subComponents.size() > 0) {
-            label = QString("SUB-SYSTEMS (%1)").arg(m_subComponents.size());
-        } else if (m_designSubComponents.size() > 0) {
-            label = QString("WIDGETS (%1)").arg(m_designSubComponents.size());
+    // Health indicator bar below header (only show when not minimized)
+    if (!m_minimized) {
+        qreal barY = HEADER_HEIGHT - 1;
+        qreal barWidth = w;
+        qreal barHeight = 3;
+        
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(tm.healthBarBackground());
+        painter->drawRect(0, barY, barWidth, barHeight);
+        
+        qreal healthFraction = qBound(0.0, m_size / 100.0, 1.0);
+        painter->setBrush(m_color);
+        painter->drawRect(0, barY, barWidth * healthFraction, barHeight);
+        
+        // Workspace container area (for freely positioned subcomponents and widgets)
+        QRectF dContainer = designContainerRect();
+        
+        // Draw a subtle container border
+        painter->setPen(QPen(tm.borderSubtle(), 1, Qt::DotLine));
+        painter->setBrush(Qt::NoBrush);
+        painter->drawRoundedRect(dContainer.adjusted(2, 0, -2, -2), 4, 4);
+        
+        // Header label showing count of subcomponents and widgets
+        int totalItems = m_subComponents.size() + m_designSubComponents.size();
+        if (totalItems > 0) {
+            painter->setPen(tm.componentTextSecondary());
+            painter->setFont(QFont("Inter", 8, QFont::Bold));
+            QRectF labelRect(PADDING, HEADER_HEIGHT + 1, w - PADDING * 2, PADDING - 1);
+            QString label = QString("COMPONENTS (%1)").arg(totalItems);
+            if (m_subComponents.size() > 0 && m_designSubComponents.size() > 0) {
+                label = QString("SUB-SYSTEMS (%1) | WIDGETS (%2)")
+                        .arg(m_subComponents.size())
+                        .arg(m_designSubComponents.size());
+            } else if (m_subComponents.size() > 0) {
+                label = QString("SUB-SYSTEMS (%1)").arg(m_subComponents.size());
+            } else if (m_designSubComponents.size() > 0) {
+                label = QString("WIDGETS (%1)").arg(m_designSubComponents.size());
+            }
+            painter->drawText(labelRect, Qt::AlignVCenter | Qt::AlignLeft, label);
+        } else {
+            // Show placeholder when empty
+            painter->setPen(tm.mutedText());
+            painter->setFont(QFont("Inter", 8));
+            painter->drawText(dContainer, Qt::AlignCenter, "Drag & drop components here");
         }
-        painter->drawText(labelRect, Qt::AlignVCenter | Qt::AlignLeft, label);
-    } else {
-        // Show placeholder when empty
-        painter->setPen(tm.mutedText());
-        painter->setFont(QFont("Inter", 8));
-        painter->drawText(dContainer, Qt::AlignCenter, "Drag & drop components here");
     }
+}
+
+void Component::paintMinimizeButton(QPainter* painter)
+{
+    ThemeManager& tm = ThemeManager::instance();
+    qreal w = containerWidth();
+    
+    // Button position in top-right corner of header
+    qreal buttonSize = 24;
+    qreal buttonX = w - buttonSize - 8;
+    qreal buttonY = (HEADER_HEIGHT - buttonSize) / 2;
+    QRectF buttonRect(buttonX, buttonY, buttonSize, buttonSize);
+    
+    // Button background
+    QColor buttonBg = tm.isDark() ? QColor(255, 255, 255, 30) : QColor(0, 0, 0, 20);
+    QColor buttonBorder = tm.isDark() ? QColor(255, 255, 255, 50) : QColor(0, 0, 0, 40);
+    
+    painter->setPen(QPen(buttonBorder, 1));
+    painter->setBrush(buttonBg);
+    painter->drawRoundedRect(buttonRect, 4, 4);
+    
+    // Button icon (minimize = horizontal line, maximize = square)
+    painter->setPen(QPen(Qt::white, 2));
+    painter->setBrush(Qt::NoBrush);
+    
+    if (m_minimized) {
+        // Maximize icon (square)
+        QRectF iconRect = buttonRect.adjusted(6, 6, -6, -6);
+        painter->drawRect(iconRect);
+    } else {
+        // Minimize icon (horizontal line)
+        qreal lineY = buttonRect.center().y();
+        painter->drawLine(QPointF(buttonRect.left() + 6, lineY), 
+                         QPointF(buttonRect.right() - 6, lineY));
+    }
+}
+
+bool Component::isPointInMinimizeButton(const QPointF& pos) const
+{
+    qreal w = containerWidth();
+    qreal buttonSize = 24;
+    qreal buttonX = w - buttonSize - 8;
+    qreal buttonY = (HEADER_HEIGHT - buttonSize) / 2;
+    QRectF buttonRect(buttonX, buttonY, buttonSize, buttonSize);
+    
+    return buttonRect.contains(pos);
 }
 
 QString Component::getDisplayName() const
@@ -442,6 +501,30 @@ void Component::setLabel(const QString& label)
     update();
 }
 
+void Component::setMinimized(bool minimized)
+{
+    if (m_minimized == minimized) {
+        return;  // No change
+    }
+    
+    prepareGeometryChange();
+    m_minimized = minimized;
+    updateSubComponentsVisibility();
+    update();
+}
+
+void Component::updateSubComponentsVisibility()
+{
+    // Hide/show all subcomponents based on minimized state
+    for (SubComponent* sub : m_subComponents) {
+        sub->setVisible(!m_minimized);
+    }
+    
+    for (DesignSubComponent* dsub : m_designSubComponents) {
+        dsub->setVisible(!m_minimized);
+    }
+}
+
 void Component::setColor(const QColor& color)
 {
     m_color = color;
@@ -473,7 +556,7 @@ void Component::setSize(qreal size)
 QString Component::toJson() const
 {
     // Note: full JSON serialization with design sub-components is handled by Canvas::saveToJson()
-    return QString("{\"id\":\"%1\",\"type\":\"%2\",\"x\":%3,\"y\":%4,\"color\":\"%5\",\"size\":%6,\"userWidth\":%7,\"userHeight\":%8}")
+    return QString("{\"id\":\"%1\",\"type\":\"%2\",\"x\":%3,\"y\":%4,\"color\":\"%5\",\"size\":%6,\"userWidth\":%7,\"userHeight\":%8,\"minimized\":%9}")
         .arg(m_id)
         .arg(m_typeId)
         .arg(pos().x())
@@ -481,7 +564,8 @@ QString Component::toJson() const
         .arg(m_color.name())
         .arg(m_size)
         .arg(m_userWidth)
-        .arg(m_userHeight);
+        .arg(m_userHeight)
+        .arg(m_minimized ? "true" : "false");
 }
 
 Component* Component::fromJson(const QString& id, const QString& typeId, qreal x, qreal y, 
@@ -582,24 +666,32 @@ void Component::paintResizeHandles(QPainter* painter)
 
 void Component::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
-    if (event->button() == Qt::LeftButton && isSelected()) {
-        // Only allow resizing in Designer mode
-        Canvas* canvas = nullptr;
-        if (scene()) {
-            canvas = qobject_cast<Canvas*>(scene()->parent());
+    if (event->button() == Qt::LeftButton) {
+        // Check if click is on minimize/maximize button
+        if (isPointInMinimizeButton(event->pos())) {
+            setMinimized(!m_minimized);
+            event->accept();
+            return;
         }
-        if (canvas && canvas->getUserRole() == UserRole::Designer) {
-            ResizeHandle handle = handleAt(event->pos());
-            if (handle != HandleNone) {
-                m_activeHandle = handle;
-                m_resizing = true;
-                m_lastMouseScenePos = event->scenePos();
-                event->accept();
-                return;
+        
+        // Only allow resizing in Designer mode when not minimized
+        if (isSelected() && !m_minimized) {
+            Canvas* canvas = nullptr;
+            if (scene()) {
+                canvas = qobject_cast<Canvas*>(scene()->parent());
+            }
+            if (canvas && canvas->getUserRole() == UserRole::Designer) {
+                ResizeHandle handle = handleAt(event->pos());
+                if (handle != HandleNone) {
+                    m_activeHandle = handle;
+                    m_resizing = true;
+                    m_lastMouseScenePos = event->scenePos();
+                    event->accept();
+                    return;
+                }
             }
         }
-    }
-    if (event->button() == Qt::LeftButton) {
+        
         setCursor(Qt::ClosedHandCursor);
     }
     QGraphicsItem::mousePressEvent(event);
