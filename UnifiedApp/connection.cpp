@@ -1,5 +1,6 @@
 #include "connection.h"
 #include "component.h"
+#include "subcomponent.h"
 #include "thememanager.h"
 #include <QPainter>
 #include <QtMath>
@@ -10,8 +11,8 @@ Connection::Connection(Component* source, Component* target,
                        ConnectionType type, const QString& label,
                        QGraphicsItem* parent)
     : QGraphicsItem(parent)
-    , m_source(source)
-    , m_target(target)
+    , m_sourceItem(source)
+    , m_targetItem(target)
     , m_connectionType(type)
     , m_label(label)
     , m_color(ThemeManager::instance().connectionDefaultColor())
@@ -22,25 +23,77 @@ Connection::Connection(Component* source, Component* target,
     updatePosition();
 }
 
+Connection::Connection(QGraphicsItem* source, QGraphicsItem* target,
+                       ConnectionType type, const QString& label,
+                       QGraphicsItem* parent)
+    : QGraphicsItem(parent)
+    , m_sourceItem(source)
+    , m_targetItem(target)
+    , m_connectionType(type)
+    , m_label(label)
+    , m_color(ThemeManager::instance().connectionDefaultColor())
+{
+    setFlag(QGraphicsItem::ItemIsSelectable);
+    setZValue(-1);  // Draw behind components
+    
+    updatePosition();
+}
+
+Component* Connection::getSource() const
+{
+    return qgraphicsitem_cast<Component*>(m_sourceItem);
+}
+
+Component* Connection::getTarget() const
+{
+    return qgraphicsitem_cast<Component*>(m_targetItem);
+}
+
+SubComponent* Connection::getSourceSub() const
+{
+    return qgraphicsitem_cast<SubComponent*>(m_sourceItem);
+}
+
+SubComponent* Connection::getTargetSub() const
+{
+    return qgraphicsitem_cast<SubComponent*>(m_targetItem);
+}
+
+QPointF Connection::getItemCenter(QGraphicsItem* item) const
+{
+    if (!item) return QPointF();
+    
+    // Check if it's a SubComponent - use its centerInScene method
+    SubComponent* sub = qgraphicsitem_cast<SubComponent*>(item);
+    if (sub) {
+        return sub->centerInScene();
+    }
+    
+    // Otherwise use the bounding rect center
+    return item->sceneBoundingRect().center();
+}
+
 void Connection::updatePosition()
 {
-    if (!m_source || !m_target) return;
+    if (!m_sourceItem || !m_targetItem) return;
     
     prepareGeometryChange();
     
-    QPointF srcCenter = m_source->sceneBoundingRect().center();
-    QPointF tgtCenter = m_target->sceneBoundingRect().center();
+    QPointF srcCenter = getItemCenter(m_sourceItem);
+    QPointF tgtCenter = getItemCenter(m_targetItem);
     
-    m_sourcePoint = getConnectionPoint(m_source, tgtCenter);
-    m_targetPoint = getConnectionPoint(m_target, srcCenter);
+    m_sourcePoint = getConnectionPoint(m_sourceItem, tgtCenter);
+    m_targetPoint = getConnectionPoint(m_targetItem, srcCenter);
 }
 
-QPointF Connection::getConnectionPoint(Component* comp, const QPointF& otherCenter) const
+QPointF Connection::getConnectionPoint(QGraphicsItem* item, const QPointF& otherCenter) const
 {
-    QRectF rect = comp->sceneBoundingRect();
+    if (!item) return QPointF();
+    
+    QRectF rect = item->sceneBoundingRect();
     QPointF center = rect.center();
     
-    // Calculate intersection of line from center to otherCenter with the component rect
+    // Calculate intersection of line from center to otherCenter with the item rect
     qreal dx = otherCenter.x() - center.x();
     qreal dy = otherCenter.y() - center.y();
     
@@ -61,7 +114,7 @@ QPointF Connection::getConnectionPoint(Component* comp, const QPointF& otherCent
 
 QRectF Connection::boundingRect() const
 {
-    if (!m_source || !m_target) return QRectF();
+    if (!m_sourceItem || !m_targetItem) return QRectF();
     
     qreal extra = 30;  // Extra space for arrowheads and labels
     QRectF rect = QRectF(m_sourcePoint, m_targetPoint).normalized();
@@ -71,7 +124,7 @@ QRectF Connection::boundingRect() const
 QPainterPath Connection::shape() const
 {
     QPainterPath path;
-    if (!m_source || !m_target) return path;
+    if (!m_sourceItem || !m_targetItem) return path;
     
     // Create a thick line shape for easier selection
     QLineF line(m_sourcePoint, m_targetPoint);
@@ -96,7 +149,7 @@ void Connection::paint(QPainter* painter, const QStyleOptionGraphicsItem* option
     Q_UNUSED(option);
     Q_UNUSED(widget);
     
-    if (!m_source || !m_target) return;
+    if (!m_sourceItem || !m_targetItem) return;
     
     painter->setRenderHint(QPainter::Antialiasing);
     
@@ -212,7 +265,21 @@ void Connection::setColor(const QColor& color)
 
 bool Connection::involvesComponent(const Component* comp) const
 {
-    return (m_source == comp || m_target == comp);
+    Component* src = qgraphicsitem_cast<Component*>(m_sourceItem);
+    Component* tgt = qgraphicsitem_cast<Component*>(m_targetItem);
+    return (src == comp || tgt == comp);
+}
+
+bool Connection::involvesSubComponent(const SubComponent* sub) const
+{
+    SubComponent* src = qgraphicsitem_cast<SubComponent*>(m_sourceItem);
+    SubComponent* tgt = qgraphicsitem_cast<SubComponent*>(m_targetItem);
+    return (src == sub || tgt == sub);
+}
+
+bool Connection::involvesItem(const QGraphicsItem* item) const
+{
+    return (m_sourceItem == item || m_targetItem == item);
 }
 
 QString Connection::connectionTypeToString(ConnectionType type)

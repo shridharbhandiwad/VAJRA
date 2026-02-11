@@ -73,8 +73,14 @@ void Component::addSubComponent(const QString& name)
     SubComponent* sub = new SubComponent(name, index, this);
     m_subComponents.append(sub);
     
+    // Position the new subcomponent at a default location within the design container
+    QRectF container = designContainerRect();
+    qreal xOffset = container.left() + 10 + (index % 3) * 50;  // Stagger horizontally
+    qreal yOffset = container.top() + 25 + (index / 3) * 40;   // Stagger vertically
+    sub->setPos(xOffset, yOffset);
+    
     prepareGeometryChange();
-    layoutSubComponents();
+    update();
 }
 
 void Component::removeSubComponent(int index)
@@ -89,7 +95,7 @@ void Component::removeSubComponent(int index)
         }
         
         prepareGeometryChange();
-        layoutSubComponents();
+        update();
     }
 }
 
@@ -109,22 +115,13 @@ SubComponent* Component::getSubComponent(const QString& name) const
 
 QRectF Component::designContainerRect() const
 {
-    // The design container sits below the subsystem sub-components area
+    // The design container sits below the header - this is where subcomponents can be freely placed
     qreal y = HEADER_HEIGHT + PADDING;
-    if (!m_subComponents.isEmpty()) {
-        y += m_subComponents.size() * (SubComponent::itemHeight() + SUB_SPACING);
-    } else {
-        y += 30;
-    }
-    y += 4; // gap between subsystem area and design container
-    
     qreal w = containerWidth();
-    qreal defaultH = m_designSubComponents.isEmpty() ? DESIGN_CONTAINER_MIN_HEIGHT : DESIGN_CONTAINER_FULL_HEIGHT;
     
-    // If the user resized the component, the design container gets all extra space
+    // Calculate height as everything below the header except the footer
     qreal totalHeight = containerHeight();
-    qreal availableH = totalHeight - y - FOOTER_HEIGHT;
-    qreal h = qMax(defaultH, availableH);
+    qreal h = totalHeight - y - FOOTER_HEIGHT - 8;  // 8px margin at bottom
     
     return QRectF(0, y, w, h);
 }
@@ -191,7 +188,7 @@ QString Component::widgetValidationMessage(const QString& typeId, SubComponentTy
 
 qreal Component::containerWidth() const
 {
-    qreal autoWidth = qMax(MIN_WIDTH, SubComponent::itemWidth() + PADDING * 2);
+    qreal autoWidth = qMax(MIN_WIDTH, SubComponent::defaultWidth() + PADDING * 2);
     // If user has manually resized, use the larger of auto and user width
     if (m_userWidth > 0) {
         return qMax(autoWidth, m_userWidth);
@@ -203,11 +200,8 @@ qreal Component::containerHeight() const
 {
     qreal autoHeight = HEADER_HEIGHT + PADDING;
     
-    if (!m_subComponents.isEmpty()) {
-        autoHeight += m_subComponents.size() * (SubComponent::itemHeight() + SUB_SPACING);
-    } else {
-        autoHeight += 30; // Minimum content area
-    }
+    // SubComponents section (flexible area for freely positioned subcomponents)
+    autoHeight += 60; // Minimum space for subcomponents
     
     // Design container area (always present to serve as drop target)
     autoHeight += 4; // gap
@@ -224,13 +218,9 @@ qreal Component::containerHeight() const
 
 void Component::layoutSubComponents()
 {
-    qreal yOffset = HEADER_HEIGHT + PADDING;
-    qreal xOffset = PADDING;
-    
-    for (int i = 0; i < m_subComponents.size(); ++i) {
-        m_subComponents[i]->setPos(xOffset, yOffset);
-        yOffset += SubComponent::itemHeight() + SUB_SPACING;
-    }
+    // No longer auto-layout subcomponents - they are freely positioned by the user
+    // This method is kept for API compatibility but does nothing
+    // Subcomponents maintain their user-defined positions
 }
 
 QPointF Component::anchorPoint() const
@@ -370,40 +360,36 @@ void Component::paintContainer(QPainter* painter)
     painter->setBrush(m_color);
     painter->drawRect(0, barY, barWidth * healthFraction, barHeight);
     
-    // Sub-components section label (if there are sub-components)
-    if (!m_subComponents.isEmpty()) {
-        painter->setPen(tm.componentTextSecondary());
-        painter->setFont(QFont("Inter", 8, QFont::Bold));
-        QRectF subLabelRect(PADDING, HEADER_HEIGHT + 1, w - PADDING * 2, PADDING - 1);
-        painter->drawText(subLabelRect, Qt::AlignVCenter | Qt::AlignLeft, 
-                          QString("SUB-SYSTEMS (%1)").arg(m_subComponents.size()));
-    }
-    
-    // Design container area (for drag-drop widgets)
+    // Workspace container area (for freely positioned subcomponents and widgets)
     QRectF dContainer = designContainerRect();
     
-    if (!m_designSubComponents.isEmpty()) {
-        // Container with visible border when widgets exist
-        painter->setPen(QPen(tm.accentPrimary().darker(120), 1, Qt::DashLine));
-        painter->setBrush(tm.isDark() ? QColor(25, 28, 35, 180) : QColor(240, 245, 252, 180));
-        painter->drawRoundedRect(dContainer.adjusted(2, 0, -2, -2), 4, 4);
-        
-        // Header label
-        painter->setPen(tm.accentPrimary());
+    // Draw a subtle container border
+    painter->setPen(QPen(tm.borderSubtle(), 1, Qt::DotLine));
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRoundedRect(dContainer.adjusted(2, 0, -2, -2), 4, 4);
+    
+    // Header label showing count of subcomponents and widgets
+    int totalItems = m_subComponents.size() + m_designSubComponents.size();
+    if (totalItems > 0) {
+        painter->setPen(tm.componentTextSecondary());
         painter->setFont(QFont("Inter", 8, QFont::Bold));
-        painter->drawText(QRectF(dContainer.left() + PADDING, dContainer.top() + 2,
-                                 dContainer.width() - PADDING * 2, DESIGN_CONTAINER_HEADER - 2),
-                          Qt::AlignVCenter | Qt::AlignLeft,
-                          QString("WIDGETS (%1)").arg(m_designSubComponents.size()));
+        QRectF labelRect(PADDING, HEADER_HEIGHT + 1, w - PADDING * 2, PADDING - 1);
+        QString label = QString("COMPONENTS (%1)").arg(totalItems);
+        if (m_subComponents.size() > 0 && m_designSubComponents.size() > 0) {
+            label = QString("SUB-SYSTEMS (%1) | WIDGETS (%2)")
+                    .arg(m_subComponents.size())
+                    .arg(m_designSubComponents.size());
+        } else if (m_subComponents.size() > 0) {
+            label = QString("SUB-SYSTEMS (%1)").arg(m_subComponents.size());
+        } else if (m_designSubComponents.size() > 0) {
+            label = QString("WIDGETS (%1)").arg(m_designSubComponents.size());
+        }
+        painter->drawText(labelRect, Qt::AlignVCenter | Qt::AlignLeft, label);
     } else {
-        // Subtle placeholder when empty (still a valid drop target)
-        painter->setPen(QPen(tm.borderSubtle(), 1, Qt::DotLine));
-        painter->setBrush(Qt::NoBrush);
-        painter->drawRoundedRect(dContainer.adjusted(2, 0, -2, -2), 4, 4);
-        
+        // Show placeholder when empty
         painter->setPen(tm.mutedText());
         painter->setFont(QFont("Inter", 8));
-        painter->drawText(dContainer, Qt::AlignCenter, "Drop widgets here");
+        painter->drawText(dContainer, Qt::AlignCenter, "Drag & drop components here");
     }
 }
 
@@ -661,8 +647,8 @@ void Component::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
         }
         
         // Enforce minimum sizes
-        qreal minAutoW = qMax(MIN_WIDTH, SubComponent::itemWidth() + PADDING * 2);
-        qreal minAutoH = HEADER_HEIGHT + PADDING + 30 + 4 + DESIGN_CONTAINER_MIN_HEIGHT + FOOTER_HEIGHT;
+        qreal minAutoW = qMax(MIN_WIDTH, SubComponent::defaultWidth() + PADDING * 2);
+        qreal minAutoH = HEADER_HEIGHT + PADDING + 60 + FOOTER_HEIGHT;
         
         if (newW < minAutoW) {
             if (m_activeHandle == HandleTopLeft || m_activeHandle == HandleBottomLeft || m_activeHandle == HandleLeft)

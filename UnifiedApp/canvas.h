@@ -64,6 +64,9 @@ public:
     Connection* addConnection(Component* source, Component* target,
                               ConnectionType type = ConnectionType::Unidirectional,
                               const QString& label = QString());
+    Connection* addConnectionBetweenItems(QGraphicsItem* source, QGraphicsItem* target,
+                                          ConnectionType type = ConnectionType::Unidirectional,
+                                          const QString& label = QString());
     void removeConnection(Connection* conn);
     QList<Connection*> getConnections() const { return m_connections; }
     void deleteSelectedConnections();
@@ -97,6 +100,7 @@ private:
     void updateAllConnections();
     Component* componentAtPoint(const QPointF& scenePos);
     Component* componentAtScenePos(const QPointF& scenePos) const;
+    QGraphicsItem* connectableItemAtPoint(const QPointF& scenePos);
     void drawPendingConnection(const QPointF& from, const QPointF& to);
     
     QGraphicsScene* m_scene;
@@ -111,7 +115,7 @@ private:
     CanvasMode m_mode;
     ConnectionType m_pendingConnectionType;
     QString m_pendingConnectionLabel;
-    Component* m_connectionSource;
+    QGraphicsItem* m_connectionSourceItem;  // Can be Component or SubComponent
     QGraphicsLineItem* m_pendingLine;
     bool m_isDrawingConnection;
 };
