@@ -949,7 +949,7 @@ void AnalyticsDashboard::clear()
     m_componentTypeCount.clear();
     m_componentFilterCombo->clear();
     m_componentFilterCombo->addItem("All Components");
-    updateCharts();
+    updateAllCharts();
 }
 
 void AnalyticsDashboard::refreshDashboard()
