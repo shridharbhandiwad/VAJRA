@@ -22,19 +22,13 @@ AnalyticsDashboard::AnalyticsDashboard(QWidget* parent)
     , m_healthTrendChart(nullptr)
     , m_componentDistChart(nullptr)
     , m_subsystemPerfChart(nullptr)
-    , m_healthAreaChart(nullptr)
     , m_messageFreqChart(nullptr)
-    , m_telemetryChart(nullptr)
     , m_alertHistoryChart(nullptr)
     , m_comparisonChart(nullptr)
-    , m_efficiencyChart(nullptr)
-    , m_upTimeChart(nullptr)
     , m_totalComponentsLabel(nullptr)
     , m_activeComponentsLabel(nullptr)
     , m_avgHealthLabel(nullptr)
     , m_totalAlertsLabel(nullptr)
-    , m_systemEfficiencyLabel(nullptr)
-    , m_upTimeLabel(nullptr)
     , m_timeRangeCombo(nullptr)
     , m_componentFilterCombo(nullptr)
     , m_refreshBtn(nullptr)
@@ -42,7 +36,7 @@ AnalyticsDashboard::AnalyticsDashboard(QWidget* parent)
     , m_updateTimer(nullptr)
 {
     setWindowTitle("Advanced Analytics Dashboard");
-    resize(1600, 1000);
+    resize(1400, 900);
     
     // Connect to theme changes
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged,
@@ -50,12 +44,14 @@ AnalyticsDashboard::AnalyticsDashboard(QWidget* parent)
     
     setupUI();
     generateSampleData();
-    updateCharts();
+    updateKPIs();
+    updateHealthTrendChart();  // Initialize real-time chart
+    updateAllCharts();         // Initialize all other charts
     
-    // Setup auto-refresh timer
+    // Setup auto-refresh timer for ONLY the time-series chart
     m_updateTimer = new QTimer(this);
-    connect(m_updateTimer, &QTimer::timeout, this, &AnalyticsDashboard::updateCharts);
-    m_updateTimer->start(5000); // Update every 5 seconds
+    connect(m_updateTimer, &QTimer::timeout, this, &AnalyticsDashboard::updateHealthTrendChart);
+    m_updateTimer->start(3000); // Update time-series every 3 seconds
 }
 
 AnalyticsDashboard::~AnalyticsDashboard()
@@ -149,45 +145,39 @@ void AnalyticsDashboard::setupUI()
     // ========== CHARTS SECTION ==========
     createCharts();
     
-    // Row 1: Health Trend and Component Distribution
+    // Row 1: Health Trend (Real-Time) - Full width
     QWidget* row1Widget = new QWidget();
     QHBoxLayout* row1Layout = new QHBoxLayout(row1Widget);
-    row1Layout->setSpacing(15);
-    row1Layout->addWidget(m_healthTrendChart, 2);
-    row1Layout->addWidget(m_componentDistChart, 1);
+    row1Layout->setSpacing(0);
+    row1Layout->setContentsMargins(0, 0, 0, 0);
+    row1Layout->addWidget(m_healthTrendChart);
     m_mainLayout->addWidget(row1Widget);
     
-    // Row 2: Subsystem Performance and Health Area
+    // Row 2: Component Distribution and Subsystem Performance
     QWidget* row2Widget = new QWidget();
     QHBoxLayout* row2Layout = new QHBoxLayout(row2Widget);
     row2Layout->setSpacing(15);
-    row2Layout->addWidget(m_subsystemPerfChart, 1);
-    row2Layout->addWidget(m_healthAreaChart, 2);
+    row2Layout->setContentsMargins(0, 0, 0, 0);
+    row2Layout->addWidget(m_componentDistChart);
+    row2Layout->addWidget(m_subsystemPerfChart);
     m_mainLayout->addWidget(row2Widget);
     
-    // Row 3: Message Frequency and Telemetry
+    // Row 3: Message Frequency and Alert History
     QWidget* row3Widget = new QWidget();
     QHBoxLayout* row3Layout = new QHBoxLayout(row3Widget);
     row3Layout->setSpacing(15);
-    row3Layout->addWidget(m_messageFreqChart, 1);
-    row3Layout->addWidget(m_telemetryChart, 2);
+    row3Layout->setContentsMargins(0, 0, 0, 0);
+    row3Layout->addWidget(m_messageFreqChart);
+    row3Layout->addWidget(m_alertHistoryChart);
     m_mainLayout->addWidget(row3Widget);
     
-    // Row 4: Alert History and Component Comparison
+    // Row 4: Component Comparison - Full width
     QWidget* row4Widget = new QWidget();
     QHBoxLayout* row4Layout = new QHBoxLayout(row4Widget);
-    row4Layout->setSpacing(15);
-    row4Layout->addWidget(m_alertHistoryChart, 1);
-    row4Layout->addWidget(m_comparisonChart, 1);
+    row4Layout->setSpacing(0);
+    row4Layout->setContentsMargins(0, 0, 0, 0);
+    row4Layout->addWidget(m_comparisonChart);
     m_mainLayout->addWidget(row4Widget);
-    
-    // Row 5: System Efficiency and Uptime
-    QWidget* row5Widget = new QWidget();
-    QHBoxLayout* row5Layout = new QHBoxLayout(row5Widget);
-    row5Layout->setSpacing(15);
-    row5Layout->addWidget(m_efficiencyChart, 1);
-    row5Layout->addWidget(m_upTimeChart, 1);
-    m_mainLayout->addWidget(row5Widget);
     
     m_scrollArea->setWidget(m_centralWidget);
     setCentralWidget(m_scrollArea);
@@ -197,22 +187,19 @@ QWidget* AnalyticsDashboard::createKPISection()
 {
     QWidget* kpiWidget = new QWidget();
     QHBoxLayout* kpiLayout = new QHBoxLayout(kpiWidget);
-    kpiLayout->setSpacing(15);
+    kpiLayout->setSpacing(20);
+    kpiLayout->setContentsMargins(0, 0, 0, 0);
     
     // Create KPI cards
     QWidget* card1 = createKPICard("Total Components", "0", "Monitored Systems", QColor(52, 152, 219));
     QWidget* card2 = createKPICard("Active Components", "0", "Currently Online", QColor(46, 204, 113));
     QWidget* card3 = createKPICard("Average Health", "0%", "System-Wide", QColor(241, 196, 15));
     QWidget* card4 = createKPICard("Total Alerts", "0", "Last 24 Hours", QColor(231, 76, 60));
-    QWidget* card5 = createKPICard("System Efficiency", "0%", "Performance Index", QColor(155, 89, 182));
-    QWidget* card6 = createKPICard("Uptime", "0%", "Availability", QColor(26, 188, 156));
     
     kpiLayout->addWidget(card1);
     kpiLayout->addWidget(card2);
     kpiLayout->addWidget(card3);
     kpiLayout->addWidget(card4);
-    kpiLayout->addWidget(card5);
-    kpiLayout->addWidget(card6);
     
     return kpiWidget;
 }
@@ -247,8 +234,6 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     else if (title == "Active Components") m_activeComponentsLabel = valueLabel;
     else if (title == "Average Health") m_avgHealthLabel = valueLabel;
     else if (title == "Total Alerts") m_totalAlertsLabel = valueLabel;
-    else if (title == "System Efficiency") m_systemEfficiencyLabel = valueLabel;
-    else if (title == "Uptime") m_upTimeLabel = valueLabel;
     
     QLabel* subtitleLabel = new QLabel(subtitle);
     QFont subtitleFont = subtitleLabel->font();
@@ -270,28 +255,23 @@ void AnalyticsDashboard::createCharts()
     m_healthTrendChart = createHealthTrendChart();
     m_componentDistChart = createComponentDistributionChart();
     m_subsystemPerfChart = createSubsystemPerformanceChart();
-    m_healthAreaChart = createHealthAreaChart();
     m_messageFreqChart = createMessageFrequencyChart();
-    m_telemetryChart = createTelemetryChart();
     m_alertHistoryChart = createAlertHistoryChart();
     m_comparisonChart = createComponentComparisonChart();
-    m_efficiencyChart = createSystemEfficiencyChart();
-    m_upTimeChart = createUpTimeChart();
 }
 
 QChartView* AnalyticsDashboard::createHealthTrendChart()
 {
     QChart* chart = new QChart();
-    chart->setTitle("Component Health Trend (Real-Time)");
-    chart->setAnimationOptions(QChart::SeriesAnimations);
-    
-    // Will be populated with actual data in updateCharts()
+    chart->setTitle("Component Health Trend (Real-Time Updates)");
+    chart->setAnimationOptions(QChart::NoAnimation); // Disable animation for better performance
     
     applyChartTheme(chart);
     
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(350);
+    chartView->setMinimumHeight(300);
+    chartView->setMinimumWidth(400);
     
     return chartView;
 }
@@ -299,14 +279,15 @@ QChartView* AnalyticsDashboard::createHealthTrendChart()
 QChartView* AnalyticsDashboard::createComponentDistributionChart()
 {
     QChart* chart = new QChart();
-    chart->setTitle("Component Distribution");
-    chart->setAnimationOptions(QChart::SeriesAnimations);
+    chart->setTitle("Component Type Distribution");
+    chart->setAnimationOptions(QChart::NoAnimation);
     
     applyChartTheme(chart);
     
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(350);
+    chartView->setMinimumHeight(280);
+    chartView->setMinimumWidth(350);
     
     return chartView;
 }
@@ -314,29 +295,15 @@ QChartView* AnalyticsDashboard::createComponentDistributionChart()
 QChartView* AnalyticsDashboard::createSubsystemPerformanceChart()
 {
     QChart* chart = new QChart();
-    chart->setTitle("Subsystem Performance Comparison");
-    chart->setAnimationOptions(QChart::SeriesAnimations);
+    chart->setTitle("Subsystem Performance");
+    chart->setAnimationOptions(QChart::NoAnimation);
     
     applyChartTheme(chart);
     
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(350);
-    
-    return chartView;
-}
-
-QChartView* AnalyticsDashboard::createHealthAreaChart()
-{
-    QChart* chart = new QChart();
-    chart->setTitle("Health Distribution Over Time");
-    chart->setAnimationOptions(QChart::SeriesAnimations);
-    
-    applyChartTheme(chart);
-    
-    QChartView* chartView = new QChartView(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(350);
+    chartView->setMinimumHeight(280);
+    chartView->setMinimumWidth(350);
     
     return chartView;
 }
@@ -344,29 +311,15 @@ QChartView* AnalyticsDashboard::createHealthAreaChart()
 QChartView* AnalyticsDashboard::createMessageFrequencyChart()
 {
     QChart* chart = new QChart();
-    chart->setTitle("Message Frequency Analysis");
-    chart->setAnimationOptions(QChart::SeriesAnimations);
+    chart->setTitle("Message Frequency (Last 6 Hours)");
+    chart->setAnimationOptions(QChart::NoAnimation);
     
     applyChartTheme(chart);
     
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(350);
-    
-    return chartView;
-}
-
-QChartView* AnalyticsDashboard::createTelemetryChart()
-{
-    QChart* chart = new QChart();
-    chart->setTitle("Telemetry Data Streams");
-    chart->setAnimationOptions(QChart::SeriesAnimations);
-    
-    applyChartTheme(chart);
-    
-    QChartView* chartView = new QChartView(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(350);
+    chartView->setMinimumHeight(280);
+    chartView->setMinimumWidth(350);
     
     return chartView;
 }
@@ -374,14 +327,15 @@ QChartView* AnalyticsDashboard::createTelemetryChart()
 QChartView* AnalyticsDashboard::createAlertHistoryChart()
 {
     QChart* chart = new QChart();
-    chart->setTitle("Alert History (Last 24 Hours)");
-    chart->setAnimationOptions(QChart::SeriesAnimations);
+    chart->setTitle("Alert History (Last 12 Hours)");
+    chart->setAnimationOptions(QChart::NoAnimation);
     
     applyChartTheme(chart);
     
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(300);
+    chartView->setMinimumHeight(280);
+    chartView->setMinimumWidth(350);
     
     return chartView;
 }
@@ -389,44 +343,15 @@ QChartView* AnalyticsDashboard::createAlertHistoryChart()
 QChartView* AnalyticsDashboard::createComponentComparisonChart()
 {
     QChart* chart = new QChart();
-    chart->setTitle("Component Performance Comparison");
-    chart->setAnimationOptions(QChart::SeriesAnimations);
+    chart->setTitle("Component Health Comparison");
+    chart->setAnimationOptions(QChart::NoAnimation);
     
     applyChartTheme(chart);
     
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(300);
-    
-    return chartView;
-}
-
-QChartView* AnalyticsDashboard::createSystemEfficiencyChart()
-{
-    QChart* chart = new QChart();
-    chart->setTitle("System Efficiency Metrics");
-    chart->setAnimationOptions(QChart::SeriesAnimations);
-    
-    applyChartTheme(chart);
-    
-    QChartView* chartView = new QChartView(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(300);
-    
-    return chartView;
-}
-
-QChartView* AnalyticsDashboard::createUpTimeChart()
-{
-    QChart* chart = new QChart();
-    chart->setTitle("Component Uptime Analysis");
-    chart->setAnimationOptions(QChart::SeriesAnimations);
-    
-    applyChartTheme(chart);
-    
-    QChartView* chartView = new QChartView(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(300);
+    chartView->setMinimumHeight(260);
+    chartView->setMinimumWidth(400);
     
     return chartView;
 }
@@ -437,13 +362,13 @@ void AnalyticsDashboard::generateSampleData()
     qint64 hourMs = 3600000; // 1 hour in milliseconds
     
     // Generate sample components
-    QStringList componentTypes = {"Radar", "Antenna", "PowerSystem", "Communication", "CoolingUnit", "Computer"};
-    QStringList subsystems = {"Transmitter", "Receiver", "Processor", "Monitor", "Controller"};
+    QStringList componentTypes = {"Radar", "Antenna", "PowerSystem", "Communication", "CoolingUnit"};
+    QStringList subsystems = {"Transmitter", "Receiver", "Processor"};
     
     QRandomGenerator* rng = QRandomGenerator::global();
     
-    // Create 8-12 sample components
-    int numComponents = 8 + rng->bounded(5);
+    // Create 5-8 sample components (reduced from 8-12)
+    int numComponents = 5 + rng->bounded(4);
     for (int i = 0; i < numComponents; i++) {
         QString componentId = QString("COMP_%1").arg(i + 1, 3, 10, QChar('0'));
         QString type = componentTypes[rng->bounded(componentTypes.size())];
@@ -455,28 +380,28 @@ void AnalyticsDashboard::generateSampleData()
         data.alertCount = 0;
         data.lastUpdateTime = currentTime;
         
-        // Generate health history (last 24 hours, every 5 minutes)
-        int numPoints = 288; // 24 hours * 12 points per hour
+        // Generate health history - REDUCED from 288 to 60 points (last 1 hour, every minute)
+        int numPoints = 60; // Much less data
         qreal baseHealth = 70.0 + rng->bounded(25);
         
         for (int j = 0; j < numPoints; j++) {
-            qint64 timestamp = currentTime - (hourMs * 24) + (j * 5 * 60000);
+            qint64 timestamp = currentTime - (hourMs) + (j * 60000); // Last 1 hour
             
             // Add some variation
             qreal healthVariation = (rng->bounded(1000) / 1000.0 - 0.5) * 10;
             qreal health = qBound(50.0, baseHealth + healthVariation, 100.0);
             
             // Occasionally drop health to simulate issues
-            if (rng->bounded(100) < 5) {
-                health -= 20 + rng->bounded(20);
+            if (rng->bounded(100) < 3) { // Reduced frequency
+                health -= 15 + rng->bounded(15);
                 data.alertCount++;
             }
             
             data.healthHistory.append(qMakePair(timestamp, health));
             
-            // Add subsystem health data
+            // Add subsystem health data (reduced subsystems)
             for (const QString& subsys : subsystems) {
-                qreal subsysHealth = health + (rng->bounded(1000) / 1000.0 - 0.5) * 15;
+                qreal subsysHealth = health + (rng->bounded(1000) / 1000.0 - 0.5) * 10;
                 subsysHealth = qBound(40.0, subsysHealth, 100.0);
                 
                 if (!data.subsystemHealth.contains(subsys)) {
@@ -485,8 +410,8 @@ void AnalyticsDashboard::generateSampleData()
                 data.subsystemHealth[subsys].append(subsysHealth);
             }
             
-            // Generate message timestamps
-            if (rng->bounded(100) < 30) { // 30% chance of message
+            // Generate message timestamps (reduced frequency)
+            if (rng->bounded(100) < 15) { // Reduced from 30% to 15%
                 data.messageTimestamps.append(timestamp);
                 data.totalMessages++;
             }
@@ -509,13 +434,13 @@ void AnalyticsDashboard::generateSampleData()
     }
 }
 
-void AnalyticsDashboard::updateCharts()
+void AnalyticsDashboard::updateKPIs()
 {
     if (m_componentData.isEmpty()) {
         return;
     }
     
-    // Update KPI values
+    // Calculate KPI values
     int totalComponents = m_componentData.size();
     int activeComponents = 0;
     qreal totalHealth = 0.0;
@@ -530,90 +455,123 @@ void AnalyticsDashboard::updateCharts()
     }
     
     qreal avgHealth = totalComponents > 0 ? totalHealth / totalComponents : 0.0;
-    qreal systemEfficiency = avgHealth * 0.95; // Simplified calculation
-    qreal uptime = activeComponents * 100.0 / totalComponents;
     
-    m_totalComponentsLabel->setText(QString::number(totalComponents));
-    m_activeComponentsLabel->setText(QString::number(activeComponents));
-    m_avgHealthLabel->setText(QString("%1%").arg(qRound(avgHealth)));
-    m_totalAlertsLabel->setText(QString::number(totalAlerts));
-    m_systemEfficiencyLabel->setText(QString("%1%").arg(qRound(systemEfficiency)));
-    m_upTimeLabel->setText(QString("%1%").arg(qRound(uptime)));
-    
-    // Update Health Trend Chart (Line Chart)
-    {
-        QChart* chart = m_healthTrendChart->chart();
-        chart->removeAllSeries();
-        
-        QVector<QColor> seriesColors = {
-            QColor(52, 152, 219),  // Blue
-            QColor(46, 204, 113),  // Green
-            QColor(241, 196, 15),  // Yellow
-            QColor(231, 76, 60),   // Red
-            QColor(155, 89, 182),  // Purple
-            QColor(26, 188, 156)   // Teal
-        };
-        
-        int colorIndex = 0;
-        int maxSeries = 6; // Limit to 6 components for readability
-        int seriesCount = 0;
-        
-        qint64 minTime = LLONG_MAX;
-        qint64 maxTime = LLONG_MIN;
-        qreal minHealth = 100.0;
-        qreal maxHealth = 0.0;
-        
-        for (auto it = m_componentData.begin(); it != m_componentData.end() && seriesCount < maxSeries; ++it) {
-            QSplineSeries* series = new QSplineSeries();
-            series->setName(it.key());
-            series->setColor(seriesColors[colorIndex % seriesColors.size()]);
-            
-            // Take every 10th point for performance (show last 24 hours)
-            for (int i = 0; i < it->healthHistory.size(); i += 10) {
-                qint64 timestamp = it->healthHistory[i].first;
-                qreal health = it->healthHistory[i].second;
-                
-                series->append(timestamp, health);
-                
-                minTime = qMin(minTime, timestamp);
-                maxTime = qMax(maxTime, timestamp);
-                minHealth = qMin(minHealth, health);
-                maxHealth = qMax(maxHealth, health);
-            }
-            
-            chart->addSeries(series);
-            colorIndex++;
-            seriesCount++;
-        }
-        
-        // Configure axes
-        QValueAxis* axisX = new QValueAxis();
-        axisX->setTitleText("Time");
-        axisX->setRange(minTime, maxTime);
-        axisX->setLabelFormat("%i");
-        axisX->setLabelsColor(m_textColor);
-        axisX->setGridLineColor(m_gridColor);
-        
-        QValueAxis* axisY = new QValueAxis();
-        axisY->setTitleText("Health (%)");
-        axisY->setRange(qMax(0.0, minHealth - 10), qMin(100.0, maxHealth + 10));
-        axisY->setLabelFormat("%i");
-        axisY->setLabelsColor(m_textColor);
-        axisY->setGridLineColor(m_gridColor);
-        
-        for (QAbstractSeries* series : chart->series()) {
-            chart->setAxisX(axisX, series);
-            chart->setAxisY(axisY, series);
-        }
-        
-        chart->legend()->setVisible(true);
-        chart->legend()->setAlignment(Qt::AlignBottom);
+    // Update KPI labels
+    if (m_totalComponentsLabel) m_totalComponentsLabel->setText(QString::number(totalComponents));
+    if (m_activeComponentsLabel) m_activeComponentsLabel->setText(QString::number(activeComponents));
+    if (m_avgHealthLabel) m_avgHealthLabel->setText(QString("%1%").arg(qRound(avgHealth)));
+    if (m_totalAlertsLabel) m_totalAlertsLabel->setText(QString::number(totalAlerts));
+}
+
+void AnalyticsDashboard::updateHealthTrendChart()
+{
+    if (m_componentData.isEmpty() || !m_healthTrendChart) {
+        return;
     }
     
+    QChart* chart = m_healthTrendChart->chart();
+    
+    // Remove old series and clean up
+    QList<QAbstractSeries*> oldSeries = chart->series();
+    for (QAbstractSeries* series : oldSeries) {
+        chart->removeSeries(series);
+        delete series;
+    }
+    
+    // Remove old axes
+    QList<QAbstractAxis*> oldAxes = chart->axes();
+    for (QAbstractAxis* axis : oldAxes) {
+        chart->removeAxis(axis);
+        delete axis;
+    }
+    
+    QVector<QColor> seriesColors = {
+        QColor(52, 152, 219),  // Blue
+        QColor(46, 204, 113),  // Green
+        QColor(241, 196, 15),  // Yellow
+        QColor(231, 76, 60),   // Red
+        QColor(155, 89, 182)   // Purple
+    };
+    
+    int colorIndex = 0;
+    int maxSeries = 4; // Limit to 4 components for better performance
+    int seriesCount = 0;
+    
+    qint64 minTime = LLONG_MAX;
+    qint64 maxTime = LLONG_MIN;
+    qreal minHealth = 100.0;
+    qreal maxHealth = 0.0;
+    
+    for (auto it = m_componentData.begin(); it != m_componentData.end() && seriesCount < maxSeries; ++it) {
+        QLineSeries* series = new QLineSeries();
+        series->setName(it.key());
+        series->setColor(seriesColors[colorIndex % seriesColors.size()]);
+        
+        // Show all points (we already reduced data to 60 points)
+        for (const auto& point : it->healthHistory) {
+            qint64 timestamp = point.first;
+            qreal health = point.second;
+            
+            series->append(timestamp, health);
+            
+            minTime = qMin(minTime, timestamp);
+            maxTime = qMax(maxTime, timestamp);
+            minHealth = qMin(minHealth, health);
+            maxHealth = qMax(maxHealth, health);
+        }
+        
+        chart->addSeries(series);
+        colorIndex++;
+        seriesCount++;
+    }
+    
+    // Configure axes
+    QValueAxis* axisX = new QValueAxis();
+    axisX->setTitleText("Time (minutes ago)");
+    axisX->setRange(minTime, maxTime);
+    axisX->setLabelsColor(m_textColor);
+    axisX->setGridLineColor(m_gridColor);
+    axisX->setLabelFormat("%i");
+    
+    QValueAxis* axisY = new QValueAxis();
+    axisY->setTitleText("Health (%)");
+    axisY->setRange(qMax(0.0, minHealth - 10), qMin(100.0, maxHealth + 10));
+    axisY->setLabelsColor(m_textColor);
+    axisY->setGridLineColor(m_gridColor);
+    axisY->setLabelFormat("%i");
+    
+    for (QAbstractSeries* series : chart->series()) {
+        chart->setAxisX(axisX, series);
+        chart->setAxisY(axisY, series);
+    }
+    
+    chart->legend()->setVisible(true);
+    chart->legend()->setAlignment(Qt::AlignBottom);
+    chart->legend()->setLabelColor(m_textColor);
+    
+    // Update KPIs as well
+    updateKPIs();
+}
+
+void AnalyticsDashboard::updateAllCharts()
+{
+    if (m_componentData.isEmpty()) {
+        return;
+    }
+    
+    // Update KPIs first
+    updateKPIs();
+    
     // Update Component Distribution Chart (Pie Chart)
-    {
+    if (m_componentDistChart) {
         QChart* chart = m_componentDistChart->chart();
-        chart->removeAllSeries();
+        
+        // Clean up old series
+        QList<QAbstractSeries*> oldSeries = chart->series();
+        for (QAbstractSeries* series : oldSeries) {
+            chart->removeSeries(series);
+            delete series;
+        }
         
         QPieSeries* series = new QPieSeries();
         
@@ -622,29 +580,42 @@ void AnalyticsDashboard::updateCharts()
             QColor(46, 204, 113),
             QColor(241, 196, 15),
             QColor(231, 76, 60),
-            QColor(155, 89, 182),
-            QColor(26, 188, 156)
+            QColor(155, 89, 182)
         };
         
         int colorIndex = 0;
         for (auto it = m_componentTypeCount.begin(); it != m_componentTypeCount.end(); ++it) {
-            QPieSlice* slice = series->append(it.key(), it.value());
-            slice->setColor(pieColors[colorIndex % pieColors.size()]);
-            slice->setLabelVisible(true);
-            slice->setLabelColor(m_textColor);
-            colorIndex++;
+            if (it.value() > 0) {
+                QPieSlice* slice = series->append(it.key(), it.value());
+                slice->setColor(pieColors[colorIndex % pieColors.size()]);
+                slice->setLabelVisible(true);
+                slice->setLabelColor(m_textColor);
+                colorIndex++;
+            }
         }
         
         series->setHoleSize(0.35); // Donut chart
         chart->addSeries(series);
         chart->legend()->setVisible(true);
         chart->legend()->setAlignment(Qt::AlignRight);
+        chart->legend()->setLabelColor(m_textColor);
     }
     
     // Update Subsystem Performance Chart (Bar Chart)
-    {
+    if (m_subsystemPerfChart) {
         QChart* chart = m_subsystemPerfChart->chart();
-        chart->removeAllSeries();
+        
+        // Clean up old series and axes
+        QList<QAbstractSeries*> oldSeries = chart->series();
+        for (QAbstractSeries* series : oldSeries) {
+            chart->removeSeries(series);
+            delete series;
+        }
+        QList<QAbstractAxis*> oldAxes = chart->axes();
+        for (QAbstractAxis* axis : oldAxes) {
+            chart->removeAxis(axis);
+            delete axis;
+        }
         
         QBarSeries* series = new QBarSeries();
         
@@ -667,14 +638,16 @@ void AnalyticsDashboard::updateCharts()
             }
         }
         
-        QBarSet* set = new QBarSet("Average Health");
+        QBarSet* set = new QBarSet("Avg Health");
         set->setColor(QColor(52, 152, 219));
         
         QStringList categories;
         for (auto it = subsystemAvgHealth.begin(); it != subsystemAvgHealth.end(); ++it) {
-            qreal avgHealth = it.value() / subsystemCount[it.key()];
-            *set << avgHealth;
-            categories << it.key();
+            if (subsystemCount[it.key()] > 0) {
+                qreal avgHealth = it.value() / subsystemCount[it.key()];
+                *set << avgHealth;
+                categories << it.key();
+            }
         }
         
         series->append(set);
@@ -697,204 +670,78 @@ void AnalyticsDashboard::updateCharts()
         chart->legend()->setVisible(false);
     }
     
-    // Update Health Area Chart (Area Chart)
-    {
-        QChart* chart = m_healthAreaChart->chart();
-        chart->removeAllSeries();
-        
-        // Show health zones (Critical, Warning, Good) over time
-        QLineSeries* upperSeries = new QLineSeries();
-        QLineSeries* lowerSeriesCritical = new QLineSeries();
-        QLineSeries* lowerSeriesWarning = new QLineSeries();
-        QLineSeries* lowerSeriesGood = new QLineSeries();
-        
-        // Get time range from first component
-        if (!m_componentData.isEmpty()) {
-            const auto& firstComp = m_componentData.first();
-            
-            // Count components in each health zone over time
-            for (int i = 0; i < firstComp.healthHistory.size(); i += 20) {
-                qint64 timestamp = firstComp.healthHistory[i].first;
-                
-                int criticalCount = 0;
-                int warningCount = 0;
-                int goodCount = 0;
-                
-                for (const auto& compData : m_componentData) {
-                    if (i < compData.healthHistory.size()) {
-                        qreal health = compData.healthHistory[i].second;
-                        if (health < 60) criticalCount++;
-                        else if (health < 80) warningCount++;
-                        else goodCount++;
-                    }
-                }
-                
-                lowerSeriesCritical->append(timestamp, 0);
-                upperSeries->append(timestamp, criticalCount);
-                
-                lowerSeriesWarning->append(timestamp, criticalCount);
-                QLineSeries* tempSeries = new QLineSeries();
-                tempSeries->append(timestamp, criticalCount + warningCount);
-                
-                lowerSeriesGood->append(timestamp, criticalCount + warningCount);
-                QLineSeries* tempSeries2 = new QLineSeries();
-                tempSeries2->append(timestamp, criticalCount + warningCount + goodCount);
-            }
-            
-            // Critical zone (red)
-            QAreaSeries* criticalArea = new QAreaSeries(upperSeries, lowerSeriesCritical);
-            criticalArea->setName("Critical (<60%)");
-            criticalArea->setColor(QColor(231, 76, 60, 100));
-            criticalArea->setBorderColor(QColor(231, 76, 60));
-            chart->addSeries(criticalArea);
-            
-            // Note: For simplicity, showing stacked distribution
-            // In production, would need proper stacked area implementation
-        }
-        
-        QValueAxis* axisX = new QValueAxis();
-        axisX->setTitleText("Time");
-        axisX->setLabelsColor(m_textColor);
-        axisX->setGridLineColor(m_gridColor);
-        
-        QValueAxis* axisY = new QValueAxis();
-        axisY->setTitleText("Component Count");
-        axisY->setLabelsColor(m_textColor);
-        axisY->setGridLineColor(m_gridColor);
-        
-        for (QAbstractSeries* s : chart->series()) {
-            chart->setAxisX(axisX, s);
-            chart->setAxisY(axisY, s);
-        }
-        
-        chart->legend()->setVisible(true);
-        chart->legend()->setAlignment(Qt::AlignBottom);
-    }
-    
-    // Update Message Frequency Chart (Scatter Plot)
-    {
+    // Update Message Frequency Chart (Bar Chart)
+    if (m_messageFreqChart) {
         QChart* chart = m_messageFreqChart->chart();
-        chart->removeAllSeries();
         
-        QScatterSeries* series = new QScatterSeries();
-        series->setName("Message Events");
-        series->setMarkerSize(8.0);
-        series->setColor(QColor(52, 152, 219));
-        
-        // Plot message frequency over last 6 hours
-        qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
-        qint64 sixHoursAgo = currentTime - (6 * 3600000);
-        
-        int compIndex = 0;
-        for (const auto& compData : m_componentData) {
-            for (qint64 msgTime : compData.messageTimestamps) {
-                if (msgTime >= sixHoursAgo) {
-                    series->append(msgTime, compIndex);
-                }
-            }
-            compIndex++;
-            if (compIndex >= 10) break; // Limit for readability
+        // Clean up
+        QList<QAbstractSeries*> oldSeries = chart->series();
+        for (QAbstractSeries* series : oldSeries) {
+            chart->removeSeries(series);
+            delete series;
+        }
+        QList<QAbstractAxis*> oldAxes = chart->axes();
+        for (QAbstractAxis* axis : oldAxes) {
+            chart->removeAxis(axis);
+            delete axis;
         }
         
+        QBarSeries* series = new QBarSeries();
+        QBarSet* set = new QBarSet("Messages");
+        set->setColor(QColor(52, 152, 219));
+        
+        QStringList categories;
+        for (auto it = m_componentData.begin(); it != m_componentData.end(); ++it) {
+            categories << it.key();
+            *set << it->totalMessages;
+        }
+        
+        series->append(set);
         chart->addSeries(series);
         
-        QValueAxis* axisX = new QValueAxis();
-        axisX->setTitleText("Time");
-        axisX->setRange(sixHoursAgo, currentTime);
+        QBarCategoryAxis* axisX = new QBarCategoryAxis();
+        axisX->append(categories);
         axisX->setLabelsColor(m_textColor);
-        axisX->setGridLineColor(m_gridColor);
+        chart->addAxis(axisX, Qt::AlignBottom);
+        series->attachAxis(axisX);
         
         QValueAxis* axisY = new QValueAxis();
-        axisY->setTitleText("Component Index");
-        axisY->setRange(-1, qMin(10, m_componentData.size()));
+        axisY->setTitleText("Message Count");
         axisY->setLabelsColor(m_textColor);
         axisY->setGridLineColor(m_gridColor);
-        
-        chart->setAxisX(axisX, series);
-        chart->setAxisY(axisY, series);
+        chart->addAxis(axisY, Qt::AlignLeft);
+        series->attachAxis(axisY);
         
         chart->legend()->setVisible(false);
     }
     
-    // Update Telemetry Chart (Multi-line)
-    {
-        QChart* chart = m_telemetryChart->chart();
-        chart->removeAllSeries();
-        
-        QVector<QColor> colors = {
-            QColor(52, 152, 219),
-            QColor(46, 204, 113),
-            QColor(241, 196, 15)
-        };
-        
-        QStringList telemetryTypes = {"Temperature", "Power", "Signal Strength"};
-        
-        QRandomGenerator* rng = QRandomGenerator::global();
-        
-        for (int i = 0; i < telemetryTypes.size(); i++) {
-            QLineSeries* series = new QLineSeries();
-            series->setName(telemetryTypes[i]);
-            series->setColor(colors[i]);
-            
-            qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
-            qreal baseValue = 50.0 + rng->bounded(30);
-            
-            for (int j = 0; j < 100; j++) {
-                qint64 timestamp = currentTime - (100 - j) * 60000; // Last 100 minutes
-                qreal value = baseValue + (rng->bounded(1000) / 1000.0 - 0.5) * 20;
-                series->append(timestamp, value);
-            }
-            
-            chart->addSeries(series);
-        }
-        
-        QValueAxis* axisX = new QValueAxis();
-        axisX->setTitleText("Time");
-        axisX->setLabelsColor(m_textColor);
-        axisX->setGridLineColor(m_gridColor);
-        
-        QValueAxis* axisY = new QValueAxis();
-        axisY->setTitleText("Value");
-        axisY->setRange(0, 100);
-        axisY->setLabelsColor(m_textColor);
-        axisY->setGridLineColor(m_gridColor);
-        
-        for (QAbstractSeries* s : chart->series()) {
-            chart->setAxisX(axisX, s);
-            chart->setAxisY(axisY, s);
-        }
-        
-        chart->legend()->setVisible(true);
-        chart->legend()->setAlignment(Qt::AlignBottom);
-    }
-    
     // Update Alert History Chart (Bar Chart)
-    {
+    if (m_alertHistoryChart) {
         QChart* chart = m_alertHistoryChart->chart();
-        chart->removeAllSeries();
+        
+        // Clean up
+        QList<QAbstractSeries*> oldSeries = chart->series();
+        for (QAbstractSeries* series : oldSeries) {
+            chart->removeSeries(series);
+            delete series;
+        }
+        QList<QAbstractAxis*> oldAxes = chart->axes();
+        for (QAbstractAxis* axis : oldAxes) {
+            chart->removeAxis(axis);
+            delete axis;
+        }
         
         QBarSeries* series = new QBarSeries();
-        
-        QBarSet* criticalSet = new QBarSet("Critical");
-        criticalSet->setColor(QColor(231, 76, 60));
-        
-        QBarSet* warningSet = new QBarSet("Warning");
-        warningSet->setColor(QColor(241, 196, 15));
+        QBarSet* set = new QBarSet("Alerts");
+        set->setColor(QColor(231, 76, 60));
         
         QStringList categories;
-        
-        // Generate hourly alert counts for last 12 hours
-        QRandomGenerator* rng = QRandomGenerator::global();
-        for (int i = 0; i < 12; i++) {
-            int hour = 12 - i;
-            categories << QString("-%1h").arg(hour);
-            
-            *criticalSet << rng->bounded(10);
-            *warningSet << rng->bounded(15);
+        for (auto it = m_componentData.begin(); it != m_componentData.end(); ++it) {
+            categories << it.key();
+            *set << it->alertCount;
         }
         
-        series->append(criticalSet);
-        series->append(warningSet);
+        series->append(set);
         chart->addSeries(series);
         
         QBarCategoryAxis* axisX = new QBarCategoryAxis();
@@ -910,29 +757,40 @@ void AnalyticsDashboard::updateCharts()
         chart->addAxis(axisY, Qt::AlignLeft);
         series->attachAxis(axisY);
         
-        chart->legend()->setVisible(true);
-        chart->legend()->setAlignment(Qt::AlignTop);
+        chart->legend()->setVisible(false);
     }
     
     // Update Component Comparison Chart (Horizontal Bar)
-    {
+    if (m_comparisonChart) {
         QChart* chart = m_comparisonChart->chart();
-        chart->removeAllSeries();
         
-        QBarSeries* series = new QBarSeries();
-        
-        QBarSet* healthSet = new QBarSet("Current Health");
-        healthSet->setColor(QColor(46, 204, 113));
-        
-        QStringList categories;
-        int count = 0;
-        
-        for (auto it = m_componentData.begin(); it != m_componentData.end() && count < 8; ++it) {
-            categories << it.key();
-            *healthSet << it->currentHealth;
-            count++;
+        // Clean up
+        QList<QAbstractSeries*> oldSeries = chart->series();
+        for (QAbstractSeries* series : oldSeries) {
+            chart->removeSeries(series);
+            delete series;
+        }
+        QList<QAbstractAxis*> oldAxes = chart->axes();
+        for (QAbstractAxis* axis : oldAxes) {
+            chart->removeAxis(axis);
+            delete axis;
         }
         
+        QBarSeries* series = new QBarSeries();
+        QBarSet* healthSet = new QBarSet("Health");
+        
+        QStringList categories;
+        for (auto it = m_componentData.begin(); it != m_componentData.end(); ++it) {
+            categories << it.key();
+            qreal health = it->currentHealth;
+            healthSet->append(health);
+            
+            // Color-code based on health
+            QColor color = getHealthColor(health);
+            // Note: Individual bar coloring would require separate sets
+        }
+        
+        healthSet->setColor(QColor(46, 204, 113));
         series->append(healthSet);
         chart->addSeries(series);
         
@@ -951,100 +809,6 @@ void AnalyticsDashboard::updateCharts()
         series->attachAxis(axisX);
         
         chart->legend()->setVisible(false);
-    }
-    
-    // Update System Efficiency Chart (Area with gradient)
-    {
-        QChart* chart = m_efficiencyChart->chart();
-        chart->removeAllSeries();
-        
-        QLineSeries* upperSeries = new QLineSeries();
-        QLineSeries* lowerSeries = new QLineSeries();
-        
-        qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
-        QRandomGenerator* rng = QRandomGenerator::global();
-        
-        qreal efficiency = 85.0;
-        for (int i = 0; i < 50; i++) {
-            qint64 timestamp = currentTime - (50 - i) * 120000; // Last 100 minutes
-            efficiency += (rng->bounded(1000) / 1000.0 - 0.5) * 5;
-            efficiency = qBound(70.0, efficiency, 98.0);
-            
-            upperSeries->append(timestamp, efficiency);
-            lowerSeries->append(timestamp, 0);
-        }
-        
-        QAreaSeries* areaSeries = new QAreaSeries(upperSeries, lowerSeries);
-        areaSeries->setName("Efficiency");
-        areaSeries->setColor(QColor(155, 89, 182, 150));
-        areaSeries->setBorderColor(QColor(155, 89, 182));
-        
-        chart->addSeries(areaSeries);
-        
-        QValueAxis* axisX = new QValueAxis();
-        axisX->setTitleText("Time");
-        axisX->setLabelsColor(m_textColor);
-        axisX->setGridLineColor(m_gridColor);
-        
-        QValueAxis* axisY = new QValueAxis();
-        axisY->setRange(0, 100);
-        axisY->setTitleText("Efficiency (%)");
-        axisY->setLabelsColor(m_textColor);
-        axisY->setGridLineColor(m_gridColor);
-        
-        chart->setAxisX(axisX, areaSeries);
-        chart->setAxisY(axisY, areaSeries);
-        
-        chart->legend()->setVisible(false);
-    }
-    
-    // Update Uptime Chart (Stacked Bar)
-    {
-        QChart* chart = m_upTimeChart->chart();
-        chart->removeAllSeries();
-        
-        QBarSeries* series = new QBarSeries();
-        series->setBarWidth(0.8);
-        
-        QBarSet* uptimeSet = new QBarSet("Uptime");
-        uptimeSet->setColor(QColor(46, 204, 113));
-        
-        QBarSet* downtimeSet = new QBarSet("Downtime");
-        downtimeSet->setColor(QColor(231, 76, 60));
-        
-        QStringList categories;
-        int count = 0;
-        
-        QRandomGenerator* rng = QRandomGenerator::global();
-        for (auto it = m_componentData.begin(); it != m_componentData.end() && count < 6; ++it) {
-            categories << it.key();
-            
-            qreal uptime = 90.0 + rng->bounded(10);
-            *uptimeSet << uptime;
-            *downtimeSet << (100.0 - uptime);
-            count++;
-        }
-        
-        series->append(uptimeSet);
-        series->append(downtimeSet);
-        chart->addSeries(series);
-        
-        QBarCategoryAxis* axisX = new QBarCategoryAxis();
-        axisX->append(categories);
-        axisX->setLabelsColor(m_textColor);
-        chart->addAxis(axisX, Qt::AlignBottom);
-        series->attachAxis(axisX);
-        
-        QValueAxis* axisY = new QValueAxis();
-        axisY->setRange(0, 100);
-        axisY->setTitleText("Percentage (%)");
-        axisY->setLabelsColor(m_textColor);
-        axisY->setGridLineColor(m_gridColor);
-        chart->addAxis(axisY, Qt::AlignLeft);
-        series->attachAxis(axisY);
-        
-        chart->legend()->setVisible(true);
-        chart->legend()->setAlignment(Qt::AlignTop);
     }
 }
 
@@ -1190,12 +954,15 @@ void AnalyticsDashboard::clear()
 
 void AnalyticsDashboard::refreshDashboard()
 {
-    updateCharts();
+    // Update all charts when refresh button is clicked
+    updateAllCharts();
+    // Also update the real-time chart
+    updateHealthTrendChart();
 }
 
 void AnalyticsDashboard::onThemeChanged()
 {
-    // Recreate UI with new theme colors
+    // Update theme colors
     ThemeManager& tm = ThemeManager::instance();
     AppTheme theme = tm.currentTheme();
     
@@ -1211,6 +978,7 @@ void AnalyticsDashboard::onThemeChanged()
         m_chartBgColor = QColor(255, 255, 255);
     }
     
-    // Reapply theme to all charts
-    updateCharts();
+    // Refresh all charts with new theme
+    updateHealthTrendChart();
+    updateAllCharts();
 }
