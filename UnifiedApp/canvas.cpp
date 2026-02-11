@@ -735,6 +735,10 @@ QString Canvas::saveToJson() const
             subObj["name"] = sub->getName();
             subObj["health"] = sub->getHealth();
             subObj["color"] = sub->getColor().name();
+            subObj["x"] = sub->pos().x();
+            subObj["y"] = sub->pos().y();
+            subObj["width"] = sub->getWidth();
+            subObj["height"] = sub->getHeight();
             subArray.append(subObj);
         }
         compObj["subcomponents"] = subArray;
@@ -897,6 +901,17 @@ void Canvas::loadFromJson(const QString& json)
             if (sub) {
                 sub->setHealth(subObj["health"].toDouble(100));
                 sub->setColor(QColor(subObj["color"].toString("#4CAF50")));
+                
+                // Restore position and size if present
+                if (subObj.contains("x") && subObj.contains("y")) {
+                    sub->setPos(subObj["x"].toDouble(), subObj["y"].toDouble());
+                }
+                if (subObj.contains("width")) {
+                    sub->setWidth(subObj["width"].toDouble());
+                }
+                if (subObj.contains("height")) {
+                    sub->setHeight(subObj["height"].toDouble());
+                }
             }
         }
         
