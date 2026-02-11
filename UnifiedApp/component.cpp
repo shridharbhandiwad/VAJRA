@@ -74,10 +74,20 @@ void Component::addSubComponent(const QString& name)
     SubComponent* sub = new SubComponent(name, index, this);
     m_subComponents.append(sub);
     
-    // Position the new subcomponent at a default location within the design container
+    // Position the new subcomponent in a 2xN grid layout for better visual appearance
     QRectF container = designContainerRect();
-    qreal xOffset = container.left() + 10 + (index % 3) * 50;  // Stagger horizontally
-    qreal yOffset = container.top() + 25 + (index / 3) * 40;   // Stagger vertically
+    qreal subWidth = SubComponent::defaultWidth();
+    qreal subHeight = SubComponent::defaultHeight();
+    qreal horizontalSpacing = 15;  // Space between columns
+    qreal verticalSpacing = 10;     // Space between rows
+    qreal leftMargin = 15;          // Left margin
+    qreal topMargin = 25;           // Top margin
+    
+    int column = index % 2;  // 2 columns (0 or 1)
+    int row = index / 2;      // Row number
+    
+    qreal xOffset = container.left() + leftMargin + column * (subWidth + horizontalSpacing);
+    qreal yOffset = container.top() + topMargin + row * (subHeight + verticalSpacing);
     sub->setPos(xOffset, yOffset);
     
     prepareGeometryChange();
