@@ -37,7 +37,7 @@ AnalyticsDashboard::AnalyticsDashboard(QWidget* parent)
 {
     setObjectName("AnalyticsDashboard");
     setWindowTitle("DATA ANALYTICS DASHBOARD");
-    resize(1600, 1000);
+    resize(1400, 850);
     
     // Initialize chart grids
     for (int i = 0; i < 4; i++) {
@@ -87,14 +87,14 @@ void AnalyticsDashboard::setupUI()
     
     m_centralWidget = new QWidget();
     m_mainLayout = new QVBoxLayout(m_centralWidget);
-    m_mainLayout->setSpacing(24);
-    m_mainLayout->setContentsMargins(32, 28, 32, 32);
+    m_mainLayout->setSpacing(12);
+    m_mainLayout->setContentsMargins(16, 12, 16, 16);
     
     // ========== HEADER SECTION WITH ENHANCED STYLING ==========
     QWidget* headerWidget = new QWidget();
     headerWidget->setObjectName("dashboardHeader");
     QVBoxLayout* headerMainLayout = new QVBoxLayout(headerWidget);
-    headerMainLayout->setSpacing(16);
+    headerMainLayout->setSpacing(8);
     headerMainLayout->setContentsMargins(0, 0, 0, 0);
     
     // Title row with icon-like decoration
@@ -104,11 +104,11 @@ void AnalyticsDashboard::setupUI()
     QLabel* titleLabel = new QLabel("ADVANCED DATA ANALYTICS");
     titleLabel->setObjectName("dashboardTitle");
     QFont titleFont;
-    titleFont.setPointSize(26);
+    titleFont.setPointSize(18);
     titleFont.setBold(true);
     titleFont.setWeight(QFont::ExtraBold);
     titleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 1.2);
+    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 1.0);
     titleLabel->setFont(titleFont);
     
     titleRow->addWidget(titleLabel);
@@ -118,32 +118,32 @@ void AnalyticsDashboard::setupUI()
     QLabel* subtitleLabel = new QLabel("Real-time system monitoring and performance analytics");
     subtitleLabel->setObjectName("dashboardSubtitle");
     QFont subtitleFont;
-    subtitleFont.setPointSize(12);
+    subtitleFont.setPointSize(9);
     subtitleFont.setWeight(QFont::Normal);
     subtitleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    subtitleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.3);
+    subtitleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.2);
     subtitleLabel->setFont(subtitleFont);
     
     // Controls row with better spacing and styling
     QHBoxLayout* controlsRow = new QHBoxLayout();
-    controlsRow->setSpacing(16);
+    controlsRow->setSpacing(12);
     
     QLabel* filterLabel = new QLabel("FILTER:");
     filterLabel->setObjectName("filterLabel");
     QFont labelFont;
-    labelFont.setPointSize(10);
+    labelFont.setPointSize(9);
     labelFont.setBold(true);
     labelFont.setWeight(QFont::Bold);
     labelFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    labelFont.setLetterSpacing(QFont::AbsoluteSpacing, 1.0);
+    labelFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.8);
     filterLabel->setFont(labelFont);
     
     m_componentFilterCombo = new QComboBox();
     m_componentFilterCombo->setObjectName("dashboardCombo");
     m_componentFilterCombo->addItem("ALL COMPONENTS");
-    m_componentFilterCombo->setFixedWidth(220);
+    m_componentFilterCombo->setFixedWidth(180);
     QFont comboFont;
-    comboFont.setPointSize(11);
+    comboFont.setPointSize(9);
     comboFont.setWeight(QFont::Medium);
     comboFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
     m_componentFilterCombo->setFont(comboFont);
@@ -158,7 +158,7 @@ void AnalyticsDashboard::setupUI()
     m_timeRangeCombo->setObjectName("dashboardCombo");
     m_timeRangeCombo->addItems({"Last Hour", "Last 6 Hours", "Last 24 Hours", "Last Week"});
     m_timeRangeCombo->setCurrentIndex(2);
-    m_timeRangeCombo->setFixedWidth(170);
+    m_timeRangeCombo->setFixedWidth(140);
     m_timeRangeCombo->setFont(comboFont);
     
     controlsRow->addWidget(filterLabel);
@@ -169,21 +169,21 @@ void AnalyticsDashboard::setupUI()
     
     m_refreshBtn = new QPushButton("REFRESH");
     m_refreshBtn->setObjectName("dashboardRefreshBtn");
-    m_refreshBtn->setMinimumWidth(120);
-    m_refreshBtn->setFixedHeight(42);
+    m_refreshBtn->setMinimumWidth(90);
+    m_refreshBtn->setFixedHeight(32);
     QFont btnFont;
-    btnFont.setPointSize(10);
+    btnFont.setPointSize(9);
     btnFont.setBold(true);
     btnFont.setWeight(QFont::Bold);
     btnFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    btnFont.setLetterSpacing(QFont::AbsoluteSpacing, 1.0);
+    btnFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.8);
     m_refreshBtn->setFont(btnFont);
     connect(m_refreshBtn, &QPushButton::clicked, this, &AnalyticsDashboard::refreshDashboard);
     
     m_exportBtn = new QPushButton("EXPORT PDF");
     m_exportBtn->setObjectName("dashboardExportBtn");
-    m_exportBtn->setMinimumWidth(130);
-    m_exportBtn->setFixedHeight(42);
+    m_exportBtn->setMinimumWidth(100);
+    m_exportBtn->setFixedHeight(32);
     m_exportBtn->setFont(btnFont);
     connect(m_exportBtn, &QPushButton::clicked, this, &AnalyticsDashboard::onExportToPDF);
     
@@ -209,8 +209,8 @@ void AnalyticsDashboard::setupUI()
     // ========== ENHANCED 2x2 CHARTS GRID ==========
     QGridLayout* chartsGrid = new QGridLayout();
     chartsGrid->setObjectName("chartsGrid");
-    chartsGrid->setSpacing(24);
-    chartsGrid->setContentsMargins(0, 8, 0, 0);
+    chartsGrid->setSpacing(12);
+    chartsGrid->setContentsMargins(0, 4, 0, 0);
     
     // Create 2x2 grid with default chart types
     m_chartGrids[0].containerWidget = createChartGrid(0, ChartType::HealthTrend);
@@ -243,7 +243,7 @@ QWidget* AnalyticsDashboard::createKPISection()
     QWidget* kpiWidget = new QWidget();
     kpiWidget->setObjectName("kpiSection");
     QHBoxLayout* kpiLayout = new QHBoxLayout(kpiWidget);
-    kpiLayout->setSpacing(20);
+    kpiLayout->setSpacing(12);
     kpiLayout->setContentsMargins(0, 0, 0, 0);
     
     // Create KPI cards with enhanced visual design and varied colors
@@ -269,31 +269,31 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
 {
     QWidget* card = new QWidget();
     card->setObjectName("kpiCard");
-    card->setMinimumHeight(140);
-    card->setMaximumHeight(160);
+    card->setMinimumHeight(90);
+    card->setMaximumHeight(110);
     
     // Enhanced border with gradient effect using color
     QString gradientColor = color.lighter(110).name();
     card->setStyleSheet(QString(
         "QWidget#kpiCard { "
-        "   border-left: 5px solid %1; "
+        "   border-left: 4px solid %1; "
         "   border-top: 1px solid %2; "
         "}"
     ).arg(color.name(), gradientColor));
     
     QVBoxLayout* cardLayout = new QVBoxLayout(card);
-    cardLayout->setSpacing(8);
-    cardLayout->setContentsMargins(20, 18, 20, 18);
+    cardLayout->setSpacing(4);
+    cardLayout->setContentsMargins(12, 10, 12, 10);
     
     // Title with icon
     QLabel* titleLabel = new QLabel(title);
     titleLabel->setObjectName("kpiTitle");
     QFont titleFont;
-    titleFont.setPointSize(12);
+    titleFont.setPointSize(9);
     titleFont.setBold(true);
     titleFont.setWeight(QFont::Bold);
     titleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 1.2);
+    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.8);
     titleLabel->setFont(titleFont);
     titleLabel->setStyleSheet(QString("color: %1;").arg(color.name()));
     titleLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -302,11 +302,11 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     QLabel* valueLabel = new QLabel(value);
     valueLabel->setObjectName("kpiValue");
     QFont valueFont;
-    valueFont.setPointSize(42);
+    valueFont.setPointSize(28);
     valueFont.setBold(true);
     valueFont.setWeight(QFont::Black);
     valueFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    valueFont.setLetterSpacing(QFont::AbsoluteSpacing, -2.0);
+    valueFont.setLetterSpacing(QFont::AbsoluteSpacing, -1.5);
     valueLabel->setFont(valueFont);
     valueLabel->setAlignment(Qt::AlignCenter);
     
@@ -320,17 +320,17 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     QLabel* subtitleLabel = new QLabel(subtitle);
     subtitleLabel->setObjectName("kpiSubtitle");
     QFont subtitleFont;
-    subtitleFont.setPointSize(10);
+    subtitleFont.setPointSize(8);
     subtitleFont.setWeight(QFont::Medium);
     subtitleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    subtitleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.6);
+    subtitleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.4);
     subtitleLabel->setFont(subtitleFont);
     subtitleLabel->setAlignment(Qt::AlignCenter);
     
     // Progress bar or indicator (visual enhancement)
     QFrame* progressBar = new QFrame();
     progressBar->setObjectName("kpiProgressBar");
-    progressBar->setFixedHeight(4);
+    progressBar->setFixedHeight(3);
     progressBar->setStyleSheet(QString(
         "QFrame#kpiProgressBar { "
         "   background: qlineargradient(x1:0, y1:0, x2:1, y2:0, "
@@ -352,22 +352,22 @@ QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialTyp
     QWidget* container = new QWidget();
     container->setObjectName("chartContainer");
     QVBoxLayout* layout = new QVBoxLayout(container);
-    layout->setSpacing(14);
-    layout->setContentsMargins(18, 18, 18, 18);
+    layout->setSpacing(8);
+    layout->setContentsMargins(12, 12, 12, 12);
     
     // Chart header with title and dropdown
     QHBoxLayout* headerLayout = new QHBoxLayout();
-    headerLayout->setSpacing(12);
+    headerLayout->setSpacing(8);
     
     // Create dropdown for chart type selection
     QComboBox* chartTypeCombo = new QComboBox();
     chartTypeCombo->setObjectName("chartTypeCombo");
     QFont comboFont;
-    comboFont.setPointSize(10);
+    comboFont.setPointSize(9);
     comboFont.setBold(true);
     comboFont.setWeight(QFont::Bold);
     comboFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    comboFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.5);
+    comboFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.4);
     chartTypeCombo->setFont(comboFont);
     chartTypeCombo->addItem("Health Trend", static_cast<int>(ChartType::HealthTrend));
     chartTypeCombo->addItem("Component Distribution", static_cast<int>(ChartType::ComponentDistribution));
@@ -400,7 +400,7 @@ QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialTyp
     chartView->setRenderHint(QPainter::Antialiasing);
     chartView->setRenderHint(QPainter::TextAntialiasing);
     chartView->setRenderHint(QPainter::SmoothPixmapTransform);
-    chartView->setMinimumHeight(350);
+    chartView->setMinimumHeight(250);
     chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     // Enable tooltips
@@ -863,10 +863,14 @@ void AnalyticsDashboard::updateHealthTrendChart(QChartView* chartView, const QSt
     axisX->setLabelFormat("%.0f");
     
     QFont axisFont;
-    axisFont.setPointSize(10);
+    axisFont.setPointSize(7);
     axisFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
     axisX->setLabelsFont(axisFont);
-    axisX->setTitleFont(axisFont);
+    
+    QFont axisTitleFont;
+    axisTitleFont.setPointSize(8);
+    axisTitleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    axisX->setTitleFont(axisTitleFont);
     
     chart->addAxis(axisX, Qt::AlignBottom);
     
@@ -879,7 +883,7 @@ void AnalyticsDashboard::updateHealthTrendChart(QChartView* chartView, const QSt
     axisY->setLabelFormat("%.0f%%");
     axisY->setTickCount(11);
     axisY->setLabelsFont(axisFont);
-    axisY->setTitleFont(axisFont);
+    axisY->setTitleFont(axisTitleFont);
     chart->addAxis(axisY, Qt::AlignLeft);
     
     // Attach axes to series
@@ -934,11 +938,11 @@ void AnalyticsDashboard::updateComponentDistributionChart(QChartView* chartView,
             slice->setLabelColor(m_textColor);
             slice->setLabelPosition(QPieSlice::LabelOutside);
             slice->setBorderColor(m_chartBgColor);
-            slice->setBorderWidth(3);
+            slice->setBorderWidth(2);
             
             // Professional label font
             QFont labelFont;
-            labelFont.setPointSize(10);
+            labelFont.setPointSize(7);
             labelFont.setBold(true);
             labelFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
             slice->setLabelFont(labelFont);
@@ -1040,7 +1044,7 @@ void AnalyticsDashboard::updateSubsystemPerformanceChart(QChartView* chartView, 
     axisX->setGridLineVisible(false);
     
     QFont axisFont;
-    axisFont.setPointSize(10);
+    axisFont.setPointSize(7);
     axisFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
     axisX->setLabelsFont(axisFont);
     
@@ -1056,7 +1060,11 @@ void AnalyticsDashboard::updateSubsystemPerformanceChart(QChartView* chartView, 
     axisY->setLabelFormat("%.0f%%");
     axisY->setTickCount(11);
     axisY->setLabelsFont(axisFont);
-    axisY->setTitleFont(axisFont);
+    
+    QFont axisTitleFont;
+    axisTitleFont.setPointSize(8);
+    axisTitleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    axisY->setTitleFont(axisTitleFont);
     chart->addAxis(axisY, Qt::AlignLeft);
     barSeries->attachAxis(axisY);
     
@@ -1122,7 +1130,7 @@ void AnalyticsDashboard::updateMessageFrequencyChart(QChartView* chartView, cons
     axisX->setGridLineVisible(false);
     
     QFont axisFont;
-    axisFont.setPointSize(10);
+    axisFont.setPointSize(7);
     axisFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
     axisX->setLabelsFont(axisFont);
     
@@ -1136,7 +1144,11 @@ void AnalyticsDashboard::updateMessageFrequencyChart(QChartView* chartView, cons
     axisY->setMinorGridLineColor(m_gridColor.lighter(110));
     axisY->setLabelFormat("%.0f");
     axisY->setLabelsFont(axisFont);
-    axisY->setTitleFont(axisFont);
+    
+    QFont axisTitleFont;
+    axisTitleFont.setPointSize(8);
+    axisTitleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    axisY->setTitleFont(axisTitleFont);
     chart->addAxis(axisY, Qt::AlignLeft);
     barSeries->attachAxis(axisY);
     
@@ -1202,7 +1214,7 @@ void AnalyticsDashboard::updateAlertHistoryChart(QChartView* chartView, const QS
     axisX->setGridLineVisible(false);
     
     QFont axisFont;
-    axisFont.setPointSize(10);
+    axisFont.setPointSize(7);
     axisFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
     axisX->setLabelsFont(axisFont);
     
@@ -1216,7 +1228,11 @@ void AnalyticsDashboard::updateAlertHistoryChart(QChartView* chartView, const QS
     axisY->setMinorGridLineColor(m_gridColor.lighter(110));
     axisY->setLabelFormat("%.0f");
     axisY->setLabelsFont(axisFont);
-    axisY->setTitleFont(axisFont);
+    
+    QFont axisTitleFont;
+    axisTitleFont.setPointSize(8);
+    axisTitleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    axisY->setTitleFont(axisTitleFont);
     chart->addAxis(axisY, Qt::AlignLeft);
     barSeries->attachAxis(axisY);
     
@@ -1293,7 +1309,7 @@ void AnalyticsDashboard::updateComponentComparisonChart(QChartView* chartView, c
     axisY->setGridLineVisible(false);
     
     QFont axisFont;
-    axisFont.setPointSize(10);
+    axisFont.setPointSize(7);
     axisFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
     axisY->setLabelsFont(axisFont);
     
@@ -1309,7 +1325,11 @@ void AnalyticsDashboard::updateComponentComparisonChart(QChartView* chartView, c
     axisX->setLabelFormat("%.0f%%");
     axisX->setTickCount(11);
     axisX->setLabelsFont(axisFont);
-    axisX->setTitleFont(axisFont);
+    
+    QFont axisTitleFont;
+    axisTitleFont.setPointSize(8);
+    axisTitleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    axisX->setTitleFont(axisTitleFont);
     chart->addAxis(axisX, Qt::AlignBottom);
     barSeries->attachAxis(axisX);
     
@@ -1321,18 +1341,18 @@ void AnalyticsDashboard::applyChartTheme(QChart* chart)
 {
     chart->setBackgroundBrush(QBrush(m_chartBgColor));
     chart->setTitleBrush(QBrush(m_textColor));
-    chart->setBackgroundRoundness(10);
+    chart->setBackgroundRoundness(8);
     chart->setAnimationOptions(QChart::AllAnimations);
-    chart->setAnimationDuration(1000);
+    chart->setAnimationDuration(800);
     chart->setAnimationEasingCurve(QEasingCurve::OutCubic);
     
     // Modern title font with better styling
     QFont titleFont;
-    titleFont.setPointSize(15);
+    titleFont.setPointSize(11);
     titleFont.setBold(true);
     titleFont.setWeight(QFont::Bold);
     titleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.8);
+    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.6);
     chart->setTitleFont(titleFont);
     
     // Enhanced legend styling
@@ -1343,11 +1363,11 @@ void AnalyticsDashboard::applyChartTheme(QChart* chart)
         chart->legend()->setShowToolTips(true);
         
         QFont legendFont;
-        legendFont.setPointSize(9);
+        legendFont.setPointSize(7);
         legendFont.setBold(false);
         legendFont.setWeight(QFont::Medium);
         legendFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-        legendFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.3);
+        legendFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.2);
         chart->legend()->setFont(legendFont);
         
         // Enhanced legend styling with better visual appearance
@@ -1357,7 +1377,7 @@ void AnalyticsDashboard::applyChartTheme(QChart* chart)
     }
     
     // Optimized margins for better data visibility
-    chart->setMargins(QMargins(18, 20, 18, 18));
+    chart->setMargins(QMargins(10, 12, 10, 10));
     
     // Drop shadow effect for depth (simulated via styling)
     chart->setDropShadowEnabled(false); // We'll use CSS shadows instead
