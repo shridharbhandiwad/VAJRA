@@ -134,13 +134,32 @@ void Canvas::removeComponentsByType(const QString& typeId)
     }
     
     // Remove connections involving these components first
+    // This includes connections to the component itself or any of its subcomponents
     QList<Connection*> connectionsToRemove;
     for (Component* comp : componentsToRemove) {
         for (Connection* conn : m_connections) {
+            bool shouldRemove = false;
+            
+            // Check if connection involves this component directly
             if (conn->getSource() == comp || conn->getTarget() == comp) {
-                if (!connectionsToRemove.contains(conn)) {
-                    connectionsToRemove.append(conn);
+                shouldRemove = true;
+            }
+            
+            // Check if connection involves any subcomponents of this component
+            if (!shouldRemove) {
+                SubComponent* srcSub = conn->getSourceSub();
+                SubComponent* tgtSub = conn->getTargetSub();
+                
+                if (srcSub && srcSub->parentComponent() == comp) {
+                    shouldRemove = true;
                 }
+                if (tgtSub && tgtSub->parentComponent() == comp) {
+                    shouldRemove = true;
+                }
+            }
+            
+            if (shouldRemove && !connectionsToRemove.contains(conn)) {
+                connectionsToRemove.append(conn);
             }
         }
     }
@@ -700,8 +719,49 @@ QString Canvas::saveToJson() const
     for (Connection* conn : m_connections) {
         QJsonObject connObj;
         connObj["id"] = conn->getId();
-        connObj["source"] = conn->getSource()->getId();
-        connObj["target"] = conn->getTarget()->getId();
+        
+        // Handle source - could be Component or SubComponent
+        Component* srcComp = conn->getSource();
+        SubComponent* srcSub = conn->getSourceSub();
+        if (srcComp) {
+            connObj["source"] = srcComp->getId();
+            connObj["sourceType"] = "component";
+        } else if (srcSub) {
+            Component* parentComp = srcSub->parentComponent();
+            if (parentComp) {
+                connObj["source"] = parentComp->getId();
+                connObj["sourceSubComponent"] = srcSub->getName();
+                connObj["sourceType"] = "subcomponent";
+            } else {
+                qWarning() << "[Canvas] SubComponent connection has no parent component (source)";
+                continue; // Skip this connection
+            }
+        } else {
+            qWarning() << "[Canvas] Connection has invalid source";
+            continue;
+        }
+        
+        // Handle target - could be Component or SubComponent
+        Component* tgtComp = conn->getTarget();
+        SubComponent* tgtSub = conn->getTargetSub();
+        if (tgtComp) {
+            connObj["target"] = tgtComp->getId();
+            connObj["targetType"] = "component";
+        } else if (tgtSub) {
+            Component* parentComp = tgtSub->parentComponent();
+            if (parentComp) {
+                connObj["target"] = parentComp->getId();
+                connObj["targetSubComponent"] = tgtSub->getName();
+                connObj["targetType"] = "subcomponent";
+            } else {
+                qWarning() << "[Canvas] SubComponent connection has no parent component (target)";
+                continue; // Skip this connection
+            }
+        } else {
+            qWarning() << "[Canvas] Connection has invalid target";
+            continue;
+        }
+        
         connObj["type"] = Connection::connectionTypeToString(conn->getConnectionType());
         connObj["label"] = conn->getLabel();
         connObj["color"] = conn->getColor().name();
@@ -843,22 +903,67 @@ void Canvas::loadFromJson(const QString& json)
         
         QString sourceId = connObj["source"].toString();
         QString targetId = connObj["target"].toString();
+        QString sourceType = connObj["sourceType"].toString("component"); // Default to component for backwards compatibility
+        QString targetType = connObj["targetType"].toString("component");
         QString typeStr = connObj["type"].toString("unidirectional");
         QString label = connObj["label"].toString();
         QString colorStr = connObj["color"].toString();
         
-        Component* source = getComponentById(sourceId);
-        Component* target = getComponentById(targetId);
+        QGraphicsItem* sourceItem = nullptr;
+        QGraphicsItem* targetItem = nullptr;
         
-        if (source && target) {
+        // Resolve source item
+        if (sourceType == "subcomponent") {
+            QString subComponentName = connObj["sourceSubComponent"].toString();
+            Component* parentComp = getComponentById(sourceId);
+            if (parentComp) {
+                sourceItem = parentComp->getSubComponent(subComponentName);
+                if (!sourceItem) {
+                    qWarning() << "[Canvas] Could not find source SubComponent:" << subComponentName
+                               << "in component:" << sourceId;
+                }
+            } else {
+                qWarning() << "[Canvas] Could not find parent component for source SubComponent:" << sourceId;
+            }
+        } else {
+            sourceItem = getComponentById(sourceId);
+            if (!sourceItem) {
+                qWarning() << "[Canvas] Could not find source Component:" << sourceId;
+            }
+        }
+        
+        // Resolve target item
+        if (targetType == "subcomponent") {
+            QString subComponentName = connObj["targetSubComponent"].toString();
+            Component* parentComp = getComponentById(targetId);
+            if (parentComp) {
+                targetItem = parentComp->getSubComponent(subComponentName);
+                if (!targetItem) {
+                    qWarning() << "[Canvas] Could not find target SubComponent:" << subComponentName
+                               << "in component:" << targetId;
+                }
+            } else {
+                qWarning() << "[Canvas] Could not find parent component for target SubComponent:" << targetId;
+            }
+        } else {
+            targetItem = getComponentById(targetId);
+            if (!targetItem) {
+                qWarning() << "[Canvas] Could not find target Component:" << targetId;
+            }
+        }
+        
+        // Create the connection if both endpoints were found
+        if (sourceItem && targetItem) {
             ConnectionType type = Connection::stringToConnectionType(typeStr);
-            Connection* conn = addConnection(source, target, type, label);
+            Connection* conn = addConnectionBetweenItems(sourceItem, targetItem, type, label);
             if (conn && !colorStr.isEmpty()) {
                 conn->setColor(QColor(colorStr));
             }
         } else {
             qWarning() << "[Canvas] Could not load connection: source=" << sourceId 
-                       << "target=" << targetId;
+                       << "(" << sourceType << ")"
+                       << "target=" << targetId
+                       << "(" << targetType << ")";
         }
     }
     
