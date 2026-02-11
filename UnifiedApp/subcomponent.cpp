@@ -1,5 +1,6 @@
 #include "subcomponent.h"
 #include "component.h"
+#include "canvas.h"
 #include "thememanager.h"
 #include <QPainter>
 #include <QDebug>
@@ -73,7 +74,14 @@ void SubComponent::paint(QPainter* painter, const QStyleOptionGraphicsItem* opti
     
     // Selection highlight and resize handles
     if (isSelected()) {
-        paintResizeHandles(painter);
+        // Only show resize handles in Designer mode
+        Canvas* canvas = nullptr;
+        if (scene()) {
+            canvas = qobject_cast<Canvas*>(scene()->parent());
+        }
+        if (canvas && canvas->getUserRole() == UserRole::Designer) {
+            paintResizeHandles(painter);
+        }
     }
 }
 
@@ -227,13 +235,20 @@ QPointF SubComponent::constrainToBoundary(const QPointF& proposedPos) const
 void SubComponent::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
     if (event->button() == Qt::LeftButton && isSelected()) {
-        ResizeHandle handle = handleAt(event->pos());
-        if (handle != HandleNone) {
-            m_activeHandle = handle;
-            m_resizing = true;
-            m_lastMouseScenePos = event->scenePos();
-            event->accept();
-            return;
+        // Only allow resizing in Designer mode
+        Canvas* canvas = nullptr;
+        if (scene()) {
+            canvas = qobject_cast<Canvas*>(scene()->parent());
+        }
+        if (canvas && canvas->getUserRole() == UserRole::Designer) {
+            ResizeHandle handle = handleAt(event->pos());
+            if (handle != HandleNone) {
+                m_activeHandle = handle;
+                m_resizing = true;
+                m_lastMouseScenePos = event->scenePos();
+                event->accept();
+                return;
+            }
         }
     }
     if (event->button() == Qt::LeftButton) {
@@ -346,27 +361,36 @@ void SubComponent::mouseReleaseEvent(QGraphicsSceneMouseEvent* event)
 void SubComponent::hoverMoveEvent(QGraphicsSceneHoverEvent* event)
 {
     if (isSelected()) {
-        ResizeHandle handle = handleAt(event->pos());
-        switch (handle) {
-        case HandleTopLeft:
-        case HandleBottomRight:
-            setCursor(Qt::SizeFDiagCursor);
-            break;
-        case HandleTopRight:
-        case HandleBottomLeft:
-            setCursor(Qt::SizeBDiagCursor);
-            break;
-        case HandleTop:
-        case HandleBottom:
-            setCursor(Qt::SizeVerCursor);
-            break;
-        case HandleLeft:
-        case HandleRight:
-            setCursor(Qt::SizeHorCursor);
-            break;
-        default:
+        // Only show resize cursors in Designer mode
+        Canvas* canvas = nullptr;
+        if (scene()) {
+            canvas = qobject_cast<Canvas*>(scene()->parent());
+        }
+        if (canvas && canvas->getUserRole() == UserRole::Designer) {
+            ResizeHandle handle = handleAt(event->pos());
+            switch (handle) {
+            case HandleTopLeft:
+            case HandleBottomRight:
+                setCursor(Qt::SizeFDiagCursor);
+                break;
+            case HandleTopRight:
+            case HandleBottomLeft:
+                setCursor(Qt::SizeBDiagCursor);
+                break;
+            case HandleTop:
+            case HandleBottom:
+                setCursor(Qt::SizeVerCursor);
+                break;
+            case HandleLeft:
+            case HandleRight:
+                setCursor(Qt::SizeHorCursor);
+                break;
+            default:
+                setCursor(Qt::OpenHandCursor);
+                break;
+            }
+        } else {
             setCursor(Qt::OpenHandCursor);
-            break;
         }
     } else {
         setCursor(Qt::OpenHandCursor);
