@@ -13,18 +13,17 @@
 #include <QtCharts/QChart>
 #include <QtCharts/QLegend>
 #include <QDebug>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QPrinter>
+#include <QPainter>
+#include <QPixmap>
 
 AnalyticsDashboard::AnalyticsDashboard(QWidget* parent)
     : QMainWindow(parent)
     , m_scrollArea(nullptr)
     , m_centralWidget(nullptr)
     , m_mainLayout(nullptr)
-    , m_healthTrendChart(nullptr)
-    , m_componentDistChart(nullptr)
-    , m_subsystemPerfChart(nullptr)
-    , m_messageFreqChart(nullptr)
-    , m_alertHistoryChart(nullptr)
-    , m_comparisonChart(nullptr)
     , m_totalComponentsLabel(nullptr)
     , m_activeComponentsLabel(nullptr)
     , m_avgHealthLabel(nullptr)
@@ -35,8 +34,15 @@ AnalyticsDashboard::AnalyticsDashboard(QWidget* parent)
     , m_exportBtn(nullptr)
     , m_updateTimer(nullptr)
 {
-    setWindowTitle("Advanced Analytics Dashboard");
-    resize(1400, 900);
+    setWindowTitle("DATA ANALYTICS DASHBOARD");
+    resize(1600, 1000);
+    
+    // Initialize chart grids
+    for (int i = 0; i < 4; i++) {
+        m_chartGrids[i].chartView = nullptr;
+        m_chartGrids[i].chartTypeCombo = nullptr;
+        m_chartGrids[i].containerWidget = nullptr;
+    }
     
     // Connect to theme changes
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged,
@@ -45,13 +51,12 @@ AnalyticsDashboard::AnalyticsDashboard(QWidget* parent)
     setupUI();
     generateSampleData();
     updateKPIs();
-    updateHealthTrendChart();  // Initialize real-time chart
-    updateAllCharts();         // Initialize all other charts
+    updateAllCharts();
     
-    // Setup auto-refresh timer for ONLY the time-series chart
+    // Setup auto-refresh timer
     m_updateTimer = new QTimer(this);
-    connect(m_updateTimer, &QTimer::timeout, this, &AnalyticsDashboard::updateHealthTrendChart);
-    m_updateTimer->start(3000); // Update time-series every 3 seconds
+    connect(m_updateTimer, &QTimer::timeout, this, &AnalyticsDashboard::updateAllCharts);
+    m_updateTimer->start(3000); // Update every 3 seconds
 }
 
 AnalyticsDashboard::~AnalyticsDashboard()
@@ -86,43 +91,66 @@ void AnalyticsDashboard::setupUI()
     
     m_centralWidget = new QWidget();
     m_mainLayout = new QVBoxLayout(m_centralWidget);
-    m_mainLayout->setSpacing(25);
-    m_mainLayout->setContentsMargins(30, 30, 30, 30);
+    m_mainLayout->setSpacing(20);
+    m_mainLayout->setContentsMargins(25, 25, 25, 25);
     
     // ========== HEADER SECTION ==========
     QWidget* headerWidget = new QWidget();
     QHBoxLayout* headerLayout = new QHBoxLayout(headerWidget);
     headerLayout->setSpacing(15);
     
-    QLabel* titleLabel = new QLabel("Analytics Dashboard");
+    QLabel* titleLabel = new QLabel("DATA ANALYTICS DASHBOARD");
     QFont titleFont = titleLabel->font();
-    titleFont.setPointSize(22);
+    titleFont.setPointSize(26);
     titleFont.setBold(true);
+    titleFont.setFamily("Arial");
     titleLabel->setFont(titleFont);
-    titleLabel->setStyleSheet(QString("color: %1;").arg(m_textColor.name()));
+    titleLabel->setStyleSheet(QString("color: %1; letter-spacing: 2px;").arg(m_textColor.name()));
     
     headerLayout->addWidget(titleLabel);
     headerLayout->addStretch();
     
-    // Controls - Simplified
-    m_timeRangeCombo = new QComboBox();
-    m_timeRangeCombo->addItems({"Last Hour", "Last 6 Hours", "Last 24 Hours", "Last Week"});
-    m_timeRangeCombo->setCurrentIndex(2);
-    m_timeRangeCombo->setFixedWidth(140);
+    // Controls
+    QLabel* filterLabel = new QLabel("COMPONENT:");
+    QFont labelFont = filterLabel->font();
+    labelFont.setPointSize(11);
+    labelFont.setBold(true);
+    filterLabel->setFont(labelFont);
+    filterLabel->setStyleSheet(QString("color: %1;").arg(m_textColor.name()));
     
     m_componentFilterCombo = new QComboBox();
-    m_componentFilterCombo->addItem("All Components");
-    m_componentFilterCombo->setFixedWidth(160);
+    m_componentFilterCombo->addItem("ALL COMPONENTS");
+    m_componentFilterCombo->setFixedWidth(200);
+    QFont comboFont;
+    comboFont.setPointSize(11);
+    m_componentFilterCombo->setFont(comboFont);
+    connect(m_componentFilterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &AnalyticsDashboard::onComponentFilterChanged);
     
-    m_refreshBtn = new QPushButton("Refresh");
-    m_refreshBtn->setFixedWidth(90);
+    m_timeRangeCombo = new QComboBox();
+    m_timeRangeCombo->addItems({"LAST HOUR", "LAST 6 HOURS", "LAST 24 HOURS", "LAST WEEK"});
+    m_timeRangeCombo->setCurrentIndex(2);
+    m_timeRangeCombo->setFixedWidth(150);
+    m_timeRangeCombo->setFont(comboFont);
+    
+    m_refreshBtn = new QPushButton("REFRESH");
+    m_refreshBtn->setFixedWidth(110);
+    m_refreshBtn->setFixedHeight(32);
+    QFont btnFont;
+    btnFont.setPointSize(11);
+    btnFont.setBold(true);
+    m_refreshBtn->setFont(btnFont);
     connect(m_refreshBtn, &QPushButton::clicked, this, &AnalyticsDashboard::refreshDashboard);
     
-    m_exportBtn = new QPushButton("Export");
-    m_exportBtn->setFixedWidth(90);
+    m_exportBtn = new QPushButton("EXPORT PDF");
+    m_exportBtn->setFixedWidth(120);
+    m_exportBtn->setFixedHeight(32);
+    m_exportBtn->setFont(btnFont);
+    connect(m_exportBtn, &QPushButton::clicked, this, &AnalyticsDashboard::onExportToPDF);
     
-    headerLayout->addWidget(m_timeRangeCombo);
+    headerLayout->addWidget(filterLabel);
     headerLayout->addWidget(m_componentFilterCombo);
+    headerLayout->addWidget(m_timeRangeCombo);
     headerLayout->addWidget(m_refreshBtn);
     headerLayout->addWidget(m_exportBtn);
     
@@ -131,35 +159,30 @@ void AnalyticsDashboard::setupUI()
     // ========== KPI SECTION ==========
     m_mainLayout->addWidget(createKPISection());
     
-    // ========== CHARTS SECTION - REDESIGNED GRID ==========
-    createCharts();
-    
-    // Use Grid Layout for better control and cleaner design
+    // ========== 2x2 CHARTS GRID ==========
     QGridLayout* chartsGrid = new QGridLayout();
-    chartsGrid->setSpacing(20);
+    chartsGrid->setSpacing(15);
     chartsGrid->setContentsMargins(0, 0, 0, 0);
     
-    // Row 0: Health Trend Chart - Full width (spans 2 columns)
-    chartsGrid->addWidget(m_healthTrendChart, 0, 0, 1, 2);
+    // Create 2x2 grid with default chart types
+    m_chartGrids[0].containerWidget = createChartGrid(0, ChartType::HealthTrend);
+    m_chartGrids[1].containerWidget = createChartGrid(1, ChartType::ComponentDistribution);
+    m_chartGrids[2].containerWidget = createChartGrid(2, ChartType::SubsystemPerformance);
+    m_chartGrids[3].containerWidget = createChartGrid(3, ChartType::AlertHistory);
     
-    // Row 1: Component Distribution (left) | Subsystem Performance (right)
-    chartsGrid->addWidget(m_componentDistChart, 1, 0);
-    chartsGrid->addWidget(m_subsystemPerfChart, 1, 1);
+    // Add to grid layout (2x2)
+    chartsGrid->addWidget(m_chartGrids[0].containerWidget, 0, 0);
+    chartsGrid->addWidget(m_chartGrids[1].containerWidget, 0, 1);
+    chartsGrid->addWidget(m_chartGrids[2].containerWidget, 1, 0);
+    chartsGrid->addWidget(m_chartGrids[3].containerWidget, 1, 1);
     
-    // Row 2: Message Frequency (left) | Alert History (right)
-    chartsGrid->addWidget(m_messageFreqChart, 2, 0);
-    chartsGrid->addWidget(m_alertHistoryChart, 2, 1);
-    
-    // Row 3: Component Comparison - Full width (spans 2 columns)
-    chartsGrid->addWidget(m_comparisonChart, 3, 0, 1, 2);
-    
-    // Set equal column stretch for balanced layout
+    // Set equal stretch
     chartsGrid->setColumnStretch(0, 1);
     chartsGrid->setColumnStretch(1, 1);
+    chartsGrid->setRowStretch(0, 1);
+    chartsGrid->setRowStretch(1, 1);
     
-    // Add grid to main layout
     m_mainLayout->addLayout(chartsGrid);
-    m_mainLayout->addStretch();
     
     m_scrollArea->setWidget(m_centralWidget);
     setCentralWidget(m_scrollArea);
@@ -172,11 +195,11 @@ QWidget* AnalyticsDashboard::createKPISection()
     kpiLayout->setSpacing(15);
     kpiLayout->setContentsMargins(0, 0, 0, 0);
     
-    // Create KPI cards with cleaner design
-    QWidget* card1 = createKPICard("Total Components", "0", "Monitored", QColor(52, 152, 219));
-    QWidget* card2 = createKPICard("Active", "0", "Online", QColor(46, 204, 113));
-    QWidget* card3 = createKPICard("Avg Health", "0%", "System-Wide", QColor(241, 196, 15));
-    QWidget* card4 = createKPICard("Alerts", "0", "Total Count", QColor(231, 76, 60));
+    // Create KPI cards with military-grade design
+    QWidget* card1 = createKPICard("TOTAL COMPONENTS", "0", "MONITORED", QColor(52, 152, 219));
+    QWidget* card2 = createKPICard("ACTIVE", "0", "ONLINE", QColor(46, 204, 113));
+    QWidget* card3 = createKPICard("AVG HEALTH", "0%", "SYSTEM-WIDE", QColor(241, 196, 15));
+    QWidget* card4 = createKPICard("ALERTS", "0", "TOTAL COUNT", QColor(231, 76, 60));
     
     kpiLayout->addWidget(card1);
     kpiLayout->addWidget(card2);
@@ -189,11 +212,11 @@ QWidget* AnalyticsDashboard::createKPISection()
 QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& value, const QString& subtitle, const QColor& color)
 {
     QWidget* card = new QWidget();
-    card->setMinimumHeight(110);
-    card->setMaximumHeight(130);
+    card->setMinimumHeight(130);
+    card->setMaximumHeight(150);
     card->setStyleSheet(QString(
-        "QWidget { background-color: %1; border-radius: 8px; }"
-    ).arg(m_chartBgColor.name()));
+        "QWidget { background-color: %1; border: 2px solid %2; border-radius: 4px; }"
+    ).arg(m_chartBgColor.name()).arg(color.name()));
     
     QVBoxLayout* cardLayout = new QVBoxLayout(card);
     cardLayout->setSpacing(8);
@@ -201,29 +224,32 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     
     QLabel* titleLabel = new QLabel(title);
     QFont titleFont = titleLabel->font();
-    titleFont.setPointSize(11);
+    titleFont.setPointSize(13);
     titleFont.setBold(true);
+    titleFont.setFamily("Arial");
     titleLabel->setFont(titleFont);
-    titleLabel->setStyleSheet(QString("color: %1;").arg(color.name()));
+    titleLabel->setStyleSheet(QString("color: %1; letter-spacing: 1px;").arg(color.name()));
     titleLabel->setAlignment(Qt::AlignLeft);
     
     QLabel* valueLabel = new QLabel(value);
     QFont valueFont = valueLabel->font();
-    valueFont.setPointSize(32);
+    valueFont.setPointSize(38);
     valueFont.setBold(true);
+    valueFont.setFamily("Arial");
     valueLabel->setFont(valueFont);
     valueLabel->setStyleSheet(QString("color: %1;").arg(m_textColor.name()));
     valueLabel->setAlignment(Qt::AlignCenter);
     
     // Store label for updates
-    if (title == "Total Components") m_totalComponentsLabel = valueLabel;
-    else if (title == "Active") m_activeComponentsLabel = valueLabel;
-    else if (title == "Avg Health") m_avgHealthLabel = valueLabel;
-    else if (title == "Alerts") m_totalAlertsLabel = valueLabel;
+    if (title == "TOTAL COMPONENTS") m_totalComponentsLabel = valueLabel;
+    else if (title == "ACTIVE") m_activeComponentsLabel = valueLabel;
+    else if (title == "AVG HEALTH") m_avgHealthLabel = valueLabel;
+    else if (title == "ALERTS") m_totalAlertsLabel = valueLabel;
     
     QLabel* subtitleLabel = new QLabel(subtitle);
     QFont subtitleFont = subtitleLabel->font();
-    subtitleFont.setPointSize(9);
+    subtitleFont.setPointSize(11);
+    subtitleFont.setBold(true);
     subtitleLabel->setFont(subtitleFont);
     subtitleLabel->setStyleSheet(QString("color: %1;").arg(m_textColor.lighter(140).name()));
     subtitleLabel->setAlignment(Qt::AlignCenter);
@@ -235,110 +261,123 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     return card;
 }
 
+QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialType)
+{
+    QWidget* container = new QWidget();
+    QVBoxLayout* layout = new QVBoxLayout(container);
+    layout->setSpacing(10);
+    layout->setContentsMargins(5, 5, 5, 5);
+    
+    // Create dropdown for chart type selection
+    QComboBox* chartTypeCombo = new QComboBox();
+    QFont comboFont;
+    comboFont.setPointSize(11);
+    comboFont.setBold(true);
+    chartTypeCombo->setFont(comboFont);
+    chartTypeCombo->addItem("HEALTH TREND", static_cast<int>(ChartType::HealthTrend));
+    chartTypeCombo->addItem("COMPONENT DISTRIBUTION", static_cast<int>(ChartType::ComponentDistribution));
+    chartTypeCombo->addItem("SUBSYSTEM PERFORMANCE", static_cast<int>(ChartType::SubsystemPerformance));
+    chartTypeCombo->addItem("MESSAGE FREQUENCY", static_cast<int>(ChartType::MessageFrequency));
+    chartTypeCombo->addItem("ALERT HISTORY", static_cast<int>(ChartType::AlertHistory));
+    chartTypeCombo->addItem("COMPONENT COMPARISON", static_cast<int>(ChartType::ComponentComparison));
+    
+    // Set initial selection
+    chartTypeCombo->setCurrentIndex(static_cast<int>(initialType));
+    
+    // Connect dropdown to update handler
+    connect(chartTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            [this, gridIndex](int index) {
+                this->onChartTypeChanged(gridIndex);
+            });
+    
+    // Create chart view
+    QChart* chart = new QChart();
+    applyChartTheme(chart);
+    QChartView* chartView = new QChartView(chart);
+    chartView->setRenderHint(QPainter::Antialiasing);
+    chartView->setMinimumHeight(400);
+    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    
+    // Enable tooltips
+    enableChartTooltips(chartView);
+    
+    layout->addWidget(chartTypeCombo);
+    layout->addWidget(chartView);
+    
+    // Store in grid structure
+    m_chartGrids[gridIndex].chartView = chartView;
+    m_chartGrids[gridIndex].chartTypeCombo = chartTypeCombo;
+    m_chartGrids[gridIndex].currentChartType = initialType;
+    m_chartGrids[gridIndex].containerWidget = container;
+    
+    return container;
+}
+
+void AnalyticsDashboard::onChartTypeChanged(int gridIndex)
+{
+    if (gridIndex < 0 || gridIndex >= 4) return;
+    
+    // Get selected chart type from combo box
+    ChartType newType = static_cast<ChartType>(
+        m_chartGrids[gridIndex].chartTypeCombo->currentData().toInt()
+    );
+    
+    m_chartGrids[gridIndex].currentChartType = newType;
+    
+    // Update the chart
+    updateChartGrid(gridIndex, newType);
+}
+
+void AnalyticsDashboard::onComponentFilterChanged(int index)
+{
+    // Refresh all charts with the new filter
+    updateAllCharts();
+}
+
+void AnalyticsDashboard::updateChartGrid(int gridIndex, ChartType chartType)
+{
+    if (gridIndex < 0 || gridIndex >= 4) return;
+    
+    QChartView* chartView = m_chartGrids[gridIndex].chartView;
+    if (!chartView) return;
+    
+    // Get current component filter
+    QString componentFilter = m_componentFilterCombo->currentText();
+    if (componentFilter == "ALL COMPONENTS") {
+        componentFilter = "";
+    }
+    
+    updateChart(chartView, chartType, componentFilter);
+}
+
+void AnalyticsDashboard::updateChart(QChartView* chartView, ChartType chartType, const QString& componentFilter)
+{
+    switch (chartType) {
+        case ChartType::HealthTrend:
+            updateHealthTrendChart(chartView, componentFilter);
+            break;
+        case ChartType::ComponentDistribution:
+            updateComponentDistributionChart(chartView, componentFilter);
+            break;
+        case ChartType::SubsystemPerformance:
+            updateSubsystemPerformanceChart(chartView, componentFilter);
+            break;
+        case ChartType::MessageFrequency:
+            updateMessageFrequencyChart(chartView, componentFilter);
+            break;
+        case ChartType::AlertHistory:
+            updateAlertHistoryChart(chartView, componentFilter);
+            break;
+        case ChartType::ComponentComparison:
+            updateComponentComparisonChart(chartView, componentFilter);
+            break;
+    }
+}
+
 void AnalyticsDashboard::createCharts()
 {
-    m_healthTrendChart = createHealthTrendChart();
-    m_componentDistChart = createComponentDistributionChart();
-    m_subsystemPerfChart = createSubsystemPerformanceChart();
-    m_messageFreqChart = createMessageFrequencyChart();
-    m_alertHistoryChart = createAlertHistoryChart();
-    m_comparisonChart = createComponentComparisonChart();
-}
-
-QChartView* AnalyticsDashboard::createHealthTrendChart()
-{
-    QChart* chart = new QChart();
-    chart->setTitle("Component Health Trend (Real-Time)");
-    chart->setAnimationOptions(QChart::NoAnimation);
-    
-    applyChartTheme(chart);
-    
-    QChartView* chartView = new QChartView(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(350);
-    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    
-    return chartView;
-}
-
-QChartView* AnalyticsDashboard::createComponentDistributionChart()
-{
-    QChart* chart = new QChart();
-    chart->setTitle("Component Distribution");
-    chart->setAnimationOptions(QChart::NoAnimation);
-    
-    applyChartTheme(chart);
-    
-    QChartView* chartView = new QChartView(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(320);
-    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    
-    return chartView;
-}
-
-QChartView* AnalyticsDashboard::createSubsystemPerformanceChart()
-{
-    QChart* chart = new QChart();
-    chart->setTitle("Subsystem Performance");
-    chart->setAnimationOptions(QChart::NoAnimation);
-    
-    applyChartTheme(chart);
-    
-    QChartView* chartView = new QChartView(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(320);
-    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    
-    return chartView;
-}
-
-QChartView* AnalyticsDashboard::createMessageFrequencyChart()
-{
-    QChart* chart = new QChart();
-    chart->setTitle("Message Frequency");
-    chart->setAnimationOptions(QChart::NoAnimation);
-    
-    applyChartTheme(chart);
-    
-    QChartView* chartView = new QChartView(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(320);
-    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    
-    return chartView;
-}
-
-QChartView* AnalyticsDashboard::createAlertHistoryChart()
-{
-    QChart* chart = new QChart();
-    chart->setTitle("Alert History");
-    chart->setAnimationOptions(QChart::NoAnimation);
-    
-    applyChartTheme(chart);
-    
-    QChartView* chartView = new QChartView(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(320);
-    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    
-    return chartView;
-}
-
-QChartView* AnalyticsDashboard::createComponentComparisonChart()
-{
-    QChart* chart = new QChart();
-    chart->setTitle("Component Comparison");
-    chart->setAnimationOptions(QChart::NoAnimation);
-    
-    applyChartTheme(chart);
-    
-    QChartView* chartView = new QChartView(chart);
-    chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(300);
-    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    
-    return chartView;
+    // This method is no longer needed with the new architecture
+    // Charts are created dynamically in createChartGrid
 }
 
 void AnalyticsDashboard::generateSampleData()
@@ -347,12 +386,12 @@ void AnalyticsDashboard::generateSampleData()
     qint64 hourMs = 3600000; // 1 hour in milliseconds
     
     // Generate sample components
-    QStringList componentTypes = {"Radar", "Antenna", "PowerSystem", "Communication", "CoolingUnit"};
-    QStringList subsystems = {"Transmitter", "Receiver", "Processor"};
+    QStringList componentTypes = {"RADAR", "ANTENNA", "POWER_SYSTEM", "COMMUNICATION", "COOLING_UNIT"};
+    QStringList subsystems = {"TRANSMITTER", "RECEIVER", "PROCESSOR"};
     
     QRandomGenerator* rng = QRandomGenerator::global();
     
-    // Create 5-8 sample components (reduced from 8-12)
+    // Create 5-8 sample components
     int numComponents = 5 + rng->bounded(4);
     for (int i = 0; i < numComponents; i++) {
         QString componentId = QString("COMP_%1").arg(i + 1, 3, 10, QChar('0'));
@@ -365,8 +404,8 @@ void AnalyticsDashboard::generateSampleData()
         data.alertCount = 0;
         data.lastUpdateTime = currentTime;
         
-        // Generate health history - REDUCED from 288 to 60 points (last 1 hour, every minute)
-        int numPoints = 60; // Much less data
+        // Generate health history - 60 points (last 1 hour, every minute)
+        int numPoints = 60;
         qreal baseHealth = 70.0 + rng->bounded(25);
         
         for (int j = 0; j < numPoints; j++) {
@@ -377,14 +416,14 @@ void AnalyticsDashboard::generateSampleData()
             qreal health = qBound(50.0, baseHealth + healthVariation, 100.0);
             
             // Occasionally drop health to simulate issues
-            if (rng->bounded(100) < 3) { // Reduced frequency
+            if (rng->bounded(100) < 3) {
                 health -= 15 + rng->bounded(15);
                 data.alertCount++;
             }
             
             data.healthHistory.append(qMakePair(timestamp, health));
             
-            // Add subsystem health data (reduced subsystems)
+            // Add subsystem health data
             for (const QString& subsys : subsystems) {
                 qreal subsysHealth = health + (rng->bounded(1000) / 1000.0 - 0.5) * 10;
                 subsysHealth = qBound(40.0, subsysHealth, 100.0);
@@ -395,8 +434,8 @@ void AnalyticsDashboard::generateSampleData()
                 data.subsystemHealth[subsys].append(subsysHealth);
             }
             
-            // Generate message timestamps (reduced frequency)
-            if (rng->bounded(100) < 15) { // Reduced from 30% to 15%
+            // Generate message timestamps
+            if (rng->bounded(100) < 15) {
                 data.messageTimestamps.append(timestamp);
                 data.totalMessages++;
             }
@@ -425,13 +464,24 @@ void AnalyticsDashboard::updateKPIs()
         return;
     }
     
+    // Get component filter
+    QString componentFilter = m_componentFilterCombo->currentText();
+    if (componentFilter == "ALL COMPONENTS") {
+        componentFilter = "";
+    }
+    
     // Calculate KPI values
-    int totalComponents = m_componentData.size();
+    int totalComponents = 0;
     int activeComponents = 0;
     qreal totalHealth = 0.0;
     int totalAlerts = 0;
     
     for (const auto& data : m_componentData) {
+        if (!componentFilter.isEmpty() && data.componentId != componentFilter) {
+            continue;
+        }
+        
+        totalComponents++;
         if (data.currentHealth > 50.0) {
             activeComponents++;
         }
@@ -448,110 +498,173 @@ void AnalyticsDashboard::updateKPIs()
     if (m_totalAlertsLabel) m_totalAlertsLabel->setText(QString::number(totalAlerts));
 }
 
-void AnalyticsDashboard::updateHealthTrendChart()
+QColor AnalyticsDashboard::getHealthColor(qreal health)
 {
-    if (m_componentData.isEmpty() || !m_healthTrendChart) {
-        return;
-    }
-    
-    QChart* chart = m_healthTrendChart->chart();
-    
-    // Remove old series and clean up
-    QList<QAbstractSeries*> oldSeries = chart->series();
-    for (QAbstractSeries* series : oldSeries) {
-        chart->removeSeries(series);
-        delete series;
-    }
-    
-    // Remove old axes
-    QList<QAbstractAxis*> oldAxes = chart->axes();
-    for (QAbstractAxis* axis : oldAxes) {
-        chart->removeAxis(axis);
-        delete axis;
-    }
-    
-    QVector<QColor> seriesColors = {
-        QColor(52, 152, 219),  // Blue
-        QColor(46, 204, 113),  // Green
-        QColor(241, 196, 15),  // Yellow
-        QColor(231, 76, 60),   // Red
-        QColor(155, 89, 182)   // Purple
-    };
-    
-    int colorIndex = 0;
-    int maxSeries = 4; // Limit to 4 components for better performance
-    int seriesCount = 0;
-    
-    qint64 minTime = LLONG_MAX;
-    qint64 maxTime = LLONG_MIN;
-    qreal minHealth = 100.0;
-    qreal maxHealth = 0.0;
-    
-    for (auto it = m_componentData.begin(); it != m_componentData.end() && seriesCount < maxSeries; ++it) {
-        QLineSeries* series = new QLineSeries();
-        series->setName(it.key());
-        series->setColor(seriesColors[colorIndex % seriesColors.size()]);
-        
-        // Show all points (we already reduced data to 60 points)
-        for (const auto& point : it->healthHistory) {
-            qint64 timestamp = point.first;
-            qreal health = point.second;
-            
-            series->append(timestamp, health);
-            
-            minTime = qMin(minTime, timestamp);
-            maxTime = qMax(maxTime, timestamp);
-            minHealth = qMin(minHealth, health);
-            maxHealth = qMax(maxHealth, health);
-        }
-        
-        chart->addSeries(series);
-        colorIndex++;
-        seriesCount++;
-    }
-    
-    // Configure axes with better formatting
-    QValueAxis* axisX = new QValueAxis();
-    axisX->setTitleText("Time");
-    axisX->setRange(minTime, maxTime);
-    axisX->setLabelsColor(m_textColor);
-    axisX->setGridLineColor(m_gridColor);
-    axisX->setLabelFormat("%i");
-    axisX->setTickCount(8);
-    
-    QValueAxis* axisY = new QValueAxis();
-    axisY->setTitleText("Health %");
-    axisY->setRange(qMax(0.0, minHealth - 10), qMin(100.0, maxHealth + 10));
-    axisY->setLabelsColor(m_textColor);
-    axisY->setGridLineColor(m_gridColor);
-    axisY->setLabelFormat("%.0f");
-    axisY->setTickCount(6);
-    
-    for (QAbstractSeries* series : chart->series()) {
-        chart->setAxisX(axisX, series);
-        chart->setAxisY(axisY, series);
-    }
-    
-    chart->legend()->setVisible(true);
-    chart->legend()->setAlignment(Qt::AlignBottom);
-    chart->legend()->setLabelColor(m_textColor);
-    
-    // Update KPIs as well
-    updateKPIs();
+    if (health >= 90) return QColor(46, 204, 113);  // Green
+    if (health >= 75) return QColor(52, 152, 219);  // Blue
+    if (health >= 60) return QColor(241, 196, 15);  // Yellow
+    if (health >= 40) return QColor(230, 126, 34);  // Orange
+    return QColor(231, 76, 60);  // Red
 }
 
-void AnalyticsDashboard::updateAllCharts()
+QString AnalyticsDashboard::getHealthStatus(qreal health)
 {
-    if (m_componentData.isEmpty()) {
-        return;
+    if (health >= 90) return "EXCELLENT";
+    if (health >= 75) return "GOOD";
+    if (health >= 60) return "FAIR";
+    if (health >= 40) return "POOR";
+    return "CRITICAL";
+}
+
+void AnalyticsDashboard::recordComponentHealth(const QString& componentId, const QString& color, qreal health, qint64 timestamp)
+{
+    if (!m_componentData.contains(componentId)) {
+        ComponentHealthData data;
+        data.componentId = componentId;
+        data.type = "UNKNOWN";
+        data.currentHealth = health;
+        data.currentStatus = getHealthStatus(health);
+        data.totalMessages = 0;
+        data.alertCount = 0;
+        data.lastUpdateTime = timestamp;
+        m_componentData[componentId] = data;
     }
     
-    // Update KPIs first
-    updateKPIs();
+    ComponentHealthData& data = m_componentData[componentId];
+    data.healthHistory.append(qMakePair(timestamp, health));
+    data.currentHealth = health;
+    data.currentStatus = getHealthStatus(health);
+    data.lastUpdateTime = timestamp;
     
-    // Update Component Distribution Chart (Pie Chart)
-    if (m_componentDistChart) {
-        QChart* chart = m_componentDistChart->chart();
+    // Limit history size
+    if (data.healthHistory.size() > 1000) {
+        data.healthHistory.remove(0, 500);
+    }
+    
+    // Count as alert if health is low
+    if (health < 60) {
+        data.alertCount++;
+    }
+}
+
+void AnalyticsDashboard::recordSubsystemHealth(const QString& componentId, const QString& subsystem, qreal health)
+{
+    if (m_componentData.contains(componentId)) {
+        m_componentData[componentId].subsystemHealth[subsystem].append(health);
+        
+        // Limit subsystem history
+        if (m_componentData[componentId].subsystemHealth[subsystem].size() > 500) {
+            m_componentData[componentId].subsystemHealth[subsystem].remove(0, 250);
+        }
+    }
+}
+
+void AnalyticsDashboard::recordMessage(const QString& componentId, qint64 timestamp)
+{
+    if (m_componentData.contains(componentId)) {
+        m_componentData[componentId].messageTimestamps.append(timestamp);
+        m_componentData[componentId].totalMessages++;
+        
+        // Limit message history
+        if (m_componentData[componentId].messageTimestamps.size() > 1000) {
+            m_componentData[componentId].messageTimestamps.remove(0, 500);
+        }
+    }
+}
+
+void AnalyticsDashboard::addComponent(const QString& componentId, const QString& type)
+{
+    if (!m_componentData.contains(componentId)) {
+        ComponentHealthData data;
+        data.componentId = componentId;
+        data.type = type.toUpper();
+        data.currentHealth = 100.0;
+        data.currentStatus = "EXCELLENT";
+        data.totalMessages = 0;
+        data.alertCount = 0;
+        data.lastUpdateTime = QDateTime::currentMSecsSinceEpoch();
+        m_componentData[componentId] = data;
+        
+        m_componentTypeCount[type.toUpper()]++;
+        m_componentFilterCombo->addItem(componentId);
+    }
+}
+
+void AnalyticsDashboard::removeComponent(const QString& componentId)
+{
+    if (m_componentData.contains(componentId)) {
+        QString type = m_componentData[componentId].type;
+        m_componentData.remove(componentId);
+        
+        m_componentTypeCount[type]--;
+        if (m_componentTypeCount[type] <= 0) {
+            m_componentTypeCount.remove(type);
+        }
+        
+        // Remove from filter combo
+        for (int i = 0; i < m_componentFilterCombo->count(); i++) {
+            if (m_componentFilterCombo->itemText(i) == componentId) {
+                m_componentFilterCombo->removeItem(i);
+                break;
+            }
+        }
+    }
+}
+
+void AnalyticsDashboard::clear()
+{
+    m_componentData.clear();
+    m_componentTypeCount.clear();
+    m_componentFilterCombo->clear();
+    m_componentFilterCombo->addItem("ALL COMPONENTS");
+    updateAllCharts();
+}
+
+void AnalyticsDashboard::refreshDashboard()
+{
+    // Update all charts when refresh button is clicked
+    updateAllCharts();
+}
+
+void AnalyticsDashboard::onThemeChanged()
+{
+    // Update theme colors
+    ThemeManager& tm = ThemeManager::instance();
+    AppTheme theme = tm.currentTheme();
+    
+    if (theme == AppTheme::Dark) {
+        m_bgColor = QColor(30, 30, 30);
+        m_textColor = QColor(220, 220, 220);
+        m_gridColor = QColor(60, 60, 60);
+        m_chartBgColor = QColor(45, 45, 45);
+    } else {
+        m_bgColor = QColor(245, 245, 245);
+        m_textColor = QColor(40, 40, 40);
+        m_gridColor = QColor(200, 200, 200);
+        m_chartBgColor = QColor(255, 255, 255);
+    }
+    
+    // Refresh all charts with new theme
+    updateAllCharts();
+}
+
+// Old methods removed - now using new 2x2 grid architecture
+/*
+OLD CODE REMOVED:
+- createHealthTrendChart()
+- createComponentDistributionChart()
+- createSubsystemPerformanceChart()
+- createMessageFrequencyChart()
+- createAlertHistoryChart()
+- createComponentComparisonChart()
+- Old updateAllCharts() implementation
+
+New architecture uses:
+- createChartGrid() for each grid cell
+- updateChart() to update based on chart type
+- Component filtering support
+- Enhanced tooltips and military-grade styling
+*/
         
         // Clean up old series
         QList<QAbstractSeries*> oldSeries = chart->series();
@@ -812,22 +925,34 @@ void AnalyticsDashboard::applyChartTheme(QChart* chart)
 {
     chart->setBackgroundBrush(QBrush(m_chartBgColor));
     chart->setTitleBrush(QBrush(m_textColor));
-    chart->setBackgroundRoundness(8);
+    chart->setBackgroundRoundness(4);
     
     QFont titleFont = chart->titleFont();
-    titleFont.setPointSize(13);
+    titleFont.setPointSize(16);
     titleFont.setBold(true);
+    titleFont.setFamily("Arial");
     chart->setTitleFont(titleFont);
     
     if (chart->legend()) {
         chart->legend()->setLabelColor(m_textColor);
         QFont legendFont;
-        legendFont.setPointSize(9);
+        legendFont.setPointSize(12);
+        legendFont.setBold(false);
         chart->legend()->setFont(legendFont);
     }
     
     // Increased margins to prevent text chopping
-    chart->setMargins(QMargins(15, 15, 15, 15));
+    chart->setMargins(QMargins(20, 20, 20, 20));
+}
+
+void AnalyticsDashboard::enableChartTooltips(QChartView* chartView)
+{
+    if (!chartView) return;
+    
+    // Enable mouse tracking for tooltips
+    chartView->setMouseTracking(true);
+    
+    // Tooltips will be configured per series when we create them
 }
 
 QColor AnalyticsDashboard::getHealthColor(qreal health)
@@ -979,6 +1104,5 @@ void AnalyticsDashboard::onThemeChanged()
     }
     
     // Refresh all charts with new theme
-    updateHealthTrendChart();
     updateAllCharts();
 }
