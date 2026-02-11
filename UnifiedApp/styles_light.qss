@@ -475,7 +475,7 @@ QLabel[hint="true"] {
 }
 
 /* Toolbar Buttons */
-QPushButton#saveButton, QPushButton#loadButton, QPushButton#clearButton {
+QPushButton#saveButton, QPushButton#loadButton, QPushButton#clearButton, QPushButton#dashboardButton {
     background: #00897B;
     color: #ffffff;
     border: none;
@@ -488,11 +488,11 @@ QPushButton#saveButton, QPushButton#loadButton, QPushButton#clearButton {
     min-height: 32px;
 }
 
-QPushButton#saveButton:hover, QPushButton#loadButton:hover, QPushButton#clearButton:hover {
+QPushButton#saveButton:hover, QPushButton#loadButton:hover, QPushButton#clearButton:hover, QPushButton#dashboardButton:hover {
     background: #00796B;
 }
 
-QPushButton#saveButton:pressed, QPushButton#loadButton:pressed, QPushButton#clearButton:pressed {
+QPushButton#saveButton:pressed, QPushButton#loadButton:pressed, QPushButton#clearButton:pressed, QPushButton#dashboardButton:pressed {
     background: #00695C;
 }
 

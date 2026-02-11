@@ -466,24 +466,10 @@ void Component::paintContainer(QPainter* painter)
         painter->setBrush(Qt::NoBrush);
         painter->drawRoundedRect(dContainer.adjusted(2, 0, -2, -2), 4, 4);
         
-        // Header label showing count of subcomponents and widgets
+        // Component header area - simplified to show only component name
+        // No additional labels for sub-systems or widgets to keep it clean
         int totalItems = m_subComponents.size() + m_designSubComponents.size();
-        if (totalItems > 0) {
-            painter->setPen(tm.componentTextSecondary());
-            painter->setFont(QFont("Inter", 8, QFont::Bold));
-            QRectF labelRect(PADDING, HEADER_HEIGHT + 1, w - PADDING * 2, PADDING - 1);
-            QString label = QString("COMPONENTS (%1)").arg(totalItems);
-            if (m_subComponents.size() > 0 && m_designSubComponents.size() > 0) {
-                label = QString("SUB-SYSTEMS (%1) | WIDGETS (%2)")
-                        .arg(m_subComponents.size())
-                        .arg(m_designSubComponents.size());
-            } else if (m_subComponents.size() > 0) {
-                label = QString("SUB-SYSTEMS (%1)").arg(m_subComponents.size());
-            } else if (m_designSubComponents.size() > 0) {
-                label = QString("WIDGETS (%1)").arg(m_designSubComponents.size());
-            }
-            painter->drawText(labelRect, Qt::AlignVCenter | Qt::AlignLeft, label);
-        } else {
+        if (totalItems == 0) {
             // Show placeholder when empty
             painter->setPen(tm.mutedText());
             painter->setFont(QFont("Inter", 8));
