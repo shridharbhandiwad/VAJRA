@@ -10,6 +10,7 @@
 #include <QFrame>
 #include <QDateTime>
 #include <QRandomGenerator>
+#include <QEasingCurve>
 #include <QtCharts/QChart>
 #include <QtCharts/QLegend>
 #include <QDebug>
@@ -1022,7 +1023,6 @@ void AnalyticsDashboard::updateSubsystemPerformanceChart(QChartView* chartView, 
             QColor barColor = palette[colorIndex % palette.size()];
             set->setColor(barColor);
             set->setBorderColor(m_chartBgColor);
-            set->setBorderWidth(2);
             
             barSeries->append(set);
             categories << it.key();
@@ -1106,7 +1106,6 @@ void AnalyticsDashboard::updateMessageFrequencyChart(QChartView* chartView, cons
         QColor barColor = palette[colorIndex % palette.size()];
         set->setColor(barColor);
         set->setBorderColor(m_chartBgColor);
-        set->setBorderWidth(2);
         
         barSeries->append(set);
         categories << it.key();
@@ -1187,7 +1186,6 @@ void AnalyticsDashboard::updateAlertHistoryChart(QChartView* chartView, const QS
         QColor barColor = palette[(colorIndex + 4) % palette.size()]; // Offset to get reds/oranges
         set->setColor(barColor);
         set->setBorderColor(m_chartBgColor);
-        set->setBorderWidth(2);
         
         barSeries->append(set);
         categories << it.key();
@@ -1281,7 +1279,6 @@ void AnalyticsDashboard::updateComponentComparisonChart(QChartView* chartView, c
         
         set->setColor(barColor);
         set->setBorderColor(m_chartBgColor);
-        set->setBorderWidth(2);
         
         barSeries->append(set);
         colorIndex++;
