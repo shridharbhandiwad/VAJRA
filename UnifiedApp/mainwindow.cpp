@@ -980,7 +980,7 @@ void MainWindow::showAnalyticsDashboard()
         const QList<Component*>& components = m_canvas->getComponents();
         for (Component* comp : components) {
             if (comp) {
-                m_analyticsDashboard->addComponent(comp->id(), comp->typeName());
+                m_analyticsDashboard->addComponent(comp->getId(), comp->getTypeId());
             }
         }
         
