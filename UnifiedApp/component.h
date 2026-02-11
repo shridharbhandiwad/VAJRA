@@ -48,12 +48,14 @@ public:
     QString getLabel() const;
     bool hasCustomDisplayName() const { return !m_displayName.isEmpty(); }
     bool hasCustomLabel() const { return !m_label.isEmpty(); }
+    bool isMinimized() const { return m_minimized; }
     
     // Mutators
     void setColor(const QColor& color);
     void setSize(qreal size);
     void setDisplayName(const QString& displayName);
     void setLabel(const QString& label);
+    void setMinimized(bool minimized);
     
     // User-resizable dimensions
     void setUserWidth(qreal w);
@@ -119,11 +121,14 @@ private:
     
     ResizeHandle handleAt(const QPointF& pos) const;
     void paintResizeHandles(QPainter* painter);
+    bool isPointInMinimizeButton(const QPointF& pos) const;
+    void paintMinimizeButton(QPainter* painter);
     
     void loadSubsystemImage();
     void createDefaultSubComponents();
     void layoutSubComponents();
     void paintContainer(QPainter* painter);
+    void updateSubComponentsVisibility();
     
     QString m_typeId;
     QString m_id;
@@ -144,6 +149,9 @@ private:
     ResizeHandle m_activeHandle;
     QPointF m_lastMouseScenePos;
     bool m_resizing;
+    
+    // Minimize/Maximize state
+    bool m_minimized;
     
     QList<SubComponent*> m_subComponents;
     QList<DesignSubComponent*> m_designSubComponents;
