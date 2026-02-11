@@ -10,6 +10,7 @@
 #include "componentlist.h"
 #include "canvas.h"
 #include "analytics.h"
+#include "analyticsdashboard.h"
 #include "messageserver.h"
 #include "voicealertmanager.h"
 #include "enlargedcomponentview.h"
@@ -74,6 +75,9 @@ private slots:
     
     // Logout slot
     void onLogout();
+    
+    // Dashboard slot
+    void showAnalyticsDashboard();
 
 signals:
     void logoutRequested();
@@ -94,6 +98,7 @@ private:
     ComponentList* m_componentList;
     Canvas* m_canvas;
     Analytics* m_analytics;
+    AnalyticsDashboard* m_analyticsDashboard;
     MessageServer* m_messageServer;
     QLabel* m_statusLabel;
     QLabel* m_userLabel;
@@ -108,6 +113,9 @@ private:
     
     // Theme UI
     QPushButton* m_themeToggleBtn;
+    
+    // Dashboard button
+    QPushButton* m_dashboardBtn;
     
     // Logout button
     QPushButton* m_logoutBtn;

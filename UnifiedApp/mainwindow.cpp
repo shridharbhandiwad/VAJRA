@@ -21,6 +21,7 @@ MainWindow::MainWindow(const QString& username, UserRole role, QWidget* parent)
     , m_componentList(nullptr)
     , m_canvas(nullptr)
     , m_analytics(nullptr)
+    , m_analyticsDashboard(nullptr)
     , m_messageServer(nullptr)
     , m_statusLabel(nullptr)
     , m_userLabel(nullptr)
@@ -231,6 +232,15 @@ void MainWindow::setupUI()
     
     toolbar->addSeparator();
     
+    // Dashboard button
+    m_dashboardBtn = new QPushButton("📊 VIEW DASHBOARD", this);
+    m_dashboardBtn->setObjectName("dashboardButton");
+    m_dashboardBtn->setCursor(Qt::PointingHandCursor);
+    m_dashboardBtn->setToolTip("Open Advanced Analytics Dashboard");
+    toolbar->addWidget(m_dashboardBtn);
+    
+    toolbar->addSeparator();
+    
     // Logout button (top right corner)
     m_logoutBtn = new QPushButton("LOG OFF", this);
     m_logoutBtn->setObjectName("logoutButton");
@@ -251,6 +261,7 @@ void MainWindow::setupUI()
     connect(m_voiceToggleBtn, &QPushButton::clicked, this, &MainWindow::toggleVoiceAlerts);
     connect(testVoiceBtn, &QPushButton::clicked, this, &MainWindow::testVoice);
     connect(m_themeToggleBtn, &QPushButton::clicked, this, &MainWindow::onThemeToggle);
+    connect(m_dashboardBtn, &QPushButton::clicked, this, &MainWindow::showAnalyticsDashboard);
     connect(m_logoutBtn, &QPushButton::clicked, this, &MainWindow::onLogout);
     
     // ========== MAIN LAYOUT ==========
@@ -953,6 +964,34 @@ void MainWindow::refreshCanvasBackground()
     if (m_canvas->scene()) {
         m_canvas->scene()->update();
     }
+}
+
+// ======================================================================
+// Analytics Dashboard
+// ======================================================================
+
+void MainWindow::showAnalyticsDashboard()
+{
+    // Create dashboard if it doesn't exist
+    if (!m_analyticsDashboard) {
+        m_analyticsDashboard = new AnalyticsDashboard(this);
+        
+        // Populate dashboard with current component data
+        const QList<Component*>& components = m_canvas->getComponents();
+        for (Component* comp : components) {
+            if (comp) {
+                m_analyticsDashboard->addComponent(comp->id(), comp->typeName());
+            }
+        }
+        
+        // Note: If you want to sync real-time data, you can connect signals here
+        // For now, the dashboard uses generated sample data
+    }
+    
+    // Show the dashboard
+    m_analyticsDashboard->show();
+    m_analyticsDashboard->raise();
+    m_analyticsDashboard->activateWindow();
 }
 
 // ======================================================================

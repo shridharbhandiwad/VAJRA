@@ -1,4 +1,4 @@
-QT += core gui widgets network
+QT += core gui widgets network charts
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -18,6 +18,7 @@ SOURCES += \
     canvas.cpp \
     componentlist.cpp \
     analytics.cpp \
+    analyticsdashboard.cpp \
     messageserver.cpp \
     componentregistry.cpp \
     addcomponentdialog.cpp \
@@ -37,6 +38,7 @@ HEADERS += \
     canvas.h \
     componentlist.h \
     analytics.h \
+    analyticsdashboard.h \
     messageserver.h \
     componentregistry.h \
     addcomponentdialog.h \
