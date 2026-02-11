@@ -36,7 +36,7 @@ AnalyticsDashboard::AnalyticsDashboard(QWidget* parent)
 {
     setObjectName("AnalyticsDashboard");
     setWindowTitle("DATA ANALYTICS DASHBOARD");
-    resize(1600, 1000);
+    resize(1400, 900);
     
     // Initialize chart grids
     for (int i = 0; i < 4; i++) {
@@ -93,18 +93,19 @@ void AnalyticsDashboard::setupUI()
     
     m_centralWidget = new QWidget();
     m_mainLayout = new QVBoxLayout(m_centralWidget);
-    m_mainLayout->setSpacing(20);
-    m_mainLayout->setContentsMargins(25, 25, 25, 25);
+    m_mainLayout->setSpacing(12);
+    m_mainLayout->setContentsMargins(15, 15, 15, 15);
     
     // ========== HEADER SECTION ==========
     QWidget* headerWidget = new QWidget();
     QHBoxLayout* headerLayout = new QHBoxLayout(headerWidget);
-    headerLayout->setSpacing(15);
+    headerLayout->setSpacing(10);
+    headerLayout->setContentsMargins(0, 0, 0, 0);
     
-    QLabel* titleLabel = new QLabel("DATA ANALYTICS DASHBOARD");
+    QLabel* titleLabel = new QLabel("Data Analytics Dashboard");
     titleLabel->setObjectName("dashboardTitle");
     QFont titleFont = titleLabel->font();
-    titleFont.setPointSize(26);
+    titleFont.setPointSize(16);
     titleFont.setBold(true);
     titleFont.setFamily("Arial");
     titleLabel->setFont(titleFont);
@@ -113,44 +114,44 @@ void AnalyticsDashboard::setupUI()
     headerLayout->addStretch();
     
     // Controls
-    QLabel* filterLabel = new QLabel("COMPONENT:");
+    QLabel* filterLabel = new QLabel("Component:");
     filterLabel->setObjectName("filterLabel");
     QFont labelFont = filterLabel->font();
-    labelFont.setPointSize(11);
+    labelFont.setPointSize(10);
     labelFont.setBold(true);
     filterLabel->setFont(labelFont);
     
     m_componentFilterCombo = new QComboBox();
     m_componentFilterCombo->setObjectName("dashboardCombo");
     m_componentFilterCombo->addItem("ALL COMPONENTS");
-    m_componentFilterCombo->setFixedWidth(200);
+    m_componentFilterCombo->setFixedWidth(180);
     QFont comboFont;
-    comboFont.setPointSize(11);
+    comboFont.setPointSize(10);
     m_componentFilterCombo->setFont(comboFont);
     connect(m_componentFilterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &AnalyticsDashboard::onComponentFilterChanged);
     
     m_timeRangeCombo = new QComboBox();
     m_timeRangeCombo->setObjectName("dashboardCombo");
-    m_timeRangeCombo->addItems({"LAST HOUR", "LAST 6 HOURS", "LAST 24 HOURS", "LAST WEEK"});
+    m_timeRangeCombo->addItems({"Last Hour", "Last 6 Hours", "Last 24 Hours", "Last Week"});
     m_timeRangeCombo->setCurrentIndex(2);
-    m_timeRangeCombo->setFixedWidth(150);
+    m_timeRangeCombo->setFixedWidth(130);
     m_timeRangeCombo->setFont(comboFont);
     
-    m_refreshBtn = new QPushButton("REFRESH");
+    m_refreshBtn = new QPushButton("Refresh");
     m_refreshBtn->setObjectName("dashboardRefreshBtn");
-    m_refreshBtn->setFixedWidth(110);
-    m_refreshBtn->setFixedHeight(32);
+    m_refreshBtn->setFixedWidth(90);
+    m_refreshBtn->setFixedHeight(28);
     QFont btnFont;
-    btnFont.setPointSize(11);
+    btnFont.setPointSize(10);
     btnFont.setBold(true);
     m_refreshBtn->setFont(btnFont);
     connect(m_refreshBtn, &QPushButton::clicked, this, &AnalyticsDashboard::refreshDashboard);
     
-    m_exportBtn = new QPushButton("EXPORT PDF");
+    m_exportBtn = new QPushButton("Export PDF");
     m_exportBtn->setObjectName("dashboardExportBtn");
-    m_exportBtn->setFixedWidth(120);
-    m_exportBtn->setFixedHeight(32);
+    m_exportBtn->setFixedWidth(100);
+    m_exportBtn->setFixedHeight(28);
     m_exportBtn->setFont(btnFont);
     connect(m_exportBtn, &QPushButton::clicked, this, &AnalyticsDashboard::onExportToPDF);
     
@@ -169,13 +170,13 @@ void AnalyticsDashboard::setupUI()
     QFrame* divider = new QFrame();
     divider->setObjectName("dashboardDivider");
     divider->setFrameShape(QFrame::HLine);
-    divider->setFixedHeight(2);
+    divider->setFixedHeight(1);
     m_mainLayout->addWidget(divider);
     
     // ========== 2x2 CHARTS GRID ==========
     QGridLayout* chartsGrid = new QGridLayout();
     chartsGrid->setObjectName("chartsGrid");
-    chartsGrid->setSpacing(18);
+    chartsGrid->setSpacing(10);
     chartsGrid->setContentsMargins(0, 0, 0, 0);
     
     // Create 2x2 grid with default chart types
@@ -207,7 +208,7 @@ QWidget* AnalyticsDashboard::createKPISection()
     QWidget* kpiWidget = new QWidget();
     kpiWidget->setObjectName("kpiSection");
     QHBoxLayout* kpiLayout = new QHBoxLayout(kpiWidget);
-    kpiLayout->setSpacing(15);
+    kpiLayout->setSpacing(10);
     kpiLayout->setContentsMargins(0, 0, 0, 0);
     
     // Create KPI cards with military-grade design
@@ -228,21 +229,21 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
 {
     QWidget* card = new QWidget();
     card->setObjectName("kpiCard");
-    card->setMinimumHeight(130);
-    card->setMaximumHeight(150);
+    card->setMinimumHeight(85);
+    card->setMaximumHeight(100);
     // Border color styling moved to QSS
     card->setStyleSheet(QString(
-        "QWidget#kpiCard { border-left: 4px solid %1; }"
+        "QWidget#kpiCard { border-left: 3px solid %1; }"
     ).arg(color.name()));
     
     QVBoxLayout* cardLayout = new QVBoxLayout(card);
-    cardLayout->setSpacing(8);
-    cardLayout->setContentsMargins(18, 18, 18, 18);
+    cardLayout->setSpacing(4);
+    cardLayout->setContentsMargins(12, 10, 12, 10);
     
     QLabel* titleLabel = new QLabel(title);
     titleLabel->setObjectName("kpiTitle");
     QFont titleFont = titleLabel->font();
-    titleFont.setPointSize(13);
+    titleFont.setPointSize(10);
     titleFont.setBold(true);
     titleFont.setFamily("Arial");
     titleLabel->setFont(titleFont);
@@ -252,7 +253,7 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     QLabel* valueLabel = new QLabel(value);
     valueLabel->setObjectName("kpiValue");
     QFont valueFont = valueLabel->font();
-    valueFont.setPointSize(38);
+    valueFont.setPointSize(28);
     valueFont.setBold(true);
     valueFont.setFamily("Arial");
     valueLabel->setFont(valueFont);
@@ -267,7 +268,7 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     QLabel* subtitleLabel = new QLabel(subtitle);
     subtitleLabel->setObjectName("kpiSubtitle");
     QFont subtitleFont = subtitleLabel->font();
-    subtitleFont.setPointSize(11);
+    subtitleFont.setPointSize(9);
     subtitleFont.setBold(true);
     subtitleLabel->setFont(subtitleFont);
     subtitleLabel->setAlignment(Qt::AlignCenter);
@@ -284,22 +285,22 @@ QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialTyp
     QWidget* container = new QWidget();
     container->setObjectName("chartContainer");
     QVBoxLayout* layout = new QVBoxLayout(container);
-    layout->setSpacing(10);
-    layout->setContentsMargins(5, 5, 5, 5);
+    layout->setSpacing(6);
+    layout->setContentsMargins(8, 8, 8, 8);
     
     // Create dropdown for chart type selection
     QComboBox* chartTypeCombo = new QComboBox();
     chartTypeCombo->setObjectName("chartTypeCombo");
     QFont comboFont;
-    comboFont.setPointSize(11);
+    comboFont.setPointSize(9);
     comboFont.setBold(true);
     chartTypeCombo->setFont(comboFont);
-    chartTypeCombo->addItem("HEALTH TREND", static_cast<int>(ChartType::HealthTrend));
-    chartTypeCombo->addItem("COMPONENT DISTRIBUTION", static_cast<int>(ChartType::ComponentDistribution));
-    chartTypeCombo->addItem("SUBSYSTEM PERFORMANCE", static_cast<int>(ChartType::SubsystemPerformance));
-    chartTypeCombo->addItem("MESSAGE FREQUENCY", static_cast<int>(ChartType::MessageFrequency));
-    chartTypeCombo->addItem("ALERT HISTORY", static_cast<int>(ChartType::AlertHistory));
-    chartTypeCombo->addItem("COMPONENT COMPARISON", static_cast<int>(ChartType::ComponentComparison));
+    chartTypeCombo->addItem("Health Trend", static_cast<int>(ChartType::HealthTrend));
+    chartTypeCombo->addItem("Component Distribution", static_cast<int>(ChartType::ComponentDistribution));
+    chartTypeCombo->addItem("Subsystem Performance", static_cast<int>(ChartType::SubsystemPerformance));
+    chartTypeCombo->addItem("Message Frequency", static_cast<int>(ChartType::MessageFrequency));
+    chartTypeCombo->addItem("Alert History", static_cast<int>(ChartType::AlertHistory));
+    chartTypeCombo->addItem("Component Comparison", static_cast<int>(ChartType::ComponentComparison));
     
     // Set initial selection
     chartTypeCombo->setCurrentIndex(static_cast<int>(initialType));
@@ -315,7 +316,7 @@ QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialTyp
     applyChartTheme(chart);
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(400);
+    chartView->setMinimumHeight(280);
     chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     // Enable tooltips
@@ -1065,7 +1066,7 @@ void AnalyticsDashboard::applyChartTheme(QChart* chart)
     chart->setBackgroundRoundness(4);
     
     QFont titleFont = chart->titleFont();
-    titleFont.setPointSize(16);
+    titleFont.setPointSize(12);
     titleFont.setBold(true);
     titleFont.setFamily("Arial");
     chart->setTitleFont(titleFont);
@@ -1073,13 +1074,13 @@ void AnalyticsDashboard::applyChartTheme(QChart* chart)
     if (chart->legend()) {
         chart->legend()->setLabelColor(m_textColor);
         QFont legendFont;
-        legendFont.setPointSize(12);
+        legendFont.setPointSize(9);
         legendFont.setBold(false);
         chart->legend()->setFont(legendFont);
     }
     
-    // Increased margins to prevent text chopping
-    chart->setMargins(QMargins(20, 20, 20, 20));
+    // Compact margins
+    chart->setMargins(QMargins(10, 10, 10, 10));
 }
 
 void AnalyticsDashboard::enableChartTooltips(QChartView* chartView)
