@@ -33,6 +33,7 @@ A single, unified application combining both Designer and Runtime capabilities w
 - **Modular component registry** - add new component types via JSON or UI
 - **Multi-protocol support** - TCP and UDP for health data
 - **Dark/Light theme switching**
+- **📊 Advanced Analytics Dashboard** - Rich visualizations with 10+ chart types
 - See `UnifiedApp/README.md` for details
 
 ### External Subsystem Simulators
@@ -66,6 +67,14 @@ The Runtime Monitor:
   - **Gray** - Offline (0-9% health)
 - **Voice alerts** for critical health states
 - **Enlarged component views** with health trend charts
+- **📊 Advanced Analytics Dashboard** - Comprehensive data visualization:
+  - 10 different chart types (line, bar, pie, area, scatter, etc.)
+  - 6 KPI cards with system metrics
+  - Real-time health monitoring
+  - Subsystem performance analysis
+  - Alert history and telemetry tracking
+  - Dark/Light theme support
+  - See `ANALYTICS_DASHBOARD_GUIDE.md` for details
 
 ### External Subsystem Simulators
 
