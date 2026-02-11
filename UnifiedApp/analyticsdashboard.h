@@ -118,6 +118,7 @@ private:
     QString getHealthStatus(qreal health);
     void applyChartTheme(QChart* chart);
     void enableChartTooltips(QChartView* chartView);
+    QVector<QColor> getChartPalette() const;
     
     // Data structures
     struct ComponentHealthData {
