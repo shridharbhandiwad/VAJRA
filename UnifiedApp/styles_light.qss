@@ -1271,7 +1271,21 @@ QFileDialog {
 /* Main Dashboard Window */
 QMainWindow#AnalyticsDashboard {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 #E8EBF0, stop:0.3 #F0F2F5, stop:0.6 #F5F7FA, stop:1 #FAFBFC);
+        stop:0 #E5E9F0, stop:0.25 #EDF0F5, stop:0.5 #F3F5F9, stop:0.75 #F8F9FC, stop:1 #FAFBFD);
+}
+
+/* Dashboard Header */
+QWidget#dashboardHeader {
+    background: transparent;
+}
+
+/* Dashboard Subtitle */
+QLabel#dashboardSubtitle {
+    color: #6B7280;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    background: transparent;
 }
 
 /* Dashboard Scroll Area */
@@ -1404,23 +1418,28 @@ QWidget#kpiSection {
     background: transparent;
 }
 
-/* Individual KPI Card */
+/* Individual KPI Card with Enhanced Styling */
 QWidget#kpiCard {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
         stop:0 #FFFFFF,
-        stop:1 #F9FAFB);
-    border: 1px solid rgba(0, 151, 167, 0.22);
-    border-radius: 14px;
+        stop:0.5 #FCFCFD,
+        stop:1 #F8F9FB);
+    border: 1px solid rgba(52, 152, 219, 0.25);
+    border-radius: 16px;
     padding: 0px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 QWidget#kpiCard:hover {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
         stop:0 #FAFBFC,
-        stop:1 #F3F4F6);
-    border: 1px solid rgba(0, 151, 167, 0.38);
-    box-shadow: 0 4px 16px rgba(0, 151, 167, 0.12);
+        stop:0.5 #F6F7F9,
+        stop:1 #F2F3F6);
+    border: 1px solid rgba(52, 152, 219, 0.45);
+}
+
+/* KPI Progress Bar */
+QFrame#kpiProgressBar {
+    border: none;
 }
 
 /* KPI Card Labels */
@@ -1448,20 +1467,32 @@ QLabel#kpiSubtitle {
     background: transparent;
 }
 
-/* Chart Container */
+/* Chart Container with Enhanced Styling */
 QWidget#chartContainer {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
         stop:0 #FFFFFF,
-        stop:1 #FAFBFC);
-    border: 1px solid rgba(0, 151, 167, 0.2);
-    border-radius: 14px;
-    padding: 14px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        stop:0.5 #FCFCFD,
+        stop:1 #F8F9FB);
+    border: 1px solid rgba(52, 152, 219, 0.22);
+    border-radius: 16px;
+    padding: 0px;
 }
 
 QWidget#chartContainer:hover {
-    border: 1px solid rgba(0, 151, 167, 0.32);
-    box-shadow: 0 4px 12px rgba(0, 151, 167, 0.08);
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #FAFBFC,
+        stop:0.5 #F6F7F9,
+        stop:1 #F2F3F6);
+    border: 1px solid rgba(52, 152, 219, 0.38);
+}
+
+/* Chart Separator */
+QFrame#chartSeparator {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(52, 152, 219, 0),
+        stop:0.5 rgba(52, 152, 219, 0.18),
+        stop:1 rgba(52, 152, 219, 0));
+    border: none;
 }
 
 /* Chart Type Combo */
@@ -1570,14 +1601,16 @@ QGridLayout#chartsGrid {
     spacing: 20px;
 }
 
-/* Separator Lines with Gradient */
+/* Separator Lines with Enhanced Gradient */
 QFrame#dashboardDivider {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 rgba(0, 151, 167, 0), 
-        stop:0.25 rgba(0, 151, 167, 0.22), 
-        stop:0.5 rgba(0, 151, 167, 0.42),
-        stop:0.75 rgba(0, 151, 167, 0.22), 
-        stop:1 rgba(0, 151, 167, 0));
+        stop:0 rgba(52, 152, 219, 0), 
+        stop:0.2 rgba(52, 152, 219, 0.28), 
+        stop:0.35 rgba(155, 89, 182, 0.48),
+        stop:0.5 rgba(241, 196, 15, 0.58),
+        stop:0.65 rgba(155, 89, 182, 0.48),
+        stop:0.8 rgba(52, 152, 219, 0.28), 
+        stop:1 rgba(52, 152, 219, 0));
     max-height: 2px;
     min-height: 2px;
     border: none;
