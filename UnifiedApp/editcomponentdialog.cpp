@@ -319,36 +319,36 @@ void EditComponentDialog::applyStyles()
             background-color: %30;
         }
     )")
-    .arg(tm.isDark() ? "#1e2329" : "#f5f7fa")      // 1: dialog bg
-    .arg(tm.isDark() ? "#e8eaed" : "#1a1f2e")      // 2: title color
-    .arg(tm.isDark() ? "#9ca3af" : "#6b7280")      // 3: description
-    .arg(tm.isDark() ? "#d1d5db" : "#374151")      // 4: group title
-    .arg(tm.isDark() ? "#374151" : "#d1d5db")      // 5: group border
-    .arg(tm.isDark() ? "#4b5563" : "#d1d5db")      // 6: input border
-    .arg(tm.isDark() ? "#2d3748" : "#ffffff")      // 7: input bg
-    .arg(tm.isDark() ? "#e8eaed" : "#1f2937")      // 8: input text
-    .arg("#4f46e5")                                 // 9: input focus border
-    .arg(tm.isDark() ? "#1f2937" : "#f3f4f6")      // 10: readonly bg
-    .arg(tm.isDark() ? "#9ca3af" : "#6b7280")      // 11: readonly text
-    .arg(tm.isDark() ? "#4b5563" : "#d1d5db")      // 12: list border
-    .arg(tm.isDark() ? "#2d3748" : "#ffffff")      // 13: list bg
-    .arg(tm.isDark() ? "#e8eaed" : "#1f2937")      // 14: list text
-    .arg("#4f46e5")                                 // 15: list selected
-    .arg(tm.isDark() ? "#374151" : "#f3f4f6")      // 16: list hover
-    .arg(tm.isDark() ? "#4b5563" : "#d1d5db")      // 17: button border
-    .arg(tm.isDark() ? "#374151" : "#f9fafb")      // 18: button bg
-    .arg(tm.isDark() ? "#e8eaed" : "#374151")      // 19: button text
-    .arg(tm.isDark() ? "#4b5563" : "#f3f4f6")      // 20: button hover
-    .arg(tm.isDark() ? "#6b7280" : "#9ca3af")      // 21: button hover border
-    .arg(tm.isDark() ? "#1f2937" : "#e5e7eb")      // 22: button pressed
-    .arg("#4f46e5")                                 // 23: primary bg
-    .arg("#4338ca")                                 // 24: primary hover
-    .arg("#3730a3")                                 // 25: primary pressed
-    .arg(tm.isDark() ? "#374151" : "#d1d5db")      // 26: primary disabled
-    .arg(tm.isDark() ? "#6b7280" : "#9ca3af")      // 27: primary disabled text
-    .arg(tm.isDark() ? "#4b5563" : "#9ca3af")      // 28: secondary border
-    .arg(tm.isDark() ? "#e8eaed" : "#374151")      // 29: secondary text
-    .arg(tm.isDark() ? "#374151" : "#f3f4f6");     // 30: secondary hover
+    .arg(tm.panelBackground().name())                   // 1: dialog bg
+    .arg(tm.primaryText().name())                       // 2: title color
+    .arg(tm.secondaryText().name())                     // 3: description
+    .arg(tm.primaryText().name())                       // 4: group title
+    .arg(tm.borderColor().name())                       // 5: group border
+    .arg(tm.borderColor().name())                       // 6: input border
+    .arg(tm.inputBackground().name())                   // 7: input bg
+    .arg(tm.primaryText().name())                       // 8: input text
+    .arg(tm.accentPrimary().name())                     // 9: input focus border
+    .arg(tm.cardBackground().name())                    // 10: readonly bg
+    .arg(tm.secondaryText().name())                     // 11: readonly text
+    .arg(tm.borderColor().name())                       // 12: list border
+    .arg(tm.inputBackground().name())                   // 13: list bg
+    .arg(tm.primaryText().name())                       // 14: list text
+    .arg(tm.accentPrimary().name())                     // 15: list selected
+    .arg(tm.cardBackground().name())                    // 16: list hover
+    .arg(tm.borderColor().name())                       // 17: button border
+    .arg(tm.cardBackground().name())                    // 18: button bg
+    .arg(tm.primaryText().name())                       // 19: button text
+    .arg(tm.cardBackground().lighter(110).name())       // 20: button hover
+    .arg(tm.borderColor().lighter(110).name())          // 21: button hover border
+    .arg(tm.cardBackground().darker(110).name())        // 22: button pressed
+    .arg(tm.accentPrimary().name())                     // 23: primary bg
+    .arg(tm.accentPrimary().darker(110).name())         // 24: primary hover
+    .arg(tm.accentPrimary().darker(120).name())         // 25: primary pressed
+    .arg(tm.borderColor().name())                       // 26: primary disabled
+    .arg(tm.mutedText().name())                         // 27: primary disabled text
+    .arg(tm.borderColor().name())                       // 28: secondary border
+    .arg(tm.primaryText().name())                       // 29: secondary text
+    .arg(tm.cardBackground().name());                   // 30: secondary hover
     
     setStyleSheet(stylesheet);
 }

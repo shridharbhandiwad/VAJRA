@@ -25,7 +25,7 @@ DesignSubComponent::DesignSubComponent(SubComponentType type, const QString& tex
     , m_height(30)
     , m_activeHandle(HandleNone)
     , m_resizing(false)
-    , m_healthColor(QColor(76, 175, 80))  // Default green (healthy)
+    , m_healthColor(ThemeManager::instance().accentSuccess())  // Default success color (healthy)
     , m_healthValue(100.0)
 {
     setFlag(ItemIsMovable, true);
@@ -97,21 +97,16 @@ void DesignSubComponent::paintLabel(QPainter* painter)
 {
     ThemeManager& tm = ThemeManager::instance();
 
-    // Subtle background
-    if (tm.isDark()) {
-        painter->setPen(QPen(QColor(100, 105, 115), 1));
-        painter->setBrush(QColor(52, 56, 63));
-    } else {
-        painter->setPen(QPen(QColor(180, 185, 195), 1));
-        painter->setBrush(QColor(245, 247, 250));
-    }
+    // Subtle background using theme colors
+    painter->setPen(QPen(tm.subcomponentBorder(), 1));
+    painter->setBrush(tm.subcomponentBackground());
     painter->drawRoundedRect(0, 0, m_width, m_height, 3, 3);
 
     // Health indicator bar on the left
     paintHealthIndicator(painter);
 
     // Text (offset to make room for health indicator bar)
-    painter->setPen(tm.isDark() ? QColor(220, 222, 228) : QColor(40, 45, 55));
+    painter->setPen(tm.subcomponentText());
     painter->setFont(QFont("Inter", 10));
     painter->drawText(QRectF(HEALTH_BAR_WIDTH + 6, 0, m_width - HEALTH_BAR_WIDTH - 12, m_height),
                       Qt::AlignVCenter | Qt::AlignLeft, m_text);
@@ -121,21 +116,16 @@ void DesignSubComponent::paintLineEdit(QPainter* painter)
 {
     ThemeManager& tm = ThemeManager::instance();
 
-    // Input-field look
-    if (tm.isDark()) {
-        painter->setPen(QPen(QColor(90, 95, 105), 1));
-        painter->setBrush(QColor(40, 42, 50));
-    } else {
-        painter->setPen(QPen(QColor(180, 185, 195), 1));
-        painter->setBrush(QColor(255, 255, 255));
-    }
+    // Input-field look using theme colors
+    painter->setPen(QPen(tm.borderColor(), 1));
+    painter->setBrush(tm.inputBackground());
     painter->drawRoundedRect(0, 0, m_width, m_height, 3, 3);
 
     // Health indicator bar on the left
     paintHealthIndicator(painter);
 
     // Placeholder text
-    painter->setPen(tm.isDark() ? QColor(140, 145, 155) : QColor(160, 165, 175));
+    painter->setPen(tm.mutedText());
     painter->setFont(QFont("Inter", 10));
     painter->drawText(QRectF(HEALTH_BAR_WIDTH + 8, 0, m_width - HEALTH_BAR_WIDTH - 16, m_height),
                       Qt::AlignVCenter | Qt::AlignLeft, m_text);
