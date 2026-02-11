@@ -50,7 +50,8 @@ AnalyticsDashboard::AnalyticsDashboard(QWidget* parent)
             this, &AnalyticsDashboard::onThemeChanged);
     
     setupUI();
-    generateSampleData();
+    // Don't generate sample data - wait for real health messages from external system
+    // generateSampleData();
     updateKPIs();
     updateAllCharts();
     
@@ -580,8 +581,8 @@ void AnalyticsDashboard::recordComponentHealth(const QString& componentId, const
         ComponentHealthData data;
         data.componentId = componentId;
         data.type = "UNKNOWN";
-        data.currentHealth = health;
-        data.currentStatus = getHealthStatus(health);
+        data.currentHealth = 0.0;  // Initialize to 0% until first message
+        data.currentStatus = "UNKNOWN";
         data.totalMessages = 0;
         data.alertCount = 0;
         data.lastUpdateTime = timestamp;
@@ -636,8 +637,8 @@ void AnalyticsDashboard::addComponent(const QString& componentId, const QString&
         ComponentHealthData data;
         data.componentId = componentId;
         data.type = type.toUpper();
-        data.currentHealth = 100.0;
-        data.currentStatus = "EXCELLENT";
+        data.currentHealth = 0.0;  // Initialize to 0% until health message is received
+        data.currentStatus = "UNKNOWN";
         data.totalMessages = 0;
         data.alertCount = 0;
         data.lastUpdateTime = QDateTime::currentMSecsSinceEpoch();
@@ -745,10 +746,9 @@ void AnalyticsDashboard::updateHealthTrendChart(QChartView* chartView, const QSt
         dataToShow[componentFilter] = m_componentData[componentFilter];
     }
     
-    // Professional color palette for lines using theme colors
-    QVector<QColor> lineColors = getChartPalette();
-    
-    int colorIndex = 0;
+    // Use uniform color for all components
+    ThemeManager& tm = ThemeManager::instance();
+    QColor uniformColor = tm.accentPrimary();
     
     // Create line series for each component with enhanced styling
     for (auto it = dataToShow.begin(); it != dataToShow.end(); ++it) {
@@ -761,8 +761,8 @@ void AnalyticsDashboard::updateHealthTrendChart(QChartView* chartView, const QSt
             series->append(point.first, point.second);
         }
         
-        // Enhanced line styling
-        QPen pen(lineColors[colorIndex % lineColors.size()]);
+        // Enhanced line styling with uniform color
+        QPen pen(uniformColor);
         pen.setWidth(3);
         pen.setCapStyle(Qt::RoundCap);
         pen.setJoinStyle(Qt::RoundJoin);
@@ -773,7 +773,6 @@ void AnalyticsDashboard::updateHealthTrendChart(QChartView* chartView, const QSt
         series->setPointLabelsVisible(false);
         
         chart->addSeries(series);
-        colorIndex++;
     }
     
     // Add axes with professional formatting
@@ -831,10 +830,10 @@ void AnalyticsDashboard::updateComponentDistributionChart(QChartView* chartView,
     
     QPieSeries* pieSeries = new QPieSeries();
     
-    // Color palette for pie slices using theme colors
-    QVector<QColor> pieColors = getChartPalette();
+    // Use uniform color for all pie slices
+    ThemeManager& tm = ThemeManager::instance();
+    QColor uniformColor = tm.accentPrimary();
     
-    int colorIndex = 0;
     qreal totalCount = 0;
     for (auto it = m_componentTypeCount.begin(); it != m_componentTypeCount.end(); ++it) {
         totalCount += it.value();
@@ -849,7 +848,7 @@ void AnalyticsDashboard::updateComponentDistributionChart(QChartView* chartView,
                 .arg(QString::number(percentage, 'f', 1));
             
             QPieSlice* slice = pieSeries->append(label, it.value());
-            slice->setColor(pieColors[colorIndex % pieColors.size()]);
+            slice->setColor(uniformColor);
             slice->setLabelVisible(true);
             slice->setLabelColor(m_textColor);
             slice->setLabelPosition(QPieSlice::LabelOutside);
@@ -865,8 +864,6 @@ void AnalyticsDashboard::updateComponentDistributionChart(QChartView* chartView,
             
             // Hover effect
             slice->setExplodeDistanceFactor(0.05);
-            
-            colorIndex++;
         }
     }
     
@@ -928,23 +925,19 @@ void AnalyticsDashboard::updateSubsystemPerformanceChart(QChartView* chartView, 
     QBarSeries* barSeries = new QBarSeries();
     QBarSet* set = new QBarSet("Average Health");
     
-    // Gradient color for bars based on health
+    // Use uniform color for all bars
     QStringList categories;
-    QVector<QColor> barColors;
     
     for (auto it = subsystemAvgHealth.begin(); it != subsystemAvgHealth.end(); ++it) {
         if (subsystemCount[it.key()] > 0) {
             qreal avgHealth = it.value() / subsystemCount[it.key()];
             *set << avgHealth;
             categories << it.key();
-            
-            // Color based on health level using theme colors
-            barColors.append(getHealthColor(avgHealth));
         }
     }
     
     ThemeManager& tm = ThemeManager::instance();
-    set->setColor(tm.accentPrimary()); // Default primary accent color
+    set->setColor(tm.accentPrimary()); // Uniform color for all bars
     set->setBorderColor(m_chartBgColor);
     barSeries->append(set);
     barSeries->setBarWidth(0.7);
@@ -1011,7 +1004,7 @@ void AnalyticsDashboard::updateMessageFrequencyChart(QChartView* chartView, cons
     QBarSeries* barSeries = new QBarSeries();
     QBarSet* set = new QBarSet("Message Count");
     ThemeManager& tm = ThemeManager::instance();
-    set->setColor(tm.accentPrimary());
+    set->setColor(tm.accentPrimary());  // Uniform color
     set->setBorderColor(m_chartBgColor);
     
     QStringList categories;
@@ -1083,7 +1076,7 @@ void AnalyticsDashboard::updateAlertHistoryChart(QChartView* chartView, const QS
     QBarSeries* barSeries = new QBarSeries();
     QBarSet* set = new QBarSet("Alert Count");
     ThemeManager& tm = ThemeManager::instance();
-    set->setColor(tm.accentDanger());
+    set->setColor(tm.accentPrimary());  // Use uniform color instead of danger color
     set->setBorderColor(m_chartBgColor);
     
     QStringList categories;
@@ -1162,9 +1155,9 @@ void AnalyticsDashboard::updateComponentComparisonChart(QChartView* chartView, c
         healthSet->append(health);
     }
     
-    // Use theme success color for health
+    // Use uniform color for health
     ThemeManager& tm = ThemeManager::instance();
-    healthSet->setColor(tm.accentSuccess());
+    healthSet->setColor(tm.accentPrimary());  // Uniform color
     healthSet->setBorderColor(m_chartBgColor);
     barSeries->append(healthSet);
     barSeries->setBarWidth(0.6);

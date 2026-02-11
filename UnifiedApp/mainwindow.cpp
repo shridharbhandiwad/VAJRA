@@ -92,15 +92,19 @@ void MainWindow::applyRoleRestrictions()
     if (m_role == UserRole::Designer) {
         // Designer: Full design capabilities on System Overview canvas only.
         // No per-component enlarged view tabs (design-focused workflow).
+        // Dashboard view is only for User mode.
         
         // Hide voice controls (not needed for design view)
         if (m_voiceToggleBtnAction) m_voiceToggleBtnAction->setVisible(false);
         if (m_testVoiceBtnAction) m_testVoiceBtnAction->setVisible(false);
         if (m_voiceSep) m_voiceSep->setVisible(false);
         
+        // Hide dashboard button (only for User mode)
+        if (m_dashboardBtn) m_dashboardBtn->setVisible(false);
+        
     } else if (m_role == UserRole::User) {
         // User: Monitor-only. Can load designs to view, but no design tools.
-        // Only visible toolbar items: User label, LOAD DESIGN, STATUS, Theme toggle.
+        // Only visible toolbar items: User label, LOAD DESIGN, STATUS, Theme toggle, VIEW DASHBOARD.
         
         // Hide the left panel (components list)
         if (m_leftPanel) {
