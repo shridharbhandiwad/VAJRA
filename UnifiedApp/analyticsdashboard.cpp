@@ -86,53 +86,42 @@ void AnalyticsDashboard::setupUI()
     
     m_centralWidget = new QWidget();
     m_mainLayout = new QVBoxLayout(m_centralWidget);
-    m_mainLayout->setSpacing(20);
-    m_mainLayout->setContentsMargins(20, 20, 20, 20);
+    m_mainLayout->setSpacing(25);
+    m_mainLayout->setContentsMargins(30, 30, 30, 30);
     
     // ========== HEADER SECTION ==========
     QWidget* headerWidget = new QWidget();
     QHBoxLayout* headerLayout = new QHBoxLayout(headerWidget);
+    headerLayout->setSpacing(15);
     
-    QLabel* titleLabel = new QLabel("Data Analytics Dashboard");
+    QLabel* titleLabel = new QLabel("Analytics Dashboard");
     QFont titleFont = titleLabel->font();
-    titleFont.setPointSize(24);
+    titleFont.setPointSize(22);
     titleFont.setBold(true);
     titleLabel->setFont(titleFont);
     titleLabel->setStyleSheet(QString("color: %1;").arg(m_textColor.name()));
     
-    QLabel* subtitleLabel = new QLabel("Real-time Component Health & Performance Monitoring");
-    QFont subtitleFont = subtitleLabel->font();
-    subtitleFont.setPointSize(12);
-    subtitleLabel->setFont(subtitleFont);
-    subtitleLabel->setStyleSheet(QString("color: %1;").arg(m_textColor.lighter(130).name()));
-    
-    QVBoxLayout* titleLayout = new QVBoxLayout();
-    titleLayout->addWidget(titleLabel);
-    titleLayout->addWidget(subtitleLabel);
-    
-    headerLayout->addLayout(titleLayout);
+    headerLayout->addWidget(titleLabel);
     headerLayout->addStretch();
     
-    // Controls
+    // Controls - Simplified
     m_timeRangeCombo = new QComboBox();
-    m_timeRangeCombo->addItems({"Last Hour", "Last 6 Hours", "Last 24 Hours", "Last Week", "Last Month"});
+    m_timeRangeCombo->addItems({"Last Hour", "Last 6 Hours", "Last 24 Hours", "Last Week"});
     m_timeRangeCombo->setCurrentIndex(2);
-    m_timeRangeCombo->setMinimumWidth(150);
+    m_timeRangeCombo->setFixedWidth(140);
     
     m_componentFilterCombo = new QComboBox();
     m_componentFilterCombo->addItem("All Components");
-    m_componentFilterCombo->setMinimumWidth(150);
+    m_componentFilterCombo->setFixedWidth(160);
     
     m_refreshBtn = new QPushButton("Refresh");
-    m_refreshBtn->setMinimumWidth(100);
+    m_refreshBtn->setFixedWidth(90);
     connect(m_refreshBtn, &QPushButton::clicked, this, &AnalyticsDashboard::refreshDashboard);
     
-    m_exportBtn = new QPushButton("Export Data");
-    m_exportBtn->setMinimumWidth(100);
+    m_exportBtn = new QPushButton("Export");
+    m_exportBtn->setFixedWidth(90);
     
-    headerLayout->addWidget(new QLabel("Time Range:"));
     headerLayout->addWidget(m_timeRangeCombo);
-    headerLayout->addWidget(new QLabel("Filter:"));
     headerLayout->addWidget(m_componentFilterCombo);
     headerLayout->addWidget(m_refreshBtn);
     headerLayout->addWidget(m_exportBtn);
@@ -142,42 +131,35 @@ void AnalyticsDashboard::setupUI()
     // ========== KPI SECTION ==========
     m_mainLayout->addWidget(createKPISection());
     
-    // ========== CHARTS SECTION ==========
+    // ========== CHARTS SECTION - REDESIGNED GRID ==========
     createCharts();
     
-    // Row 1: Health Trend (Real-Time) - Full width
-    QWidget* row1Widget = new QWidget();
-    QHBoxLayout* row1Layout = new QHBoxLayout(row1Widget);
-    row1Layout->setSpacing(0);
-    row1Layout->setContentsMargins(0, 0, 0, 0);
-    row1Layout->addWidget(m_healthTrendChart);
-    m_mainLayout->addWidget(row1Widget);
+    // Use Grid Layout for better control and cleaner design
+    QGridLayout* chartsGrid = new QGridLayout();
+    chartsGrid->setSpacing(20);
+    chartsGrid->setContentsMargins(0, 0, 0, 0);
     
-    // Row 2: Component Distribution and Subsystem Performance
-    QWidget* row2Widget = new QWidget();
-    QHBoxLayout* row2Layout = new QHBoxLayout(row2Widget);
-    row2Layout->setSpacing(15);
-    row2Layout->setContentsMargins(0, 0, 0, 0);
-    row2Layout->addWidget(m_componentDistChart);
-    row2Layout->addWidget(m_subsystemPerfChart);
-    m_mainLayout->addWidget(row2Widget);
+    // Row 0: Health Trend Chart - Full width (spans 2 columns)
+    chartsGrid->addWidget(m_healthTrendChart, 0, 0, 1, 2);
     
-    // Row 3: Message Frequency and Alert History
-    QWidget* row3Widget = new QWidget();
-    QHBoxLayout* row3Layout = new QHBoxLayout(row3Widget);
-    row3Layout->setSpacing(15);
-    row3Layout->setContentsMargins(0, 0, 0, 0);
-    row3Layout->addWidget(m_messageFreqChart);
-    row3Layout->addWidget(m_alertHistoryChart);
-    m_mainLayout->addWidget(row3Widget);
+    // Row 1: Component Distribution (left) | Subsystem Performance (right)
+    chartsGrid->addWidget(m_componentDistChart, 1, 0);
+    chartsGrid->addWidget(m_subsystemPerfChart, 1, 1);
     
-    // Row 4: Component Comparison - Full width
-    QWidget* row4Widget = new QWidget();
-    QHBoxLayout* row4Layout = new QHBoxLayout(row4Widget);
-    row4Layout->setSpacing(0);
-    row4Layout->setContentsMargins(0, 0, 0, 0);
-    row4Layout->addWidget(m_comparisonChart);
-    m_mainLayout->addWidget(row4Widget);
+    // Row 2: Message Frequency (left) | Alert History (right)
+    chartsGrid->addWidget(m_messageFreqChart, 2, 0);
+    chartsGrid->addWidget(m_alertHistoryChart, 2, 1);
+    
+    // Row 3: Component Comparison - Full width (spans 2 columns)
+    chartsGrid->addWidget(m_comparisonChart, 3, 0, 1, 2);
+    
+    // Set equal column stretch for balanced layout
+    chartsGrid->setColumnStretch(0, 1);
+    chartsGrid->setColumnStretch(1, 1);
+    
+    // Add grid to main layout
+    m_mainLayout->addLayout(chartsGrid);
+    m_mainLayout->addStretch();
     
     m_scrollArea->setWidget(m_centralWidget);
     setCentralWidget(m_scrollArea);
@@ -187,14 +169,14 @@ QWidget* AnalyticsDashboard::createKPISection()
 {
     QWidget* kpiWidget = new QWidget();
     QHBoxLayout* kpiLayout = new QHBoxLayout(kpiWidget);
-    kpiLayout->setSpacing(20);
+    kpiLayout->setSpacing(15);
     kpiLayout->setContentsMargins(0, 0, 0, 0);
     
-    // Create KPI cards
-    QWidget* card1 = createKPICard("Total Components", "0", "Monitored Systems", QColor(52, 152, 219));
-    QWidget* card2 = createKPICard("Active Components", "0", "Currently Online", QColor(46, 204, 113));
-    QWidget* card3 = createKPICard("Average Health", "0%", "System-Wide", QColor(241, 196, 15));
-    QWidget* card4 = createKPICard("Total Alerts", "0", "Last 24 Hours", QColor(231, 76, 60));
+    // Create KPI cards with cleaner design
+    QWidget* card1 = createKPICard("Total Components", "0", "Monitored", QColor(52, 152, 219));
+    QWidget* card2 = createKPICard("Active", "0", "Online", QColor(46, 204, 113));
+    QWidget* card3 = createKPICard("Avg Health", "0%", "System-Wide", QColor(241, 196, 15));
+    QWidget* card4 = createKPICard("Alerts", "0", "Total Count", QColor(231, 76, 60));
     
     kpiLayout->addWidget(card1);
     kpiLayout->addWidget(card2);
@@ -207,23 +189,27 @@ QWidget* AnalyticsDashboard::createKPISection()
 QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& value, const QString& subtitle, const QColor& color)
 {
     QWidget* card = new QWidget();
-    card->setMinimumHeight(120);
+    card->setMinimumHeight(110);
+    card->setMaximumHeight(130);
     card->setStyleSheet(QString(
-        "QWidget { background-color: %1; border-radius: 10px; padding: 15px; }"
+        "QWidget { background-color: %1; border-radius: 8px; }"
     ).arg(m_chartBgColor.name()));
     
     QVBoxLayout* cardLayout = new QVBoxLayout(card);
+    cardLayout->setSpacing(8);
+    cardLayout->setContentsMargins(15, 15, 15, 15);
     
     QLabel* titleLabel = new QLabel(title);
     QFont titleFont = titleLabel->font();
-    titleFont.setPointSize(10);
+    titleFont.setPointSize(11);
     titleFont.setBold(true);
     titleLabel->setFont(titleFont);
     titleLabel->setStyleSheet(QString("color: %1;").arg(color.name()));
+    titleLabel->setAlignment(Qt::AlignLeft);
     
     QLabel* valueLabel = new QLabel(value);
     QFont valueFont = valueLabel->font();
-    valueFont.setPointSize(28);
+    valueFont.setPointSize(32);
     valueFont.setBold(true);
     valueLabel->setFont(valueFont);
     valueLabel->setStyleSheet(QString("color: %1;").arg(m_textColor.name()));
@@ -231,21 +217,20 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     
     // Store label for updates
     if (title == "Total Components") m_totalComponentsLabel = valueLabel;
-    else if (title == "Active Components") m_activeComponentsLabel = valueLabel;
-    else if (title == "Average Health") m_avgHealthLabel = valueLabel;
-    else if (title == "Total Alerts") m_totalAlertsLabel = valueLabel;
+    else if (title == "Active") m_activeComponentsLabel = valueLabel;
+    else if (title == "Avg Health") m_avgHealthLabel = valueLabel;
+    else if (title == "Alerts") m_totalAlertsLabel = valueLabel;
     
     QLabel* subtitleLabel = new QLabel(subtitle);
     QFont subtitleFont = subtitleLabel->font();
     subtitleFont.setPointSize(9);
     subtitleLabel->setFont(subtitleFont);
-    subtitleLabel->setStyleSheet(QString("color: %1;").arg(m_textColor.lighter(150).name()));
+    subtitleLabel->setStyleSheet(QString("color: %1;").arg(m_textColor.lighter(140).name()));
     subtitleLabel->setAlignment(Qt::AlignCenter);
     
     cardLayout->addWidget(titleLabel);
     cardLayout->addWidget(valueLabel);
     cardLayout->addWidget(subtitleLabel);
-    cardLayout->addStretch();
     
     return card;
 }
@@ -263,15 +248,15 @@ void AnalyticsDashboard::createCharts()
 QChartView* AnalyticsDashboard::createHealthTrendChart()
 {
     QChart* chart = new QChart();
-    chart->setTitle("Component Health Trend (Real-Time Updates)");
-    chart->setAnimationOptions(QChart::NoAnimation); // Disable animation for better performance
+    chart->setTitle("Component Health Trend (Real-Time)");
+    chart->setAnimationOptions(QChart::NoAnimation);
     
     applyChartTheme(chart);
     
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(300);
-    chartView->setMinimumWidth(400);
+    chartView->setMinimumHeight(350);
+    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     return chartView;
 }
@@ -279,15 +264,15 @@ QChartView* AnalyticsDashboard::createHealthTrendChart()
 QChartView* AnalyticsDashboard::createComponentDistributionChart()
 {
     QChart* chart = new QChart();
-    chart->setTitle("Component Type Distribution");
+    chart->setTitle("Component Distribution");
     chart->setAnimationOptions(QChart::NoAnimation);
     
     applyChartTheme(chart);
     
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(280);
-    chartView->setMinimumWidth(350);
+    chartView->setMinimumHeight(320);
+    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     return chartView;
 }
@@ -302,8 +287,8 @@ QChartView* AnalyticsDashboard::createSubsystemPerformanceChart()
     
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(280);
-    chartView->setMinimumWidth(350);
+    chartView->setMinimumHeight(320);
+    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     return chartView;
 }
@@ -311,15 +296,15 @@ QChartView* AnalyticsDashboard::createSubsystemPerformanceChart()
 QChartView* AnalyticsDashboard::createMessageFrequencyChart()
 {
     QChart* chart = new QChart();
-    chart->setTitle("Message Frequency (Last 6 Hours)");
+    chart->setTitle("Message Frequency");
     chart->setAnimationOptions(QChart::NoAnimation);
     
     applyChartTheme(chart);
     
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(280);
-    chartView->setMinimumWidth(350);
+    chartView->setMinimumHeight(320);
+    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     return chartView;
 }
@@ -327,15 +312,15 @@ QChartView* AnalyticsDashboard::createMessageFrequencyChart()
 QChartView* AnalyticsDashboard::createAlertHistoryChart()
 {
     QChart* chart = new QChart();
-    chart->setTitle("Alert History (Last 12 Hours)");
+    chart->setTitle("Alert History");
     chart->setAnimationOptions(QChart::NoAnimation);
     
     applyChartTheme(chart);
     
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(280);
-    chartView->setMinimumWidth(350);
+    chartView->setMinimumHeight(320);
+    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     return chartView;
 }
@@ -343,15 +328,15 @@ QChartView* AnalyticsDashboard::createAlertHistoryChart()
 QChartView* AnalyticsDashboard::createComponentComparisonChart()
 {
     QChart* chart = new QChart();
-    chart->setTitle("Component Health Comparison");
+    chart->setTitle("Component Comparison");
     chart->setAnimationOptions(QChart::NoAnimation);
     
     applyChartTheme(chart);
     
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
-    chartView->setMinimumHeight(260);
-    chartView->setMinimumWidth(400);
+    chartView->setMinimumHeight(300);
+    chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     return chartView;
 }
@@ -525,20 +510,22 @@ void AnalyticsDashboard::updateHealthTrendChart()
         seriesCount++;
     }
     
-    // Configure axes
+    // Configure axes with better formatting
     QValueAxis* axisX = new QValueAxis();
-    axisX->setTitleText("Time (minutes ago)");
+    axisX->setTitleText("Time");
     axisX->setRange(minTime, maxTime);
     axisX->setLabelsColor(m_textColor);
     axisX->setGridLineColor(m_gridColor);
     axisX->setLabelFormat("%i");
+    axisX->setTickCount(8);
     
     QValueAxis* axisY = new QValueAxis();
-    axisY->setTitleText("Health (%)");
+    axisY->setTitleText("Health %");
     axisY->setRange(qMax(0.0, minHealth - 10), qMin(100.0, maxHealth + 10));
     axisY->setLabelsColor(m_textColor);
     axisY->setGridLineColor(m_gridColor);
-    axisY->setLabelFormat("%i");
+    axisY->setLabelFormat("%.0f");
+    axisY->setTickCount(6);
     
     for (QAbstractSeries* series : chart->series()) {
         chart->setAxisX(axisX, series);
@@ -590,14 +577,16 @@ void AnalyticsDashboard::updateAllCharts()
                 slice->setColor(pieColors[colorIndex % pieColors.size()]);
                 slice->setLabelVisible(true);
                 slice->setLabelColor(m_textColor);
+                slice->setLabelPosition(QPieSlice::LabelOutside);
                 colorIndex++;
             }
         }
         
-        series->setHoleSize(0.35); // Donut chart
+        series->setHoleSize(0.4); // Donut chart
+        series->setPieSize(0.75);  // Smaller pie to make room for labels
         chart->addSeries(series);
         chart->legend()->setVisible(true);
-        chart->legend()->setAlignment(Qt::AlignRight);
+        chart->legend()->setAlignment(Qt::AlignBottom);
         chart->legend()->setLabelColor(m_textColor);
     }
     
@@ -656,14 +645,16 @@ void AnalyticsDashboard::updateAllCharts()
         QBarCategoryAxis* axisX = new QBarCategoryAxis();
         axisX->append(categories);
         axisX->setLabelsColor(m_textColor);
+        axisX->setLabelsAngle(-45);  // Angle labels to prevent overlap
         chart->addAxis(axisX, Qt::AlignBottom);
         series->attachAxis(axisX);
         
         QValueAxis* axisY = new QValueAxis();
         axisY->setRange(0, 100);
-        axisY->setTitleText("Health (%)");
+        axisY->setTitleText("Health %");
         axisY->setLabelsColor(m_textColor);
         axisY->setGridLineColor(m_gridColor);
+        axisY->setLabelFormat("%.0f");
         chart->addAxis(axisY, Qt::AlignLeft);
         series->attachAxis(axisY);
         
@@ -702,13 +693,15 @@ void AnalyticsDashboard::updateAllCharts()
         QBarCategoryAxis* axisX = new QBarCategoryAxis();
         axisX->append(categories);
         axisX->setLabelsColor(m_textColor);
+        axisX->setLabelsAngle(-45);  // Angle labels to prevent overlap
         chart->addAxis(axisX, Qt::AlignBottom);
         series->attachAxis(axisX);
         
         QValueAxis* axisY = new QValueAxis();
-        axisY->setTitleText("Message Count");
+        axisY->setTitleText("Messages");
         axisY->setLabelsColor(m_textColor);
         axisY->setGridLineColor(m_gridColor);
+        axisY->setLabelFormat("%.0f");
         chart->addAxis(axisY, Qt::AlignLeft);
         series->attachAxis(axisY);
         
@@ -747,13 +740,15 @@ void AnalyticsDashboard::updateAllCharts()
         QBarCategoryAxis* axisX = new QBarCategoryAxis();
         axisX->append(categories);
         axisX->setLabelsColor(m_textColor);
+        axisX->setLabelsAngle(-45);  // Angle labels to prevent overlap
         chart->addAxis(axisX, Qt::AlignBottom);
         series->attachAxis(axisX);
         
         QValueAxis* axisY = new QValueAxis();
-        axisY->setTitleText("Alert Count");
+        axisY->setTitleText("Alerts");
         axisY->setLabelsColor(m_textColor);
         axisY->setGridLineColor(m_gridColor);
+        axisY->setLabelFormat("%.0f");
         chart->addAxis(axisY, Qt::AlignLeft);
         series->attachAxis(axisY);
         
@@ -802,9 +797,10 @@ void AnalyticsDashboard::updateAllCharts()
         
         QValueAxis* axisX = new QValueAxis();
         axisX->setRange(0, 100);
-        axisX->setTitleText("Health (%)");
+        axisX->setTitleText("Health %");
         axisX->setLabelsColor(m_textColor);
         axisX->setGridLineColor(m_gridColor);
+        axisX->setLabelFormat("%.0f");
         chart->addAxis(axisX, Qt::AlignBottom);
         series->attachAxis(axisX);
         
@@ -816,18 +812,22 @@ void AnalyticsDashboard::applyChartTheme(QChart* chart)
 {
     chart->setBackgroundBrush(QBrush(m_chartBgColor));
     chart->setTitleBrush(QBrush(m_textColor));
+    chart->setBackgroundRoundness(8);
     
     QFont titleFont = chart->titleFont();
-    titleFont.setPointSize(12);
+    titleFont.setPointSize(13);
     titleFont.setBold(true);
     chart->setTitleFont(titleFont);
     
     if (chart->legend()) {
         chart->legend()->setLabelColor(m_textColor);
-        chart->legend()->setFont(QFont("Arial", 9));
+        QFont legendFont;
+        legendFont.setPointSize(9);
+        chart->legend()->setFont(legendFont);
     }
     
-    chart->setMargins(QMargins(10, 10, 10, 10));
+    // Increased margins to prevent text chopping
+    chart->setMargins(QMargins(15, 15, 15, 15));
 }
 
 QColor AnalyticsDashboard::getHealthColor(qreal health)
