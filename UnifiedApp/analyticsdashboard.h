@@ -17,6 +17,9 @@
 #include <QtCharts/QValueAxis>
 #include <QtCharts/QBarCategoryAxis>
 #include <QtCharts/QPieSlice>
+#include <QPrinter>
+#include <QPrintDialog>
+#include <QPainter>
 
 QT_CHARTS_USE_NAMESPACE
 
@@ -28,8 +31,18 @@ class QComboBox;
 class QPushButton;
 class QScrollArea;
 
+// Chart type enumeration for dropdown selection
+enum class ChartType {
+    HealthTrend,
+    ComponentDistribution,
+    SubsystemPerformance,
+    MessageFrequency,
+    AlertHistory,
+    ComponentComparison
+};
+
 /**
- * AnalyticsDashboard - Comprehensive data analytics dashboard with multiple visualization types
+ * AnalyticsDashboard - Military-grade comprehensive data analytics dashboard
  * 
  * Features:
  *   - Real-time component health monitoring with time-series charts
@@ -41,6 +54,10 @@ class QScrollArea;
  *   - Alert history and statistics
  *   - Performance metrics and KPIs
  *   - Component comparison views
+ *   - Component-wise filtering
+ *   - 2x2 configurable grid layout with chart type selection
+ *   - PDF export capability
+ *   - Enhanced tooltips and data visualization
  *   - Dark/Light theme support
  */
 class AnalyticsDashboard : public QMainWindow
@@ -65,23 +82,32 @@ public:
 public slots:
     void onThemeChanged();
     
+private slots:
+    void onChartTypeChanged(int gridIndex);
+    void onComponentFilterChanged(int index);
+    void onExportToPDF();
+    
 private:
     void setupUI();
     void createCharts();
     void generateSampleData();
     
-    // Separate update methods for real-time vs on-demand
-    void updateHealthTrendChart();  // Real-time only
-    void updateAllCharts();          // On-demand (Refresh button)
-    void updateKPIs();               // Update KPI cards
+    // Chart grid management
+    void updateChartGrid(int gridIndex, ChartType chartType);
+    QWidget* createChartGrid(int gridIndex, ChartType initialType);
     
-    // Chart creation helpers
-    QChartView* createHealthTrendChart();
-    QChartView* createComponentDistributionChart();
-    QChartView* createSubsystemPerformanceChart();
-    QChartView* createMessageFrequencyChart();
-    QChartView* createAlertHistoryChart();
-    QChartView* createComponentComparisonChart();
+    // Chart update methods
+    void updateAllCharts();          // Update all visible charts
+    void updateKPIs();               // Update KPI cards
+    void updateChart(QChartView* chartView, ChartType chartType, const QString& componentFilter);
+    
+    // Chart creation helpers - now with optional filtering
+    void updateHealthTrendChart(QChartView* chartView, const QString& componentFilter = "");
+    void updateComponentDistributionChart(QChartView* chartView, const QString& componentFilter = "");
+    void updateSubsystemPerformanceChart(QChartView* chartView, const QString& componentFilter = "");
+    void updateMessageFrequencyChart(QChartView* chartView, const QString& componentFilter = "");
+    void updateAlertHistoryChart(QChartView* chartView, const QString& componentFilter = "");
+    void updateComponentComparisonChart(QChartView* chartView, const QString& componentFilter = "");
     
     // KPI Cards
     QWidget* createKPICard(const QString& title, const QString& value, const QString& subtitle, const QColor& color);
@@ -91,6 +117,7 @@ private:
     QColor getHealthColor(qreal health);
     QString getHealthStatus(qreal health);
     void applyChartTheme(QChart* chart);
+    void enableChartTooltips(QChartView* chartView);
     
     // Data structures
     struct ComponentHealthData {
@@ -114,13 +141,15 @@ private:
     QWidget* m_centralWidget;
     QVBoxLayout* m_mainLayout;
     
-    // Chart views
-    QChartView* m_healthTrendChart;      // Real-time
-    QChartView* m_componentDistChart;    // On-demand
-    QChartView* m_subsystemPerfChart;    // On-demand
-    QChartView* m_messageFreqChart;      // On-demand
-    QChartView* m_alertHistoryChart;     // On-demand
-    QChartView* m_comparisonChart;       // On-demand
+    // 2x2 Grid structure
+    struct ChartGrid {
+        QChartView* chartView;
+        QComboBox* chartTypeCombo;
+        ChartType currentChartType;
+        QWidget* containerWidget;
+    };
+    
+    ChartGrid m_chartGrids[4];  // 2x2 grid = 4 charts
     
     // KPI Labels
     QLabel* m_totalComponentsLabel;
