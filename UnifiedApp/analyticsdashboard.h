@@ -69,19 +69,19 @@ private:
     void setupUI();
     void createCharts();
     void generateSampleData();
-    void updateCharts();
+    
+    // Separate update methods for real-time vs on-demand
+    void updateHealthTrendChart();  // Real-time only
+    void updateAllCharts();          // On-demand (Refresh button)
+    void updateKPIs();               // Update KPI cards
     
     // Chart creation helpers
     QChartView* createHealthTrendChart();
     QChartView* createComponentDistributionChart();
     QChartView* createSubsystemPerformanceChart();
-    QChartView* createHealthAreaChart();
     QChartView* createMessageFrequencyChart();
-    QChartView* createTelemetryChart();
     QChartView* createAlertHistoryChart();
     QChartView* createComponentComparisonChart();
-    QChartView* createSystemEfficiencyChart();
-    QChartView* createUpTimeChart();
     
     // KPI Cards
     QWidget* createKPICard(const QString& title, const QString& value, const QString& subtitle, const QColor& color);
@@ -115,24 +115,18 @@ private:
     QVBoxLayout* m_mainLayout;
     
     // Chart views
-    QChartView* m_healthTrendChart;
-    QChartView* m_componentDistChart;
-    QChartView* m_subsystemPerfChart;
-    QChartView* m_healthAreaChart;
-    QChartView* m_messageFreqChart;
-    QChartView* m_telemetryChart;
-    QChartView* m_alertHistoryChart;
-    QChartView* m_comparisonChart;
-    QChartView* m_efficiencyChart;
-    QChartView* m_upTimeChart;
+    QChartView* m_healthTrendChart;      // Real-time
+    QChartView* m_componentDistChart;    // On-demand
+    QChartView* m_subsystemPerfChart;    // On-demand
+    QChartView* m_messageFreqChart;      // On-demand
+    QChartView* m_alertHistoryChart;     // On-demand
+    QChartView* m_comparisonChart;       // On-demand
     
     // KPI Labels
     QLabel* m_totalComponentsLabel;
     QLabel* m_activeComponentsLabel;
     QLabel* m_avgHealthLabel;
     QLabel* m_totalAlertsLabel;
-    QLabel* m_systemEfficiencyLabel;
-    QLabel* m_upTimeLabel;
     
     // Controls
     QComboBox* m_timeRangeCombo;
