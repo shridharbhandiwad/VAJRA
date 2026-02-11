@@ -1,6 +1,7 @@
 #include "canvas.h"
 #include "componentregistry.h"
 #include "thememanager.h"
+#include "subcomponent.h"
 #include <QDragEnterEvent>
 #include <QMouseEvent>
 #include <QKeyEvent>
@@ -21,7 +22,7 @@ Canvas::Canvas(QWidget* parent)
     , m_connectionCounter(0)
     , m_mode(CanvasMode::Select)
     , m_pendingConnectionType(ConnectionType::Unidirectional)
-    , m_connectionSource(nullptr)
+    , m_connectionSourceItem(nullptr)
     , m_pendingLine(nullptr)
     , m_isDrawingConnection(false)
 {
@@ -114,7 +115,7 @@ void Canvas::clearCanvas()
     m_componentCounter = 0;
     m_connectionCounter = 0;
     m_componentMap.clear();
-    m_connectionSource = nullptr;
+    m_connectionSourceItem = nullptr;
     m_pendingLine = nullptr;
     m_isDrawingConnection = false;
 }
@@ -181,7 +182,7 @@ void Canvas::setMode(CanvasMode mode)
             delete m_pendingLine;
             m_pendingLine = nullptr;
         }
-        m_connectionSource = nullptr;
+        m_connectionSourceItem = nullptr;
         m_isDrawingConnection = false;
     } else if (m_mode == CanvasMode::Connect) {
         setCursor(Qt::CrossCursor);
@@ -212,6 +213,50 @@ Connection* Canvas::addConnection(Component* source, Component* target,
     
     qDebug() << "[Canvas] Connection created:" << conn->getId() 
              << "from" << source->getId() << "to" << target->getId()
+             << "type:" << Connection::connectionTypeToString(type)
+             << "label:" << label;
+    
+    emit connectionAdded(conn);
+    return conn;
+}
+
+Connection* Canvas::addConnectionBetweenItems(QGraphicsItem* source, QGraphicsItem* target,
+                                              ConnectionType type, const QString& label)
+{
+    if (!source || !target || source == target) return nullptr;
+    
+    // Check if connection already exists
+    for (Connection* conn : m_connections) {
+        if ((conn->getSourceItem() == source && conn->getTargetItem() == target) ||
+            (conn->getSourceItem() == target && conn->getTargetItem() == source)) {
+            qDebug() << "[Canvas] Connection already exists between these items";
+            return nullptr;
+        }
+    }
+    
+    Connection* conn = new Connection(source, target, type, label);
+    conn->setId(QString("connection_%1").arg(++m_connectionCounter));
+    
+    m_scene->addItem(conn);
+    m_connections.append(conn);
+    
+    // Log the connection with appropriate details
+    QString sourceDesc = "item";
+    QString targetDesc = "item";
+    
+    Component* srcComp = qgraphicsitem_cast<Component*>(source);
+    Component* tgtComp = qgraphicsitem_cast<Component*>(target);
+    SubComponent* srcSub = qgraphicsitem_cast<SubComponent*>(source);
+    SubComponent* tgtSub = qgraphicsitem_cast<SubComponent*>(target);
+    
+    if (srcComp) sourceDesc = QString("Component(%1)").arg(srcComp->getId());
+    else if (srcSub) sourceDesc = QString("SubComponent(%1)").arg(srcSub->getName());
+    
+    if (tgtComp) targetDesc = QString("Component(%1)").arg(tgtComp->getId());
+    else if (tgtSub) targetDesc = QString("SubComponent(%1)").arg(tgtSub->getName());
+    
+    qDebug() << "[Canvas] Connection created:" << conn->getId() 
+             << "from" << sourceDesc << "to" << targetDesc
              << "type:" << Connection::connectionTypeToString(type)
              << "label:" << label;
     
@@ -371,14 +416,14 @@ void Canvas::mousePressEvent(QMouseEvent* event)
     
     if (m_mode == CanvasMode::Connect && event->button() == Qt::LeftButton) {
         QPointF scenePos = mapToScene(event->pos());
-        Component* comp = componentAtPoint(scenePos);
+        QGraphicsItem* item = connectableItemAtPoint(scenePos);
         
-        if (comp) {
-            m_connectionSource = comp;
+        if (item) {
+            m_connectionSourceItem = item;
             m_isDrawingConnection = true;
             
             // Create a temporary line to show the pending connection
-            QPointF startPos = comp->sceneBoundingRect().center();
+            QPointF startPos = item->sceneBoundingRect().center();
             m_pendingLine = m_scene->addLine(
                 QLineF(startPos, startPos),
                 QPen(QColor(100, 180, 220, 150), 2, Qt::DashLine));
@@ -390,7 +435,7 @@ void Canvas::mousePressEvent(QMouseEvent* event)
     
     QGraphicsView::mousePressEvent(event);
     
-    // Update connections when components are being moved
+    // Update connections when items are being moved
     if (m_mode == CanvasMode::Select) {
         updateAllConnections();
     }
@@ -398,24 +443,24 @@ void Canvas::mousePressEvent(QMouseEvent* event)
 
 void Canvas::mouseMoveEvent(QMouseEvent* event)
 {
-    if (m_isDrawingConnection && m_pendingLine && m_connectionSource) {
+    if (m_isDrawingConnection && m_pendingLine && m_connectionSourceItem) {
         QPointF scenePos = mapToScene(event->pos());
-        QPointF startPos = m_connectionSource->sceneBoundingRect().center();
+        QPointF startPos = m_connectionSourceItem->sceneBoundingRect().center();
         m_pendingLine->setLine(QLineF(startPos, scenePos));
         return;
     }
     
     QGraphicsView::mouseMoveEvent(event);
     
-    // Update connections while dragging components
+    // Update connections while dragging items
     updateAllConnections();
 }
 
 void Canvas::mouseReleaseEvent(QMouseEvent* event)
 {
-    if (m_isDrawingConnection && m_connectionSource && event->button() == Qt::LeftButton) {
+    if (m_isDrawingConnection && m_connectionSourceItem && event->button() == Qt::LeftButton) {
         QPointF scenePos = mapToScene(event->pos());
-        Component* target = componentAtPoint(scenePos);
+        QGraphicsItem* target = connectableItemAtPoint(scenePos);
         
         // Remove the pending line
         if (m_pendingLine) {
@@ -424,7 +469,7 @@ void Canvas::mouseReleaseEvent(QMouseEvent* event)
             m_pendingLine = nullptr;
         }
         
-        if (target && target != m_connectionSource) {
+        if (target && target != m_connectionSourceItem) {
             // Ask for connection label
             QString label = m_pendingConnectionLabel;
             if (label.isEmpty()) {
@@ -433,16 +478,16 @@ void Canvas::mouseReleaseEvent(QMouseEvent* event)
                     "Enter label for the connection (or leave empty):",
                     QLineEdit::Normal, "", &ok);
                 if (!ok) {
-                    m_connectionSource = nullptr;
+                    m_connectionSourceItem = nullptr;
                     m_isDrawingConnection = false;
                     return;
                 }
             }
             
-            addConnection(m_connectionSource, target, m_pendingConnectionType, label);
+            addConnectionBetweenItems(m_connectionSourceItem, target, m_pendingConnectionType, label);
         }
         
-        m_connectionSource = nullptr;
+        m_connectionSourceItem = nullptr;
         m_isDrawingConnection = false;
         return;
     }
@@ -482,7 +527,7 @@ void Canvas::keyPressEvent(QKeyEvent* event)
             delete m_pendingLine;
             m_pendingLine = nullptr;
         }
-        m_connectionSource = nullptr;
+        m_connectionSourceItem = nullptr;
         m_isDrawingConnection = false;
     }
     
@@ -517,6 +562,33 @@ Component* Canvas::componentAtPoint(const QPointF& scenePos)
             if (parentComp) return parentComp;
         }
     }
+    return nullptr;
+}
+
+// ======================================================================
+// Helper – find connectable item (Component or SubComponent) at scene position
+// ======================================================================
+
+QGraphicsItem* Canvas::connectableItemAtPoint(const QPointF& scenePos)
+{
+    QList<QGraphicsItem*> items = m_scene->items(scenePos);
+    
+    // Prioritize SubComponents (they are drawn on top of Components)
+    for (QGraphicsItem* item : items) {
+        SubComponent* sub = qgraphicsitem_cast<SubComponent*>(item);
+        if (sub) {
+            return sub;
+        }
+    }
+    
+    // If no SubComponent found, look for a Component
+    for (QGraphicsItem* item : items) {
+        Component* comp = qgraphicsitem_cast<Component*>(item);
+        if (comp) {
+            return comp;
+        }
+    }
+    
     return nullptr;
 }
 
