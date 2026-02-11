@@ -1,6 +1,7 @@
 #include "editcomponentdialog.h"
 #include "componentregistry.h"
 #include "thememanager.h"
+#include "canvas.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
@@ -14,9 +15,10 @@
 #include <QFile>
 #include <QDebug>
 
-EditComponentDialog::EditComponentDialog(Component* component, QWidget* parent)
+EditComponentDialog::EditComponentDialog(Component* component, Canvas* canvas, QWidget* parent)
     : QDialog(parent)
     , m_component(component)
+    , m_canvas(canvas)
     , m_hasChanges(false)
 {
     setWindowTitle("Edit Component");
@@ -582,7 +584,12 @@ void EditComponentDialog::applyChanges()
     
     // Update subsystems
     // First, remove all existing subsystems
+    // Important: Clean up connections before removing subcomponents to avoid crashes
     while (m_component->subComponentCount() > 0) {
+        SubComponent* sub = m_component->getSubComponents()[0];
+        if (m_canvas && sub) {
+            m_canvas->removeConnectionsInvolvingSubComponent(sub);
+        }
         m_component->removeSubComponent(0);
     }
     

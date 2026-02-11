@@ -292,6 +292,52 @@ void Canvas::removeConnection(Connection* conn)
     delete conn;
 }
 
+void Canvas::removeConnectionsInvolvingItem(QGraphicsItem* item)
+{
+    if (!item) return;
+    
+    QList<Connection*> connectionsToRemove;
+    for (Connection* conn : m_connections) {
+        if (conn->involvesItem(item)) {
+            connectionsToRemove.append(conn);
+        }
+    }
+    
+    for (Connection* conn : connectionsToRemove) {
+        m_scene->removeItem(conn);
+        m_connections.removeAll(conn);
+        delete conn;
+    }
+    
+    if (!connectionsToRemove.isEmpty()) {
+        qDebug() << "[Canvas] Removed" << connectionsToRemove.size() 
+                 << "connections involving item";
+    }
+}
+
+void Canvas::removeConnectionsInvolvingSubComponent(SubComponent* sub)
+{
+    if (!sub) return;
+    
+    QList<Connection*> connectionsToRemove;
+    for (Connection* conn : m_connections) {
+        if (conn->involvesSubComponent(sub)) {
+            connectionsToRemove.append(conn);
+        }
+    }
+    
+    for (Connection* conn : connectionsToRemove) {
+        m_scene->removeItem(conn);
+        m_connections.removeAll(conn);
+        delete conn;
+    }
+    
+    if (!connectionsToRemove.isEmpty()) {
+        qDebug() << "[Canvas] Removed" << connectionsToRemove.size() 
+                 << "connections involving SubComponent:" << sub->getName();
+    }
+}
+
 void Canvas::deleteSelectedConnections()
 {
     QList<Connection*> toRemove;
@@ -1040,7 +1086,12 @@ bool Canvas::importComponent(const QString& filePath)
     comp->setPos(centerPos);
     
     // Clear default subsystems and add imported ones
+    // Important: Clean up connections before removing subcomponents to avoid crashes
     while (comp->subComponentCount() > 0) {
+        SubComponent* sub = comp->getSubComponents()[0];
+        if (sub) {
+            removeConnectionsInvolvingSubComponent(sub);
+        }
         comp->removeSubComponent(0);
     }
     

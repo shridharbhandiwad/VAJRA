@@ -22,12 +22,14 @@
  * - Export design subcomponents to .subcmp file
  * - Beautiful, modern UI with consistent styling
  */
+class Canvas;  // Forward declaration
+
 class EditComponentDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit EditComponentDialog(Component* component, QWidget* parent = nullptr);
+    explicit EditComponentDialog(Component* component, Canvas* canvas = nullptr, QWidget* parent = nullptr);
     
     // Get the updated component properties (returns true if changes were made)
     bool hasChanges() const { return m_hasChanges; }
@@ -50,6 +52,7 @@ private:
     void applyChanges();
     
     Component* m_component;
+    Canvas* m_canvas;
     bool m_hasChanges;
     
     // UI Elements

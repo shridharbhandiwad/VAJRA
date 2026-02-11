@@ -811,7 +811,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
     
     if (editAction && selected == editAction) {
         // Open edit dialog
-        EditComponentDialog dialog(this);
+        EditComponentDialog dialog(this, canvas);
         if (dialog.exec() == QDialog::Accepted && dialog.hasChanges()) {
             // Changes have been applied to the component
             update();

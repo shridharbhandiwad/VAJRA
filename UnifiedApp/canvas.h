@@ -70,6 +70,8 @@ public:
     void removeConnection(Connection* conn);
     QList<Connection*> getConnections() const { return m_connections; }
     void deleteSelectedConnections();
+    void removeConnectionsInvolvingItem(QGraphicsItem* item);
+    void removeConnectionsInvolvingSubComponent(SubComponent* sub);
     
     // Remove all components of a specific type (called when type is deleted from registry)
     void removeComponentsByType(const QString& typeId);
