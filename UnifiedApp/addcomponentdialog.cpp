@@ -255,7 +255,7 @@ void AddComponentDialog::onNameChanged(const QString& text)
     // Auto-generate label from name if label is empty or was auto-generated
     if (m_labelEdit->text().isEmpty() || m_labelEdit->text().length() <= 5) {
         QString autoLabel;
-        QStringList words = text.split(' ', Qt::SkipEmptyParts);
+        QStringList words = text.split(' ', QString::SkipEmptyParts);
         if (words.size() >= 2) {
             // Take first letter of each word
             for (const QString& word : words) {
@@ -321,7 +321,7 @@ void AddComponentDialog::onBrowseImage()
 QString AddComponentDialog::generateTypeId(const QString& displayName) const
 {
     // Convert "GPS Receiver" -> "GpsReceiver"
-    QStringList words = displayName.split(' ', Qt::SkipEmptyParts);
+    QStringList words = displayName.split(' ', QString::SkipEmptyParts);
     QString typeId;
     for (const QString& word : words) {
         if (!word.isEmpty()) {
@@ -354,7 +354,7 @@ void AddComponentDialog::onAddClicked()
     QStringList subsystems;
     QString subsText = m_subsystemsEdit->toPlainText().trimmed();
     if (!subsText.isEmpty()) {
-        QStringList lines = subsText.split('\n', Qt::SkipEmptyParts);
+        QStringList lines = subsText.split('\n', QString::SkipEmptyParts);
         for (const QString& line : lines) {
             QString trimmed = line.trimmed();
             if (!trimmed.isEmpty()) {
