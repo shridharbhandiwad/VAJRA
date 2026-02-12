@@ -94,10 +94,6 @@ void MainWindow::applyRoleRestrictions()
         // No per-component enlarged view tabs (design-focused workflow).
         // Dashboard view is only for User mode.
         
-        // Hide status label (not needed for design view)
-        if (m_statusLabel) m_statusLabel->setVisible(false);
-        if (m_statusSep) m_statusSep->setVisible(false);
-        
         // Hide voice controls (not needed for design view)
         if (m_voiceToggleBtnAction) m_voiceToggleBtnAction->setVisible(false);
         if (m_testVoiceBtnAction) m_testVoiceBtnAction->setVisible(false);
@@ -210,11 +206,13 @@ void MainWindow::setupUI()
     m_connectionTypeComboAction = toolbar->addWidget(m_connectionTypeCombo);
     m_connectSep = toolbar->addSeparator();
     
-    // Runtime status & voice controls
-    m_statusLabel = new QLabel("STATUS: INITIALIZING", this);
-    m_statusLabel->setObjectName("statusLabel");
-    toolbar->addWidget(m_statusLabel);
-    m_statusSep = toolbar->addSeparator();
+    // Runtime status & voice controls (only for User/Monitor mode)
+    if (m_role == UserRole::User) {
+        m_statusLabel = new QLabel("STATUS: INITIALIZING", this);
+        m_statusLabel->setObjectName("statusLabel");
+        toolbar->addWidget(m_statusLabel);
+        m_statusSep = toolbar->addSeparator();
+    }
     
     m_voiceToggleBtn = new QPushButton("VOICE: ON", this);
     m_voiceToggleBtn->setObjectName("voiceToggleBtn");
@@ -381,28 +379,34 @@ void MainWindow::setupUI()
     connect(m_canvas, &Canvas::modeChanged, this, &MainWindow::onModeChanged);
     
     // ========== INITIALIZE RUNTIME SERVICES ==========
-    // Voice alert manager
-    m_voiceAlertManager = new VoiceAlertManager(this);
-    
-    // Message server for health data from external systems
-    m_messageServer = new MessageServer(this);
-    if (m_messageServer->startServer(12345)) {
-        m_statusLabel->setText("STATUS: ACTIVE  |  PORT: 12345  |  CLIENTS: 0");
-    } else {
-        m_statusLabel->setText("STATUS: SERVER FAILED");
-        qWarning() << "[MainWindow] Failed to start message server on port 12345";
+    // Voice alert manager (only for User/Monitor mode)
+    if (m_role == UserRole::User) {
+        m_voiceAlertManager = new VoiceAlertManager(this);
+        
+        // Message server for health data from external systems
+        m_messageServer = new MessageServer(this);
+        if (m_messageServer->startServer(12345)) {
+            if (m_statusLabel) {
+                m_statusLabel->setText("STATUS: ACTIVE  |  PORT: 12345  |  CLIENTS: 0");
+            }
+        } else {
+            if (m_statusLabel) {
+                m_statusLabel->setText("STATUS: SERVER FAILED");
+            }
+            qWarning() << "[MainWindow] Failed to start message server on port 12345";
+        }
+        
+        connect(m_messageServer, &MessageServer::messageReceived, 
+                this, &MainWindow::onMessageReceived);
+        connect(m_messageServer, &MessageServer::subsystemHealthReceived,
+                this, &MainWindow::onSubsystemHealthReceived);
+        connect(m_messageServer, &MessageServer::telemetryReceived,
+                this, &MainWindow::onTelemetryReceived);
+        connect(m_messageServer, &MessageServer::clientConnected,
+                this, &MainWindow::onClientConnected);
+        connect(m_messageServer, &MessageServer::clientDisconnected,
+                this, &MainWindow::onClientDisconnected);
     }
-    
-    connect(m_messageServer, &MessageServer::messageReceived, 
-            this, &MainWindow::onMessageReceived);
-    connect(m_messageServer, &MessageServer::subsystemHealthReceived,
-            this, &MainWindow::onSubsystemHealthReceived);
-    connect(m_messageServer, &MessageServer::telemetryReceived,
-            this, &MainWindow::onTelemetryReceived);
-    connect(m_messageServer, &MessageServer::clientConnected,
-            this, &MainWindow::onClientConnected);
-    connect(m_messageServer, &MessageServer::clientDisconnected,
-            this, &MainWindow::onClientDisconnected);
 }
 
 // ======================================================================
