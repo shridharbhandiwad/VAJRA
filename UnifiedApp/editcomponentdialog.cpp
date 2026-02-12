@@ -458,6 +458,13 @@ void EditComponentDialog::onExportComponent()
     json["x"] = m_component->pos().x();
     json["y"] = m_component->pos().y();
     
+    // Export component type definition from registry
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    ComponentDefinition compDef = registry.getComponent(m_component->getTypeId());
+    if (!compDef.typeId.isEmpty()) {
+        json["componentDefinition"] = compDef.toJson();
+    }
+    
     // Export subsystems
     QJsonArray subsystems;
     QList<SubComponent*> subComponents = m_component->getSubComponents();
