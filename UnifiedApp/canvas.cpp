@@ -1089,11 +1089,35 @@ bool Canvas::importComponent(const QString& filePath)
     qreal userWidth = json["userWidth"].toDouble(0);
     qreal userHeight = json["userHeight"].toDouble(0);
     
-    // Verify type exists in registry
+    // Check if component type exists in registry
     ComponentRegistry& registry = ComponentRegistry::instance();
     if (!registry.hasComponent(typeId)) {
-        qWarning() << "[Canvas] Unknown component type:" << typeId;
-        return false;
+        // Try to import component definition if it's included in the file
+        if (json.contains("componentDefinition")) {
+            QJsonObject compDefJson = json["componentDefinition"].toObject();
+            ComponentDefinition compDef = ComponentDefinition::fromJson(compDefJson);
+            
+            if (compDef.typeId == typeId) {
+                qDebug() << "[Canvas] Registering new component type from import:" << typeId;
+                if (registry.registerComponent(compDef)) {
+                    // Save registry to persist the new component type
+                    if (registry.saveToFile()) {
+                        qDebug() << "[Canvas] Component type registered and saved:" << typeId;
+                    } else {
+                        qWarning() << "[Canvas] Failed to save registry after registering component type";
+                    }
+                } else {
+                    qWarning() << "[Canvas] Failed to register component type:" << typeId;
+                    return false;
+                }
+            } else {
+                qWarning() << "[Canvas] Component definition typeId mismatch:" << compDef.typeId << "vs" << typeId;
+                return false;
+            }
+        } else {
+            qWarning() << "[Canvas] Unknown component type and no definition provided:" << typeId;
+            return false;
+        }
     }
     
     // Create new component with unique ID
