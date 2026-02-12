@@ -94,6 +94,10 @@ void MainWindow::applyRoleRestrictions()
         // No per-component enlarged view tabs (design-focused workflow).
         // Dashboard view is only for User mode.
         
+        // Hide status label (not needed for design view)
+        if (m_statusLabel) m_statusLabel->setVisible(false);
+        if (m_statusSep) m_statusSep->setVisible(false);
+        
         // Hide voice controls (not needed for design view)
         if (m_voiceToggleBtnAction) m_voiceToggleBtnAction->setVisible(false);
         if (m_testVoiceBtnAction) m_testVoiceBtnAction->setVisible(false);
@@ -173,11 +177,11 @@ void MainWindow::setupUI()
     m_addTypeBtn->setObjectName("addTypeButton");
     m_addTypeBtn->setToolTip("Add a new component type to the registry");
     
-    m_importComponentBtn = new QPushButton("📥 IMPORT COMPONENT", this);
+    m_importComponentBtn = new QPushButton("IMPORT COMPONENT", this);
     m_importComponentBtn->setObjectName("importButton");
     m_importComponentBtn->setToolTip("Import a component from .cmp file");
     
-    m_importSubcomponentsBtn = new QPushButton("📥 IMPORT WIDGETS", this);
+    m_importSubcomponentsBtn = new QPushButton("IMPORT WIDGETS", this);
     m_importSubcomponentsBtn->setObjectName("importButton");
     m_importSubcomponentsBtn->setToolTip("Import design widgets from .subcmp file into selected component");
     
