@@ -5,6 +5,7 @@
 #include <QString>
 #include <QStringList>
 #include <QMap>
+#include <QVariantMap>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QColor>
@@ -13,6 +14,16 @@
  * ComponentDefinition - Data class holding all metadata for a component type.
  * This is the core of the modular architecture: new components are defined
  * entirely through data (JSON), not code.
+ *
+ * Protocol modality:
+ *   - protocol      : primary protocol string ("TCP", "UDP", "RS422", "RS232", "Modbus", "CAN")
+ *   - port          : primary port / device index
+ *   - protocolConfig: freeform QVariantMap forwarded to the ProtocolHandler.
+ *                     Keys depend on the protocol (host, device, baud, etc.)
+ *
+ * Antenna / TRM subsystem:
+ *   - trmCount      : number of TRM elements (0 = not a TRM subsystem)
+ *   - trmColumns    : columns in the TRM grid (default 16)
  */
 struct ComponentDefinition {
     QString typeId;          // Unique identifier (e.g., "Antenna", "PowerSystem")
@@ -22,11 +33,16 @@ struct ComponentDefinition {
     QString imageDir;        // Directory name under assets/subsystems/
     QColor iconColor;        // Fallback color when no image is available
     QStringList subsystems;  // Sub-component names for health tracking
-    QString protocol;        // Health protocol: "TCP", "UDP", "WebSocket", "MQTT"
-    int port;                // Port number for health data
+    QString protocol;        // Health protocol: "TCP","UDP","RS422","RS232","Modbus","CAN"
+    int port;                // Port number (TCP/UDP) or numeric device index
+    QVariantMap protocolConfig; // Extended protocol configuration (device, baud, host, etc.)
     QString category;        // Grouping category (e.g., "Sensor", "Infrastructure")
     QString shape;           // Fallback geometric shape: "ellipse", "rect", "hexagon", "diamond"
     QStringList allowedWidgets; // Widget sub-component types allowed: "Label", "LineEdit", "Button"
+
+    // TRM (Transmitter-Receiver Module) grid parameters
+    int trmCount;            // Total number of TRMs (0 = no TRM grid)
+    int trmColumns;          // Columns in TRM grid display (default 16)
 
     ComponentDefinition()
         : iconColor(Qt::blue)
@@ -34,11 +50,16 @@ struct ComponentDefinition {
         , port(12345)
         , shape("rect")
         , allowedWidgets({"Label", "LineEdit", "Button"})
+        , trmCount(0)
+        , trmColumns(16)
     {}
 
     QJsonObject toJson() const;
     static ComponentDefinition fromJson(const QJsonObject& obj);
-    
+
+    // Convenience: build a ProtocolHandler config from this definition
+    QVariantMap buildProtocolConfig() const;
+
     // Helper to get full image path
     QString imagePath() const;
     QString imagePathPng() const;
@@ -79,6 +100,11 @@ public:
     
     // Protocol info
     QStringList availableProtocols() const;
+
+    // Build a ProtocolHandler config for a specific placed component instance.
+    // component_id is injected so Modbus/CAN handlers can stamp their JSON.
+    QVariantMap buildProtocolConfig(const QString& typeId,
+                                    const QString& componentId) const;
     
     // Resolve display name to type ID (for drag-drop compatibility)
     QString resolveTypeId(const QString& displayNameOrTypeId) const;

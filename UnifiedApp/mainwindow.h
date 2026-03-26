@@ -18,6 +18,7 @@
 #include "designsubcomponent.h"
 #include "userrole.h"
 #include <QJsonObject>
+#include <QJsonArray>
 
 /**
  * MainWindow - Unified application window that combines Designer and Runtime
@@ -59,6 +60,7 @@ private slots:
     void onSubsystemHealthReceived(const QString& componentId, const QString& subsystemName,
                                    const QString& color, qreal health);
     void onTelemetryReceived(const QString& componentId, const QJsonObject& telemetry);
+    void onTrmDataReceived(const QString& componentId, const QJsonArray& trmArray);
     void onClientConnected();
     void onClientDisconnected();
     void toggleVoiceAlerts();

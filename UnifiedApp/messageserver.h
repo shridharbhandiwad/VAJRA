@@ -2,67 +2,97 @@
 #define MESSAGESERVER_H
 
 #include <QObject>
-#include <QTcpServer>
-#include <QTcpSocket>
-#include <QUdpSocket>
-#include <QList>
 #include <QMap>
 #include <QJsonObject>
+#include "protocolhandler.h"
+#include "protocolhandlerfactory.h"
 
 /**
- * MessageServer - Multi-protocol health message receiver.
- * 
- * Supports receiving health data via:
- * - TCP (default, line-delimited JSON)
- * - UDP (JSON datagrams)
- * 
- * Extended APCU Protocol:
- * - Basic health:     { "component_id", "color", "size" }
- * - Subsystem health: { "component_id", "subsystem", "color", "size" }
- * - Full telemetry:   { "component_id", "color", "size", "subsystem_health": {...}, "apcu_telemetry": {...} }
- * 
- * WebSocket and MQTT can be added by extending this class.
- * The protocol is configurable per component type via the ComponentRegistry.
+ * MessageServer – Multi-protocol health message dispatcher.
+ *
+ * Each subsystem (component) is registered with its own ProtocolHandler.
+ * Supported protocols: TCP, UDP, RS422, RS232, Modbus, CAN.
+ * Protocol handlers are interchangeable at runtime; the rest of the
+ * application sees only the same signals regardless of the transport.
+ *
+ * Default behaviour (backward-compatible):
+ *   startServer(port)    – starts a shared TCP handler on <port>
+ *   startUdpServer(port) – starts a shared UDP handler on <port>
+ *
+ * Per-component protocol registration:
+ *   registerComponentProtocol(componentId, type, config)
+ *   – creates a dedicated handler for that component.
+ *   The handler forwards its dataReceived() to the same parseAndEmitMessage()
+ *   pipeline, with the component_id injected when it is missing from the frame.
+ *
+ * JSON message shapes (unchanged from original protocol):
+ *   Basic:          { "component_id", "color", "size" }
+ *   Single system:  { "component_id", "subsystem", "color", "size" }
+ *   Bulk subsystem: { "component_id", "color", "size",
+ *                     "subsystem_health": { "Name": 0-100, ... } }
+ *   APCU telemetry: { ..., "apcu_telemetry": { ... } }
+ *   TRM grid:       { ..., "trm_data": [ { "id", "health", "color", ... }, ... ] }
  */
 class MessageServer : public QObject
 {
     Q_OBJECT
-    
+
 public:
     explicit MessageServer(QObject* parent = nullptr);
     ~MessageServer();
-    
+
+    // ── Legacy convenience API (backward-compatible) ──────────────
     bool startServer(quint16 port = 12345);
     bool startUdpServer(quint16 port = 12346);
     void stopServer();
     bool isRunning() const;
-    
+
+    // ── Per-component protocol management ─────────────────────────
+    /**
+     * Register a dedicated protocol handler for a specific component.
+     * If a handler already exists for componentId it is replaced.
+     * Pass an empty componentId to create a "global" handler whose
+     * messages are routed purely by the component_id field in the JSON.
+     */
+    bool registerComponentProtocol(const QString& componentId,
+                                   ProtocolType type,
+                                   const QVariantMap& config);
+
+    void unregisterComponentProtocol(const QString& componentId);
+
+    /** Returns the protocol type currently in use for a component,
+     *  or TCP if no dedicated handler exists. */
+    ProtocolType protocolForComponent(const QString& componentId) const;
+
+    QStringList registeredComponents() const;
+
 signals:
-    /** Basic component-level health update. */
     void messageReceived(const QString& componentId, const QString& color, qreal size);
-    
-    /** Per-subsystem health update (from APCU extended protocol). */
     void subsystemHealthReceived(const QString& componentId, const QString& subsystemName,
                                  const QString& color, qreal health);
-    
-    /** Full APCU telemetry payload received. */
     void telemetryReceived(const QString& componentId, const QJsonObject& telemetry);
-    
+    void trmDataReceived(const QString& componentId, const QJsonArray& trmArray);
     void clientConnected();
     void clientDisconnected();
-    
+
 private slots:
-    void onNewConnection();
-    void onReadyRead();
-    void onDisconnected();
-    void onUdpReadyRead();
-    
+    void onHandlerData(const QByteArray& data);
+    void onHandlerConnected();
+    void onHandlerDisconnected();
+
 private:
     void parseAndEmitMessage(const QByteArray& data);
-    
-    QTcpServer* m_tcpServer;
-    QUdpSocket* m_udpSocket;
-    QList<QTcpSocket*> m_clients;
+    void attachHandler(const QString& componentId, ProtocolHandler* handler);
+
+    struct HandlerEntry {
+        ProtocolType type;
+        ProtocolHandler* handler;
+    };
+
+    // "global" key "" holds the legacy shared handlers
+    QMap<QString, HandlerEntry> m_handlers;
 };
+
+#include <QJsonArray>
 
 #endif // MESSAGESERVER_H

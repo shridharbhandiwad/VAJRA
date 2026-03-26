@@ -10,8 +10,11 @@
 #include <QScrollArea>
 #include <QPainter>
 #include <QTimer>
+#include <QTabWidget>
+#include <QJsonArray>
 #include "component.h"
 #include "subcomponent.h"
+#include "trmgridview.h"
 
 // ─── Subsystem health bar widget ───────────────────────────────
 class SubsystemHealthBar : public QWidget
@@ -66,6 +69,7 @@ public:
 
     void updateComponentHealth(const QColor& color, qreal size);
     void updateSubcomponentHealth(const QString& subName, qreal health, const QColor& color);
+    void updateTrmData(const QJsonArray& trmArray);
     void updateDisplayName(const QString& newDisplayName);
     void updateFromComponent(Component* sourceComponent);
     QString getComponentId() const { return m_componentId; }
@@ -94,6 +98,11 @@ private:
     QLabel* m_updateCountLabel;
     QLabel* m_statusChangesLabel;
     QLabel* m_avgHealthLabel;
+
+    // TRM grid (shown for Antenna-type components)
+    QTabWidget* m_tabWidget;
+    TrmGridView* m_trmGrid;
+    bool m_hasTrmGrid;
 
     QStringList m_subcomponentNames;
     int m_updateCount;

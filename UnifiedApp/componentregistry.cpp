@@ -21,24 +21,32 @@ QJsonObject ComponentDefinition::toJson() const
     obj["description"] = description;
     obj["image_dir"] = imageDir;
     obj["icon_color"] = iconColor.name();
-    
+
     QJsonArray subsArr;
-    for (const QString& s : subsystems) {
+    for (const QString& s : subsystems)
         subsArr.append(s);
-    }
     obj["subsystems"] = subsArr;
-    
+
     obj["protocol"] = protocol;
     obj["port"] = port;
+
+    if (!protocolConfig.isEmpty()) {
+        obj["protocol_config"] = QJsonObject::fromVariantMap(protocolConfig);
+    }
+
     obj["category"] = category;
     obj["shape"] = shape;
-    
+
     QJsonArray widgetsArr;
-    for (const QString& w : allowedWidgets) {
+    for (const QString& w : allowedWidgets)
         widgetsArr.append(w);
-    }
     obj["allowed_widgets"] = widgetsArr;
-    
+
+    if (trmCount > 0) {
+        obj["trm_count"] = trmCount;
+        obj["trm_columns"] = trmColumns;
+    }
+
     return obj;
 }
 
@@ -51,29 +59,42 @@ ComponentDefinition ComponentDefinition::fromJson(const QJsonObject& obj)
     def.description = obj["description"].toString();
     def.imageDir = obj["image_dir"].toString();
     def.iconColor = QColor(obj["icon_color"].toString());
-    
+
     QJsonArray subsArr = obj["subsystems"].toArray();
-    for (const QJsonValue& v : subsArr) {
+    for (const QJsonValue& v : subsArr)
         def.subsystems.append(v.toString());
-    }
-    
+
     def.protocol = obj["protocol"].toString("TCP");
     def.port = obj["port"].toInt(12345);
+
+    if (obj.contains("protocol_config"))
+        def.protocolConfig = obj["protocol_config"].toObject().toVariantMap();
+
     def.category = obj["category"].toString("General");
     def.shape = obj["shape"].toString("rect");
-    
+
     QJsonArray widgetsArr = obj["allowed_widgets"].toArray();
     if (widgetsArr.isEmpty()) {
-        // Default: all widget types allowed
         def.allowedWidgets = QStringList() << "Label" << "LineEdit" << "Button";
     } else {
         def.allowedWidgets.clear();
-        for (const QJsonValue& v : widgetsArr) {
+        for (const QJsonValue& v : widgetsArr)
             def.allowedWidgets.append(v.toString());
-        }
     }
-    
+
+    def.trmCount = obj["trm_count"].toInt(0);
+    def.trmColumns = obj["trm_columns"].toInt(16);
+
     return def;
+}
+
+QVariantMap ComponentDefinition::buildProtocolConfig() const
+{
+    QVariantMap cfg = protocolConfig;
+    cfg["port"] = port;
+    // Ensure host has a default
+    if (!cfg.contains("host")) cfg["host"] = "0.0.0.0";
+    return cfg;
 }
 
 QString ComponentDefinition::imagePath() const
@@ -271,7 +292,18 @@ QList<ComponentDefinition> ComponentRegistry::getComponentsByCategory(const QStr
 
 QStringList ComponentRegistry::availableProtocols() const
 {
-    return QStringList() << "TCP" << "UDP" << "WebSocket" << "MQTT";
+    return QStringList() << "TCP" << "UDP" << "RS422" << "RS232" << "Modbus" << "CAN";
+}
+
+QVariantMap ComponentRegistry::buildProtocolConfig(const QString& typeId,
+                                                    const QString& componentId) const
+{
+    ComponentDefinition def = getComponent(typeId);
+    QVariantMap cfg = def.buildProtocolConfig();
+    cfg["component_id"] = componentId;
+    if (!def.subsystems.isEmpty())
+        cfg["subsystems"] = def.subsystems;
+    return cfg;
 }
 
 QString ComponentRegistry::resolveTypeId(const QString& displayNameOrTypeId) const

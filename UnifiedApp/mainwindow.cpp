@@ -2,6 +2,7 @@
 #include "componentregistry.h"
 #include "addcomponentdialog.h"
 #include "thememanager.h"
+#include <QJsonArray>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -396,12 +397,14 @@ void MainWindow::setupUI()
             qWarning() << "[MainWindow] Failed to start message server on port 12345";
         }
         
-        connect(m_messageServer, &MessageServer::messageReceived, 
+        connect(m_messageServer, &MessageServer::messageReceived,
                 this, &MainWindow::onMessageReceived);
         connect(m_messageServer, &MessageServer::subsystemHealthReceived,
                 this, &MainWindow::onSubsystemHealthReceived);
         connect(m_messageServer, &MessageServer::telemetryReceived,
                 this, &MainWindow::onTelemetryReceived);
+        connect(m_messageServer, &MessageServer::trmDataReceived,
+                this, &MainWindow::onTrmDataReceived);
         connect(m_messageServer, &MessageServer::clientConnected,
                 this, &MainWindow::onClientConnected);
         connect(m_messageServer, &MessageServer::clientDisconnected,
@@ -843,13 +846,20 @@ void MainWindow::onSubsystemHealthReceived(const QString& componentId,
 
 void MainWindow::onTelemetryReceived(const QString& componentId, const QJsonObject& telemetry)
 {
-    Q_UNUSED(telemetry);
-    // Full APCU telemetry received - log for now, can be extended
-    // for detailed quadrant/channel views in the future
-    qDebug() << "[MainWindow] Full APCU telemetry received for" << componentId
+    qDebug() << "[MainWindow] APCU telemetry received for" << componentId
              << "- unit:" << telemetry.value("unit").toString()
              << "- array_voltage:" << telemetry.value("array_voltage").toDouble()
              << "- array_current:" << telemetry.value("array_current").toDouble();
+}
+
+void MainWindow::onTrmDataReceived(const QString& componentId, const QJsonArray& trmArray)
+{
+    qDebug() << "[MainWindow] TRM data received for" << componentId
+             << "- TRMs:" << trmArray.size();
+
+    if (m_enlargedViews.contains(componentId)) {
+        m_enlargedViews[componentId]->updateTrmData(trmArray);
+    }
 }
 
 void MainWindow::onClientConnected()

@@ -6,7 +6,7 @@
       "type_id": "Antenna",
       "display_name": "Antenna System",
       "label": "ANT",
-      "description": "APCU-based phased array antenna system with 4 quadrants, temperature monitoring, board diagnostics, QTRMs, and AQC controllers",
+      "description": "APCU-based phased array antenna system. Each antenna subsystem consists of N Transmitter-Receiver Modules (TRMs) arranged in quadrants. Supports TCP, UDP, RS422, RS232, Modbus, and CAN protocols.",
       "image_dir": "antenna",
       "icon_color": "#4CAF50",
       "subsystems": [
@@ -24,8 +24,13 @@
       "allowed_widgets": ["Label", "LineEdit", "Button"],
       "protocol": "TCP",
       "port": 12345,
+      "protocol_config": {
+        "host": "0.0.0.0"
+      },
       "category": "Sensor",
-      "shape": "ellipse"
+      "shape": "ellipse",
+      "trm_count": 271,
+      "trm_columns": 16
     },
     {
       "type_id": "PowerSystem",
@@ -42,8 +47,11 @@
         "Power Distribution"
       ],
       "allowed_widgets": ["Label", "LineEdit", "Button"],
-      "protocol": "TCP",
-      "port": 12345,
+      "protocol": "UDP",
+      "port": 12346,
+      "protocol_config": {
+        "host": "0.0.0.0"
+      },
       "category": "Infrastructure",
       "shape": "rect"
     },
@@ -61,8 +69,16 @@
         "Heat Exchanger"
       ],
       "allowed_widgets": ["Label", "LineEdit", "Button"],
-      "protocol": "TCP",
+      "protocol": "RS422",
       "port": 12345,
+      "protocol_config": {
+        "device": "/dev/ttyUSB0",
+        "baud": 115200,
+        "dataBits": 8,
+        "stopBits": 1,
+        "parity": "none",
+        "sim_port": 12347
+      },
       "category": "Infrastructure",
       "shape": "ellipse"
     },
@@ -81,8 +97,13 @@
         "Protocol Handler"
       ],
       "allowed_widgets": ["Label", "LineEdit", "Button"],
-      "protocol": "TCP",
-      "port": 12345,
+      "protocol": "Modbus",
+      "port": 502,
+      "protocol_config": {
+        "host": "localhost",
+        "slave_id": 1,
+        "poll_ms": 1000
+      },
       "category": "Network",
       "shape": "rect"
     },
@@ -101,8 +122,12 @@
         "Storage Controller"
       ],
       "allowed_widgets": ["Label", "LineEdit", "Button"],
-      "protocol": "TCP",
-      "port": 12345,
+      "protocol": "CAN",
+      "port": 0,
+      "protocol_config": {
+        "interface": "vcan0",
+        "plugin": "socketcan"
+      },
       "category": "Processing",
       "shape": "rect"
     }

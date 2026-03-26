@@ -1,131 +1,168 @@
 #include "messageserver.h"
+#include "tcpprotocolhandler.h"
+#include "udpprotocolhandler.h"
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QDebug>
-#include <QNetworkDatagram>
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Construction / destruction
+// ────────────────────────────────────────────────────────────────────────────
 
 MessageServer::MessageServer(QObject* parent)
     : QObject(parent)
-    , m_tcpServer(new QTcpServer(this))
-    , m_udpSocket(nullptr)
-{
-    connect(m_tcpServer, &QTcpServer::newConnection, this, &MessageServer::onNewConnection);
-}
+{}
 
 MessageServer::~MessageServer()
 {
     stopServer();
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+//  Legacy API (backward-compatible)
+// ────────────────────────────────────────────────────────────────────────────
+
 bool MessageServer::startServer(quint16 port)
 {
-    if (m_tcpServer->isListening()) {
+    // Global TCP handler (key "")
+    if (m_handlers.contains("") && m_handlers[""].type == ProtocolType::TCP
+            && m_handlers[""].handler->isRunning()) {
         return true;
     }
-    
-    if (!m_tcpServer->listen(QHostAddress::Any, port)) {
-        qDebug() << "[MessageServer] Failed to start TCP server:" << m_tcpServer->errorString();
-        return false;
-    }
-    
-    qDebug() << "[MessageServer] TCP server started on port" << port;
-    
-    // Also start UDP on port+1
-    startUdpServer(port + 1);
-    
-    return true;
+
+    QVariantMap cfg;
+    cfg["port"] = (int)port;
+
+    return registerComponentProtocol("", ProtocolType::TCP, cfg);
 }
 
 bool MessageServer::startUdpServer(quint16 port)
 {
-    if (m_udpSocket) {
+    // Global UDP handler (key "udp_global")
+    const QString key = "udp_global";
+    if (m_handlers.contains(key) && m_handlers[key].handler->isRunning())
         return true;
-    }
-    
-    m_udpSocket = new QUdpSocket(this);
-    if (!m_udpSocket->bind(QHostAddress::Any, port)) {
-        qDebug() << "[MessageServer] Failed to start UDP server:" << m_udpSocket->errorString();
-        delete m_udpSocket;
-        m_udpSocket = nullptr;
-        return false;
-    }
-    
-    connect(m_udpSocket, &QUdpSocket::readyRead, this, &MessageServer::onUdpReadyRead);
-    qDebug() << "[MessageServer] UDP server started on port" << port;
-    return true;
-}
 
-bool MessageServer::isRunning() const
-{
-    return m_tcpServer->isListening();
+    QVariantMap cfg;
+    cfg["port"] = (int)port;
+
+    return registerComponentProtocol(key, ProtocolType::UDP, cfg);
 }
 
 void MessageServer::stopServer()
 {
-    foreach (QTcpSocket* client, m_clients) {
-        client->disconnectFromHost();
-        client->deleteLater();
+    for (auto it = m_handlers.begin(); it != m_handlers.end(); ++it) {
+        it->handler->stop();
+        it->handler->deleteLater();
     }
-    m_clients.clear();
-    
-    if (m_tcpServer->isListening()) {
-        m_tcpServer->close();
-    }
-    
-    if (m_udpSocket) {
-        m_udpSocket->close();
-        delete m_udpSocket;
-        m_udpSocket = nullptr;
-    }
+    m_handlers.clear();
 }
 
-void MessageServer::onNewConnection()
+bool MessageServer::isRunning() const
 {
-    QTcpSocket* client = m_tcpServer->nextPendingConnection();
-    m_clients.append(client);
-    
-    connect(client, &QTcpSocket::readyRead, this, &MessageServer::onReadyRead);
-    connect(client, &QTcpSocket::disconnected, this, &MessageServer::onDisconnected);
-    
-    qDebug() << "[MessageServer] TCP client connected:" << client->peerAddress().toString();
+    // True if the legacy TCP handler is running
+    if (m_handlers.contains("") && m_handlers[""].handler->isRunning())
+        return true;
+    // Or if any handler is running
+    for (auto& e : m_handlers) {
+        if (e.handler->isRunning()) return true;
+    }
+    return false;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Per-component protocol management
+// ────────────────────────────────────────────────────────────────────────────
+
+bool MessageServer::registerComponentProtocol(const QString& componentId,
+                                               ProtocolType type,
+                                               const QVariantMap& config)
+{
+    // Stop & remove existing handler for this component
+    if (m_handlers.contains(componentId)) {
+        m_handlers[componentId].handler->stop();
+        m_handlers[componentId].handler->deleteLater();
+        m_handlers.remove(componentId);
+    }
+
+    ProtocolHandler* h = ProtocolHandlerFactory::create(type, config, this);
+    if (!h) return false;
+
+    attachHandler(componentId, h);
+
+    if (!h->start()) {
+        qWarning() << "[MessageServer] Failed to start"
+                   << h->protocolName() << "handler for component"
+                   << (componentId.isEmpty() ? "(global)" : componentId);
+        h->deleteLater();
+        m_handlers.remove(componentId);
+        return false;
+    }
+
+    qDebug() << "[MessageServer] Registered" << h->protocolName()
+             << "handler for component"
+             << (componentId.isEmpty() ? "(global)" : componentId);
+    return true;
+}
+
+void MessageServer::unregisterComponentProtocol(const QString& componentId)
+{
+    if (!m_handlers.contains(componentId)) return;
+    m_handlers[componentId].handler->stop();
+    m_handlers[componentId].handler->deleteLater();
+    m_handlers.remove(componentId);
+}
+
+ProtocolType MessageServer::protocolForComponent(const QString& componentId) const
+{
+    if (m_handlers.contains(componentId))
+        return m_handlers[componentId].type;
+    return ProtocolType::TCP;
+}
+
+QStringList MessageServer::registeredComponents() const
+{
+    return m_handlers.keys();
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+//  Internal helpers
+// ────────────────────────────────────────────────────────────────────────────
+
+void MessageServer::attachHandler(const QString& componentId, ProtocolHandler* handler)
+{
+    connect(handler, &ProtocolHandler::dataReceived,
+            this, &MessageServer::onHandlerData);
+    connect(handler, &ProtocolHandler::connected,
+            this, &MessageServer::onHandlerConnected);
+    connect(handler, &ProtocolHandler::disconnected,
+            this, &MessageServer::onHandlerDisconnected);
+
+    HandlerEntry e;
+    e.type = ProtocolHandler::fromString(handler->protocolName());
+    e.handler = handler;
+    m_handlers[componentId] = e;
+}
+
+void MessageServer::onHandlerData(const QByteArray& data)
+{
+    parseAndEmitMessage(data);
+}
+
+void MessageServer::onHandlerConnected()
+{
     emit clientConnected();
 }
 
-void MessageServer::onReadyRead()
+void MessageServer::onHandlerDisconnected()
 {
-    QTcpSocket* client = qobject_cast<QTcpSocket*>(sender());
-    if (!client) return;
-    
-    while (client->canReadLine()) {
-        QByteArray data = client->readLine().trimmed();
-        if (!data.isEmpty()) {
-            parseAndEmitMessage(data);
-        }
-    }
-}
-
-void MessageServer::onDisconnected()
-{
-    QTcpSocket* client = qobject_cast<QTcpSocket*>(sender());
-    if (!client) return;
-    
-    qDebug() << "[MessageServer] TCP client disconnected:" << client->peerAddress().toString();
-    m_clients.removeAll(client);
-    client->deleteLater();
-    
     emit clientDisconnected();
 }
 
-void MessageServer::onUdpReadyRead()
-{
-    while (m_udpSocket && m_udpSocket->hasPendingDatagrams()) {
-        QNetworkDatagram datagram = m_udpSocket->receiveDatagram();
-        QByteArray data = datagram.data().trimmed();
-        if (!data.isEmpty()) {
-            parseAndEmitMessage(data);
-        }
-    }
-}
+// ────────────────────────────────────────────────────────────────────────────
+//  Message parsing (unchanged protocol logic)
+// ────────────────────────────────────────────────────────────────────────────
 
 void MessageServer::parseAndEmitMessage(const QByteArray& data)
 {
@@ -134,57 +171,58 @@ void MessageServer::parseAndEmitMessage(const QByteArray& data)
         qDebug() << "[MessageServer] Invalid JSON received";
         return;
     }
-    
+
     QJsonObject obj = doc.object();
     QString componentId = obj["component_id"].toString();
     QString color = obj["color"].toString();
     qreal size = obj["size"].toDouble();
-    
+
     if (componentId.isEmpty()) {
         qDebug() << "[MessageServer] Missing component_id in message";
         return;
     }
-    
-    // ── Check for subsystem-level health update ──
-    // Format: { "component_id", "subsystem", "color", "size" }
+
+    // ── Single subsystem update ──────────────────────────────────────
     if (obj.contains("subsystem")) {
         QString subsystem = obj["subsystem"].toString();
         if (!subsystem.isEmpty() && !color.isEmpty()) {
-            qDebug() << "[MessageServer] Subsystem health:" << componentId 
-                     << "/" << subsystem << ":" << color << size;
             emit subsystemHealthReceived(componentId, subsystem, color, size);
         }
-        return;  // Subsystem-only message, don't emit component-level
+        return;
     }
-    
-    // ── Basic component-level health update ──
+
+    // ── Component-level health update ────────────────────────────────
     if (!color.isEmpty() && size >= 0) {
-        qDebug() << "[MessageServer] Health update for" << componentId 
-                 << ":" << color << size;
         emit messageReceived(componentId, color, size);
     }
-    
-    // ── Check for subsystem_health map (bulk subsystem update) ──
-    // Format: { ..., "subsystem_health": { "SubName": 95.0, ... } }
+
+    // ── Bulk subsystem health map ────────────────────────────────────
     if (obj.contains("subsystem_health")) {
         QJsonObject subHealth = obj["subsystem_health"].toObject();
         for (auto it = subHealth.begin(); it != subHealth.end(); ++it) {
             QString subName = it.key();
-            qreal subHealthVal = it.value().toDouble();
-            // Determine color from health value
+            qreal subVal = it.value().toDouble();
             QString subColor;
-            if (subHealthVal >= 90) subColor = "#00FF00";
-            else if (subHealthVal >= 70) subColor = "#FFFF00";
-            else if (subHealthVal >= 40) subColor = "#FFA500";
-            else if (subHealthVal >= 10) subColor = "#FF0000";
-            else subColor = "#808080";
-            
-            emit subsystemHealthReceived(componentId, subName, subColor, subHealthVal);
+            if (subVal >= 90)      subColor = "#00FF00";
+            else if (subVal >= 70) subColor = "#FFFF00";
+            else if (subVal >= 40) subColor = "#FFA500";
+            else if (subVal >= 10) subColor = "#FF0000";
+            else                   subColor = "#808080";
+            emit subsystemHealthReceived(componentId, subName, subColor, subVal);
         }
     }
-    
-    // ── Check for full APCU telemetry ──
-    // Format: { ..., "apcu_telemetry": { ... } }
+
+    // ── TRM grid data ────────────────────────────────────────────────
+    if (obj.contains("trm_data")) {
+        QJsonArray trmArray = obj["trm_data"].toArray();
+        if (!trmArray.isEmpty()) {
+            qDebug() << "[MessageServer] TRM data received for" << componentId
+                     << "- TRMs:" << trmArray.size();
+            emit trmDataReceived(componentId, trmArray);
+        }
+    }
+
+    // ── Full APCU telemetry ──────────────────────────────────────────
     if (obj.contains("apcu_telemetry")) {
         QJsonObject telemetry = obj["apcu_telemetry"].toObject();
         qDebug() << "[MessageServer] APCU telemetry received for" << componentId;
