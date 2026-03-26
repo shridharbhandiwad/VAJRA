@@ -8,6 +8,7 @@
 #include <QFrame>
 #include <QDebug>
 #include <QtMath>
+#include <QTabWidget>
 
 // ═══════════════════════════════════════════════════════════════
 //  SubsystemHealthBar
@@ -270,11 +271,20 @@ EnlargedComponentView::EnlargedComponentView(const QString& componentId,
     , m_updateCountLabel(nullptr)
     , m_statusChangesLabel(nullptr)
     , m_avgHealthLabel(nullptr)
+    , m_tabWidget(nullptr)
+    , m_trmGrid(nullptr)
+    , m_hasTrmGrid(false)
     , m_subcomponentNames(subcomponentNames)
     , m_updateCount(0)
     , m_statusChanges(0)
     , m_healthSum(0)
 {
+    // Determine if this type has a TRM grid
+    ComponentRegistry& registry = ComponentRegistry::instance();
+    if (registry.hasComponent(typeId)) {
+        ComponentDefinition def = registry.getComponent(typeId);
+        m_hasTrmGrid = (def.trmCount > 0);
+    }
     setupUI();
 }
 
@@ -455,12 +465,43 @@ void EnlargedComponentView::setupUI()
     subOverviewScroll->setWidget(subOverviewContainer);
 
     rightLayout->addWidget(rightTitle);
-    rightLayout->addWidget(chartLabel);
-    rightLayout->addWidget(m_trendChart, 2);
-    rightLayout->addWidget(statsLabel);
-    rightLayout->addWidget(statsContainer);
-    rightLayout->addWidget(subOverviewLabel);
-    rightLayout->addWidget(subOverviewScroll, 1);
+
+    if (m_hasTrmGrid) {
+        // ── TRM Grid mode: tab widget with Analytics + TRM tabs ──
+        m_tabWidget = new QTabWidget(rightPanel);
+        m_tabWidget->setObjectName("trmTabWidget");
+
+        // Analytics tab
+        QWidget* analyticsTab = new QWidget();
+        QVBoxLayout* atLayout = new QVBoxLayout(analyticsTab);
+        atLayout->setContentsMargins(0, 0, 0, 0);
+        atLayout->setSpacing(4);
+        atLayout->addWidget(chartLabel);
+        atLayout->addWidget(m_trendChart, 2);
+        atLayout->addWidget(statsLabel);
+        atLayout->addWidget(statsContainer);
+        atLayout->addWidget(subOverviewLabel);
+        atLayout->addWidget(subOverviewScroll, 1);
+
+        // TRM Grid tab
+        ComponentRegistry& reg2 = ComponentRegistry::instance();
+        ComponentDefinition def = reg2.getComponent(m_typeId);
+        m_trmGrid = new TrmGridView();
+        m_trmGrid->setTrmCount(def.trmCount, def.trmColumns);
+
+        m_tabWidget->addTab(analyticsTab, "Analytics");
+        m_tabWidget->addTab(m_trmGrid, QString("TRM Grid (%1)").arg(def.trmCount));
+        m_tabWidget->setCurrentIndex(1); // Show TRM grid by default for Antenna type
+
+        rightLayout->addWidget(m_tabWidget, 1);
+    } else {
+        rightLayout->addWidget(chartLabel);
+        rightLayout->addWidget(m_trendChart, 2);
+        rightLayout->addWidget(statsLabel);
+        rightLayout->addWidget(statsContainer);
+        rightLayout->addWidget(subOverviewLabel);
+        rightLayout->addWidget(subOverviewScroll, 1);
+    }
 
     // ── Add panels to main layout ──
     mainLayout->addWidget(leftPanel, 3);  // 60%
@@ -573,7 +614,14 @@ void EnlargedComponentView::updateComponentHealth(const QColor& color, qreal siz
 
 void EnlargedComponentView::updateSubcomponentHealth(const QString& /*subName*/, qreal /*health*/, const QColor& /*color*/)
 {
-    // Subsystem health bars removed from enlarged view
+    // Subsystem health bars shown in the subsystem overview dots/percentages
+}
+
+void EnlargedComponentView::updateTrmData(const QJsonArray& trmArray)
+{
+    if (m_trmGrid) {
+        m_trmGrid->updateTrmData(trmArray);
+    }
 }
 
 void EnlargedComponentView::updateDisplayName(const QString& newDisplayName)
