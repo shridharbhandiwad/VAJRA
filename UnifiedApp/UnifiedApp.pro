@@ -2,6 +2,26 @@ QT += core gui widgets network charts printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+# Optional Qt SerialPort module (RS422/RS232 support)
+# Comment this out if the module is not installed.
+qtHaveModule(serialport) {
+    QT += serialport
+    DEFINES += QT_SERIALPORT_LIB
+    message("Qt SerialPort module found – RS422/RS232 enabled")
+} else {
+    message("Qt SerialPort module NOT found – RS422/RS232 will run in simulation mode")
+}
+
+# Optional Qt SerialBus module (Modbus / CAN support)
+# Comment this out if the module is not installed.
+qtHaveModule(serialbus) {
+    QT += serialbus
+    DEFINES += QT_SERIALBUS_LIB
+    message("Qt SerialBus module found – Modbus/CAN enabled")
+} else {
+    message("Qt SerialBus module NOT found – Modbus/CAN will run in simulation mode")
+}
+
 TARGET = UnifiedApp
 TEMPLATE = app
 
@@ -25,7 +45,15 @@ SOURCES += \
     editcomponentdialog.cpp \
     voicealertmanager.cpp \
     enlargedcomponentview.cpp \
-    thememanager.cpp
+    thememanager.cpp \
+    protocolhandler.cpp \
+    tcpprotocolhandler.cpp \
+    udpprotocolhandler.cpp \
+    serialprotocolhandler.cpp \
+    modbusprotocolhandler.cpp \
+    canprotocolhandler.cpp \
+    protocolhandlerfactory.cpp \
+    trmgridview.cpp
 
 HEADERS += \
     userrole.h \
@@ -45,7 +73,15 @@ HEADERS += \
     editcomponentdialog.h \
     voicealertmanager.h \
     enlargedcomponentview.h \
-    thememanager.h
+    thememanager.h \
+    protocolhandler.h \
+    tcpprotocolhandler.h \
+    udpprotocolhandler.h \
+    serialprotocolhandler.h \
+    modbusprotocolhandler.h \
+    canprotocolhandler.h \
+    protocolhandlerfactory.h \
+    trmgridview.h
 
 RESOURCES += \
     resources.qrc
