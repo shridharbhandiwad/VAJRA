@@ -247,7 +247,18 @@ void MainWindow::setupUI()
     toolbar->addWidget(m_dashboardBtn);
     
     toolbar->addSeparator();
-    
+
+    // Radar Antenna Health Monitor button
+    m_radarAntennaBtn = new QPushButton("📡 ANTENNA MONITOR", this);
+    m_radarAntennaBtn->setObjectName("radarAntennaBtn");
+    m_radarAntennaBtn->setCursor(Qt::PointingHandCursor);
+    m_radarAntennaBtn->setToolTip("Open Radar Antenna Health Monitor (element-level health)");
+    m_radarAntennaBtn->setCheckable(true);
+    m_radarAntennaBtnAction = toolbar->addWidget(m_radarAntennaBtn);
+    connect(m_radarAntennaBtn, &QPushButton::clicked, this, &MainWindow::toggleRadarAntennaPanel);
+
+    toolbar->addSeparator();
+
     // Logout button (top right corner)
     m_logoutBtn = new QPushButton("LOG OFF", this);
     m_logoutBtn->setObjectName("logoutButton");
@@ -369,7 +380,25 @@ void MainWindow::setupUI()
     
     centralWidget->setLayout(mainLayout);
     setCentralWidget(centralWidget);
-    
+
+    // ========== RADAR ANTENNA DOCK ==========
+    m_radarAntennaWidget = new RadarAntennaWidget(this);
+    m_radarAntennaWidget->setObjectName("radarAntennaWidget");
+    m_radarAntennaWidget->setMinimumSize(900, 600);
+
+    m_radarAntennaDock = new QDockWidget("Radar Antenna Health Monitor", this);
+    m_radarAntennaDock->setObjectName("radarAntennaDock");
+    m_radarAntennaDock->setWidget(m_radarAntennaWidget);
+    m_radarAntennaDock->setAllowedAreas(Qt::AllDockWidgetAreas);
+    m_radarAntennaDock->setFeatures(QDockWidget::DockWidgetMovable |
+                                    QDockWidget::DockWidgetFloatable |
+                                    QDockWidget::DockWidgetClosable);
+    m_radarAntennaDock->hide();
+    addDockWidget(Qt::BottomDockWidgetArea, m_radarAntennaDock);
+    connect(m_radarAntennaDock, &QDockWidget::visibilityChanged, this, [this](bool visible) {
+        if (m_radarAntennaBtn) m_radarAntennaBtn->setChecked(visible);
+    });
+
     // ========== CONNECT CANVAS SIGNALS ==========
     connect(m_canvas, &Canvas::componentAdded, this, &MainWindow::onComponentAdded);
     connect(m_canvas, &Canvas::componentLoaded, this, &MainWindow::onComponentLoaded);
@@ -1014,6 +1043,22 @@ void MainWindow::showAnalyticsDashboard()
     m_analyticsDashboard->show();
     m_analyticsDashboard->raise();
     m_analyticsDashboard->activateWindow();
+}
+
+// ======================================================================
+// Radar Antenna Health Monitor
+// ======================================================================
+
+void MainWindow::toggleRadarAntennaPanel()
+{
+    if (!m_radarAntennaDock) return;
+
+    if (m_radarAntennaDock->isVisible()) {
+        m_radarAntennaDock->hide();
+    } else {
+        m_radarAntennaDock->show();
+        m_radarAntennaDock->raise();
+    }
 }
 
 // ======================================================================

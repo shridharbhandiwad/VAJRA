@@ -1,4 +1,4 @@
-QT += core gui widgets network charts printsupport
+QT += core gui widgets network charts printsupport qml quick quickwidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -53,7 +53,12 @@ SOURCES += \
     modbusprotocolhandler.cpp \
     canprotocolhandler.cpp \
     protocolhandlerfactory.cpp \
-    trmgridview.cpp
+    trmgridview.cpp \
+    RadarModel.cpp \
+    UdpReceiver.cpp \
+    SimulatorEngine.cpp \
+    CommandSender.cpp \
+    radarantennawidget.cpp
 
 HEADERS += \
     userrole.h \
@@ -81,7 +86,13 @@ HEADERS += \
     modbusprotocolhandler.h \
     canprotocolhandler.h \
     protocolhandlerfactory.h \
-    trmgridview.h
+    trmgridview.h \
+    AntennaConfig.h \
+    RadarModel.h \
+    UdpReceiver.h \
+    SimulatorEngine.h \
+    CommandSender.h \
+    radarantennawidget.h
 
 RESOURCES += \
     resources.qrc

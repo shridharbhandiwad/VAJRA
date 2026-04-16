@@ -87,7 +87,11 @@ void TrmCell::mousePressEvent(QMouseEvent* event)
     QWidget::mousePressEvent(event);
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+void TrmCell::enterEvent(QEnterEvent* event)
+#else
 void TrmCell::enterEvent(QEvent* event)
+#endif
 {
     m_hovered = true;
     update();

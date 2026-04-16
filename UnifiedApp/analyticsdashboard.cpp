@@ -1421,7 +1421,7 @@ void AnalyticsDashboard::onExportToPDF()
     printer.setOutputFormat(QPrinter::PdfFormat);
     printer.setOutputFileName(fileName);
     printer.setPageOrientation(QPageLayout::Landscape);
-    printer.setPageSize(QPrinter::A4);
+    printer.setPageSize(QPageSize(QPageSize::A4));
     
     // Create painter
     QPainter painter;
