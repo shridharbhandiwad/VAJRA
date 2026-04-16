@@ -76,9 +76,9 @@ QVariantMap RadarModel::quadrantMetrics(int q) const
     float  minP=999, maxT=-999, maxC=-999;
     int    np=0, nt=0, nc=0;
     for (auto &e : m_data[q]) {
-        if (e.power       != ElementHealth::NO_DATA) { sp+=e.power;       minP=qMin(minP,e.power);       ++np; }
-        if (e.temperature != ElementHealth::NO_DATA) { st+=e.temperature; maxT=qMax(maxT,e.temperature); ++nt; }
-        if (e.current     != ElementHealth::NO_DATA) { sc+=e.current;     maxC=qMax(maxC,e.current);     ++nc; }
+        if (e.power       != ElementHealth::NO_DATA_VAL) { sp+=e.power;       minP=qMin(minP,e.power);       ++np; }
+        if (e.temperature != ElementHealth::NO_DATA_VAL) { st+=e.temperature; maxT=qMax(maxT,e.temperature); ++nt; }
+        if (e.current     != ElementHealth::NO_DATA_VAL) { sc+=e.current;     maxC=qMax(maxC,e.current);     ++nc; }
     }
     m["avgPower"]   = np ? sp/np : -999.0;
     m["avgTemp"]    = nt ? st/nt : -999.0;
@@ -124,9 +124,9 @@ QVariantMap RadarModel::clusterMetrics(int q, int c) const
     int np=0, nt=0, nc=0;
     for (int i = start; i < start+epc && i < m_data[q].size(); ++i) {
         auto &e = m_data[q][i];
-        if (e.power       != ElementHealth::NO_DATA) { sp+=e.power;       ++np; }
-        if (e.temperature != ElementHealth::NO_DATA) { st+=e.temperature; ++nt; }
-        if (e.current     != ElementHealth::NO_DATA) { sc+=e.current;     ++nc; }
+        if (e.power       != ElementHealth::NO_DATA_VAL) { sp+=e.power;       ++np; }
+        if (e.temperature != ElementHealth::NO_DATA_VAL) { st+=e.temperature; ++nt; }
+        if (e.current     != ElementHealth::NO_DATA_VAL) { sc+=e.current;     ++nc; }
     }
     m["avgPower"]   = np ? sp/np : -999.0;
     m["avgTemp"]    = nt ? st/nt : -999.0;
@@ -187,11 +187,11 @@ QVariantList RadarModel::worstElements(int n) const
                               s, e.power, e.temperature, e.current});
         }
     }
-    std::sort(cands.begin(), cands.end(), [](auto &a, auto &b){
+    std::sort(cands.begin(), cands.end(), [](const Candidate &a, const Candidate &b){
         if (a.status != b.status) return a.status > b.status;
         // Among same status, sort by power (lowest first)
-        float ap = a.power == ElementHealth::NO_DATA ? 999 : a.power;
-        float bp = b.power == ElementHealth::NO_DATA ? 999 : b.power;
+        float ap = a.power == ElementHealth::NO_DATA_VAL ? 999.0f : a.power;
+        float bp = b.power == ElementHealth::NO_DATA_VAL ? 999.0f : b.power;
         return ap < bp;
     });
 
@@ -230,9 +230,9 @@ void RadarModel::setQuadrant(int q,
     if (q < 0 || q >= m_data.size()) return;
     int n = m_data[q].size();
     for (int i = 0; i < n; ++i) {
-        m_data[q][i].power       = (i < powers.size())   ? powers[i]   : ElementHealth::NO_DATA;
-        m_data[q][i].temperature = (i < temps.size())    ? temps[i]    : ElementHealth::NO_DATA;
-        m_data[q][i].current     = (i < currents.size()) ? currents[i] : ElementHealth::NO_DATA;
+        m_data[q][i].power       = (i < powers.size())   ? powers[i]   : ElementHealth::NO_DATA_VAL;
+        m_data[q][i].temperature = (i < temps.size())    ? temps[i]    : ElementHealth::NO_DATA_VAL;
+        m_data[q][i].current     = (i < currents.size()) ? currents[i] : ElementHealth::NO_DATA_VAL;
     }
     rebuildStats();
     emit quadrantUpdated(q);
@@ -245,9 +245,9 @@ void RadarModel::setAllQuadrants(const QVector<QVector<float>> &powers,
     for (int q = 0; q < m_data.size(); ++q) {
         int n = m_data[q].size();
         for (int i = 0; i < n; ++i) {
-            m_data[q][i].power       = (q < powers.size()   && i < powers[q].size())   ? powers[q][i]   : ElementHealth::NO_DATA;
-            m_data[q][i].temperature = (q < temps.size()    && i < temps[q].size())    ? temps[q][i]    : ElementHealth::NO_DATA;
-            m_data[q][i].current     = (q < currents.size() && i < currents[q].size()) ? currents[q][i] : ElementHealth::NO_DATA;
+            m_data[q][i].power       = (q < powers.size()   && i < powers[q].size())   ? powers[q][i]   : ElementHealth::NO_DATA_VAL;
+            m_data[q][i].temperature = (q < temps.size()    && i < temps[q].size())    ? temps[q][i]    : ElementHealth::NO_DATA_VAL;
+            m_data[q][i].current     = (q < currents.size() && i < currents[q].size()) ? currents[q][i] : ElementHealth::NO_DATA_VAL;
         }
     }
     rebuildStats();
