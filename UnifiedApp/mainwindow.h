@@ -7,7 +7,10 @@
 #include <QComboBox>
 #include <QTabWidget>
 #include <QMap>
+#include <QDockWidget>
+#include <QPushButton>
 #include "componentlist.h"
+#include "radarantennawidget.h"
 #include "canvas.h"
 #include "analytics.h"
 #include "analyticsdashboard.h"
@@ -154,6 +157,15 @@ private:
     // Tab widget for enlarged component views
     QTabWidget* m_tabWidget;
     QMap<QString, EnlargedComponentView*> m_enlargedViews;
+
+    // ── Radar Antenna Panel ────────────────────────────────────────
+    RadarAntennaWidget *m_radarAntennaWidget = nullptr;
+    QDockWidget        *m_radarAntennaDock   = nullptr;
+    QPushButton        *m_radarAntennaBtn    = nullptr;
+    QAction            *m_radarAntennaBtnAction = nullptr;
+
+private slots:
+    void toggleRadarAntennaPanel();
 };
 
 #endif // MAINWINDOW_H

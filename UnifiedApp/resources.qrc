@@ -7,4 +7,11 @@
     <qresource prefix="/config">
         <file>components.json</file>
     </qresource>
+    <qresource prefix="/radar_qml">
+        <file>radar_qml/RadarAntennaView.qml</file>
+        <file>radar_qml/AnalyticsPanel.qml</file>
+        <file>radar_qml/ControlPanel.qml</file>
+        <file>radar_qml/CmdButton.qml</file>
+        <file>radar_qml/ParamRow.qml</file>
+    </qresource>
 </RCC>

@@ -21,7 +21,10 @@
 #include <QPrintDialog>
 #include <QPainter>
 
+// Qt6: QtCharts types are in the global namespace (no separate QT_CHARTS_USE_NAMESPACE needed)
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 QT_CHARTS_USE_NAMESPACE
+#endif
 
 class QVBoxLayout;
 class QHBoxLayout;
