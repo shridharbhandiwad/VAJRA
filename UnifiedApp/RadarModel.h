@@ -12,11 +12,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 struct ElementHealth {
     // Sentinel value meaning "no data received yet"
-    static constexpr float NO_DATA = -999.0f;
+    // Named NO_DATA_VAL to avoid collision with the NO_DATA macro in Windows SDK (winbase.h)
+    static constexpr float NO_DATA_VAL = -999.0f;
 
-    float power       = NO_DATA;   // dBm  — forward transmit power
-    float temperature = NO_DATA;   // °C   — element temperature
-    float current     = NO_DATA;   // A    — supply current draw
+    float power       = NO_DATA_VAL;   // dBm  — forward transmit power
+    float temperature = NO_DATA_VAL;   // °C   — element temperature
+    float current     = NO_DATA_VAL;   // A    — supply current draw
 
     // ── Thresholds ────────────────────────────────────────────────
     // Power  : HEALTHY ≥ 43 dBm | WARNING 40–43 | CRITICAL < 40
@@ -25,34 +26,34 @@ struct ElementHealth {
     enum Status { NoData = 0, Healthy = 1, Warning = 2, Critical = 3 };
 
     static Status powerStatus(float p) {
-        if (p == NO_DATA) return NoData;
-        if (p >= 43.0f)   return Healthy;
-        if (p >= 40.0f)   return Warning;
+        if (p == NO_DATA_VAL) return NoData;
+        if (p >= 43.0f)       return Healthy;
+        if (p >= 40.0f)       return Warning;
         return Critical;
     }
     static Status tempStatus(float t) {
-        if (t == NO_DATA) return NoData;
-        if (t <= 45.0f)   return Healthy;
-        if (t <= 50.0f)   return Warning;
+        if (t == NO_DATA_VAL) return NoData;
+        if (t <= 45.0f)       return Healthy;
+        if (t <= 50.0f)       return Warning;
         return Critical;
     }
     static Status currentStatus(float c) {
-        if (c == NO_DATA) return NoData;
-        if (c <= 1.8f)    return Healthy;
-        if (c <= 2.0f)    return Warning;
+        if (c == NO_DATA_VAL) return NoData;
+        if (c <= 1.8f)        return Healthy;
+        if (c <= 2.0f)        return Warning;
         return Critical;
     }
 
     // Overall status = worst of the three
     Status overall() const {
-        auto ps = powerStatus(power);
-        auto ts = tempStatus(temperature);
-        auto cs = currentStatus(current);
+        Status ps = powerStatus(power);
+        Status ts = tempStatus(temperature);
+        Status cs = currentStatus(current);
         return static_cast<Status>(qMax(int(ps), qMax(int(ts), int(cs))));
     }
 
     bool hasData() const {
-        return power != NO_DATA || temperature != NO_DATA || current != NO_DATA;
+        return power != NO_DATA_VAL || temperature != NO_DATA_VAL || current != NO_DATA_VAL;
     }
 
     // Health score 0-100 used for aggregate %
