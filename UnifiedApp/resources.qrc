@@ -8,10 +8,10 @@
         <file>components.json</file>
     </qresource>
     <qresource prefix="/radar_qml">
-        <file>radar_qml/RadarAntennaView.qml</file>
-        <file>radar_qml/AnalyticsPanel.qml</file>
-        <file>radar_qml/ControlPanel.qml</file>
-        <file>radar_qml/CmdButton.qml</file>
-        <file>radar_qml/ParamRow.qml</file>
+        <file alias="RadarAntennaView.qml">radar_qml/RadarAntennaView.qml</file>
+        <file alias="AnalyticsPanel.qml">radar_qml/AnalyticsPanel.qml</file>
+        <file alias="ControlPanel.qml">radar_qml/ControlPanel.qml</file>
+        <file alias="CmdButton.qml">radar_qml/CmdButton.qml</file>
+        <file alias="ParamRow.qml">radar_qml/ParamRow.qml</file>
     </qresource>
 </RCC>
