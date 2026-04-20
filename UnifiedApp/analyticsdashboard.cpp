@@ -238,8 +238,6 @@ void AnalyticsDashboard::setupUI()
 
 QWidget* AnalyticsDashboard::createKPISection()
 {
-    ThemeManager& tm = ThemeManager::instance();
-    
     QWidget* kpiWidget = new QWidget();
     kpiWidget->setObjectName("kpiSection");
     QHBoxLayout* kpiLayout = new QHBoxLayout(kpiWidget);
@@ -381,7 +379,7 @@ QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialTyp
     
     // Connect dropdown to update handler
     connect(chartTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            [this, gridIndex](int index) {
+            [this, gridIndex](int /*index*/) {
                 this->onChartTypeChanged(gridIndex);
             });
     
@@ -434,9 +432,8 @@ void AnalyticsDashboard::onChartTypeChanged(int gridIndex)
     updateChartGrid(gridIndex, newType);
 }
 
-void AnalyticsDashboard::onComponentFilterChanged(int index)
+void AnalyticsDashboard::onComponentFilterChanged(int /*index*/)
 {
-    // Refresh all charts with the new filter
     updateAllCharts();
 }
 
@@ -651,7 +648,7 @@ QVector<QColor> AnalyticsDashboard::getChartPalette() const
     };
 }
 
-void AnalyticsDashboard::recordComponentHealth(const QString& componentId, const QString& color, qreal health, qint64 timestamp)
+void AnalyticsDashboard::recordComponentHealth(const QString& componentId, const QString& /*color*/, qreal health, qint64 timestamp)
 {
     if (!m_componentData.contains(componentId)) {
         ComponentHealthData data;
@@ -895,7 +892,7 @@ void AnalyticsDashboard::updateHealthTrendChart(QChartView* chartView, const QSt
     applyChartTheme(chart);
 }
 
-void AnalyticsDashboard::updateComponentDistributionChart(QChartView* chartView, const QString& componentFilter)
+void AnalyticsDashboard::updateComponentDistributionChart(QChartView* chartView, const QString& /*componentFilter*/)
 {
     if (!chartView) return;
     
