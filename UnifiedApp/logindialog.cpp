@@ -7,15 +7,13 @@
 #include <QMessageBox>
 #include <QFile>
 #include <QFrame>
-#include <QPainter>
-#include <QLinearGradient>
-#include <QSequentialAnimationGroup>
 #include <QEasingCurve>
 #include <QShowEvent>
 #include <QTimer>
 #include <QDebug>
 #include <QScreen>
 #include <QApplication>
+#include <QGraphicsOpacityEffect>
 
 LoginDialog::LoginDialog(QWidget* parent)
     : QDialog(parent)
@@ -31,10 +29,7 @@ LoginDialog::LoginDialog(QWidget* parent)
     , m_subtitleLabel(nullptr)
     , m_welcomeLabel(nullptr)
     , m_rememberMeCheck(nullptr)
-    , m_opacityEffect(nullptr)
     , m_fadeAnimation(nullptr)
-    , m_slideAnimation(nullptr)
-    , m_entranceAnimation(nullptr)
     , m_userRole(UserRole::User)
     , m_passwordVisible(false)
     , m_loginAttempts(0)
@@ -265,13 +260,12 @@ void LoginDialog::setupUI()
 
 void LoginDialog::setupAnimations()
 {
-    // Opacity effect for entrance animation
-    m_opacityEffect = new QGraphicsOpacityEffect(this);
-    m_opacityEffect->setOpacity(0.0);
-    setGraphicsEffect(m_opacityEffect);
-    
-    // Fade animation
-    m_fadeAnimation = new QPropertyAnimation(m_opacityEffect, "opacity", this);
+    // Use windowOpacity instead of QGraphicsOpacityEffect on a top-level window.
+    // QGraphicsOpacityEffect on a QDialog triggers the Qt widget-effect compositing
+    // path, which starts a second QPainter on the backing-store device and produces
+    // "A paint device can only be painted by one painter at a time" errors.
+    setWindowOpacity(0.0);
+    m_fadeAnimation = new QPropertyAnimation(this, "windowOpacity", this);
     m_fadeAnimation->setDuration(800);
     m_fadeAnimation->setStartValue(0.0);
     m_fadeAnimation->setEndValue(1.0);
@@ -441,15 +435,21 @@ void LoginDialog::animateError()
 
 void LoginDialog::animateSuccess()
 {
-    // Pulse animation for success
+    // Animate the success label via a color-fade on its stylesheet rather than
+    // QGraphicsOpacityEffect, to avoid triggering the nested-painter compositing
+    // path that fires when a graphics effect is applied during a paint cycle.
     QGraphicsOpacityEffect* successEffect = new QGraphicsOpacityEffect(m_successLabel);
+    successEffect->setOpacity(0.3);
     m_successLabel->setGraphicsEffect(successEffect);
-    
+
     QPropertyAnimation* pulseAnim = new QPropertyAnimation(successEffect, "opacity", this);
     pulseAnim->setDuration(600);
     pulseAnim->setStartValue(0.3);
     pulseAnim->setEndValue(1.0);
     pulseAnim->setEasingCurve(QEasingCurve::OutCubic);
+    connect(pulseAnim, &QPropertyAnimation::finished, m_successLabel, [this]() {
+        m_successLabel->setGraphicsEffect(nullptr);
+    });
     pulseAnim->start(QAbstractAnimation::DeleteWhenStopped);
 }
 

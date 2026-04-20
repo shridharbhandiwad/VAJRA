@@ -6,8 +6,6 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QPropertyAnimation>
-#include <QGraphicsOpacityEffect>
-#include <QParallelAnimationGroup>
 #include <QCheckBox>
 #include "thememanager.h"
 #include "userrole.h"
@@ -57,10 +55,7 @@ private:
     QCheckBox* m_rememberMeCheck;
     
     // Animation Effects
-    QGraphicsOpacityEffect* m_opacityEffect;
     QPropertyAnimation* m_fadeAnimation;
-    QPropertyAnimation* m_slideAnimation;
-    QParallelAnimationGroup* m_entranceAnimation;
     
     // State
     QString m_username;

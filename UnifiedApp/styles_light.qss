@@ -88,7 +88,6 @@ QDialog#LoginDialog QLineEdit {
 QDialog#LoginDialog QLineEdit:focus {
     background-color: #FFFFFF;
     border: 2px solid #00BCD4;
-    box-shadow: 0 0 10px rgba(0, 188, 212, 0.2);
 }
 
 QDialog#LoginDialog QLineEdit:hover {
@@ -1403,7 +1402,6 @@ QPushButton#dashboardExportBtn:hover {
         stop:0.5 #0097A7,
         stop:1 #00796B);
     border: 1px solid rgba(0, 151, 167, 0.6);
-    box-shadow: 0 0 15px rgba(0, 151, 167, 0.3);
 }
 
 QPushButton#dashboardRefreshBtn:pressed,
