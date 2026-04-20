@@ -1257,6 +1257,23 @@ Item {
         }
     }
 
+    // ── Initial paint on component completion ────────────────────
+    Component.onCompleted: {
+        lod1Canvas.requestPaint()
+        analyticsCanvas.model     = root.model
+        analyticsCanvas.udpRecv   = root.udpRecv
+        analyticsCanvas.cmdSender = root.cmdSender
+        ctrlPanel.model           = root.model
+    }
+
+    // Repaint when the root item becomes visible (e.g. dock shown)
+    onVisibleChanged: {
+        if (visible) {
+            lod1Canvas.requestPaint()
+            if (root.fullView) allCanvas.requestPaint()
+        }
+    }
+
     // ── Data connections ─────────────────────────────────────────
     Connections {
         target: antenna0

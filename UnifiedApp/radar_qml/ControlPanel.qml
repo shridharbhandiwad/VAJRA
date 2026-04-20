@@ -286,7 +286,7 @@ Item {
     // ACK handler
     Connections {
         target: panel.cmdSender
-        function onCommandAcknowledged() {
+        function onCommandAcknowledged(command, quadrant, elementId, status) {
             var gid = quadrant * (panel.model ? panel.model.elementsPerQuadrant : 256) + elementId
             if (gid !== panel.globalId) return
             var n = ["","POWER OFF","CALIBRATE","RESTART"]
