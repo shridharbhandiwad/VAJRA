@@ -228,72 +228,144 @@ QString Analytics::formatMessageRate(const ComponentStats& stats) const
 void Analytics::updateDisplay()
 {
     ThemeManager& tm = ThemeManager::instance();
+    bool dark = tm.isDark();
+
+    // Color tokens
+    QString bg          = dark ? "#10131a" : "#f8fafc";
+    QString panelBg     = dark ? "#161b26" : "#ffffff";
+    QString borderCol   = dark ? "#1e2a3d" : "#e2e8f0";
+    QString textPrimary = dark ? "#e2e8f0" : "#1e293b";
+    QString textMuted   = dark ? "#64748b" : "#94a3b8";
+    QString accent      = "#3B82F6";
+    QString accentGreen = "#10B981";
+    QString accentYellow= "#F59E0B";
+    QString accentRed   = "#EF4444";
+    QString accentCyan  = "#06B6D4";
 
     QString html;
-    html += tm.analyticsStyleBlock();
-
-    // Extended styles
     html += QString(
         "<style>"
-        "a.component-toggle { color: %1; text-decoration: none; cursor: pointer; }"
-        "a.component-toggle:hover { color: %2; text-decoration: underline; }"
-        ".expand-icon { display: inline-block; width: 12px; font-weight: bold; }"
-        ".subcomponent-item { margin-left: 20px; font-size: 11px; padding: 2px 0; }"
-        ".pill {"
-        "   display: inline-block; padding: 1px 7px; border-radius: 9px;"
-        "   font-size: 10px; font-weight: bold; letter-spacing: 0.4px;"
-        "   margin-left: 4px;"
+        "* { box-sizing: border-box; margin: 0; padding: 0; }"
+        "body { background: %1; color: %2; font-family: 'Inter','Segoe UI','Roboto',sans-serif; font-size: 12px; }"
+
+        // Section label
+        ".sec-label {"
+        "  font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;"
+        "  color: %3; margin: 14px 0 6px 0; padding: 0 12px;"
         "}"
-        ".health-bar-bg {"
-        "   display: inline-block; width: 80px; height: 6px;"
-        "   background: %3; border-radius: 3px; vertical-align: middle;"
+
+        // Card base
+        ".card {"
+        "  background: %4; border: 1px solid %5;"
+        "  border-radius: 8px; margin: 0 8px 6px 8px; padding: 10px 12px;"
         "}"
-        ".health-bar-fill {"
-        "   display: inline-block; height: 6px; border-radius: 3px;"
-        "   vertical-align: top;"
+
+        // Fleet health band
+        ".health-ring {"
+        "  display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;"
         "}"
-        ".summary-grid {"
-        "   display: table; width: 100%%; border-collapse: collapse; margin-bottom: 4px;"
+        ".health-num {"
+        "  font-size: 26px; font-weight: 800; line-height: 1;"
         "}"
-        ".summary-row { display: table-row; }"
-        ".summary-cell {"
-        "   display: table-cell; padding: 3px 6px; font-size: 11px;"
-        "   border-bottom: 1px solid %4;"
+        ".health-track {"
+        "  background: %5; border-radius: 4px; height: 6px; margin: 6px 0;"
+        "  overflow: hidden;"
         "}"
-        ".kv-row { margin: 2px 0; font-size: 11px; }"
-        "</style>")
-        .arg(tm.accentPrimary().name())
-        .arg(tm.accentPrimary().lighter(120).name())
-        .arg(tm.borderColor().name())
-        .arg(tm.borderSubtle().name());
+        ".health-fill {"
+        "  height: 6px; border-radius: 4px;"
+        "}"
+
+        // Status dot row
+        ".dot-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }"
+        ".dot-badge {"
+        "  display: inline-flex; align-items: center; gap: 3px;"
+        "  padding: 2px 7px; border-radius: 12px; font-size: 9px; font-weight: 700;"
+        "}"
+
+        // Stat mini row
+        ".stat-grid {"
+        "  display: table; width: 100%%; border-collapse: separate; border-spacing: 0 1px;"
+        "}"
+        ".stat-row { display: table-row; }"
+        ".stat-k { display: table-cell; color: %3; font-size: 10px; padding: 3px 0; width: 60%%; }"
+        ".stat-v { display: table-cell; font-size: 10px; font-weight: 700; color: %2; text-align: right; }"
+
+        // Component card
+        ".comp-card {"
+        "  background: %4; border: 1px solid %5;"
+        "  border-radius: 8px; margin: 0 8px 5px 8px; overflow: hidden;"
+        "}"
+        ".comp-header {"
+        "  display: flex; align-items: center; justify-content: space-between;"
+        "  padding: 8px 10px 6px 10px;"
+        "}"
+        ".comp-toggle {"
+        "  font-weight: 700; font-size: 11px; color: %2; text-decoration: none; flex: 1;"
+        "}"
+        ".comp-toggle:hover { color: %6; }"
+        ".status-badge {"
+        "  display: inline-block; padding: 2px 8px; border-radius: 10px;"
+        "  font-size: 9px; font-weight: 700; letter-spacing: 0.4px; white-space: nowrap;"
+        "}"
+        ".comp-bar-track {"
+        "  height: 3px; background: %5; margin: 0 10px 8px 10px; border-radius: 2px;"
+        "}"
+        ".comp-bar-fill { height: 3px; border-radius: 2px; }"
+        ".comp-meta {"
+        "  display: flex; gap: 12px; padding: 0 10px 8px 10px; font-size: 10px; color: %3;"
+        "}"
+        ".comp-meta span b { color: %2; font-weight: 600; }"
+
+        // Subcomponent items
+        ".sub-list { padding: 0 10px 8px 20px; border-top: 1px solid %5; }"
+        ".sub-item {"
+        "  display: flex; align-items: center; gap: 6px;"
+        "  padding: 4px 0; font-size: 10px; color: %3; border-bottom: 1px solid %5;"
+        "}"
+        ".sub-item:last-child { border-bottom: none; }"
+        ".sub-dot { width: 6px; height: 6px; border-radius: 3px; flex-shrink: 0; }"
+        ".sub-name { color: %2; font-weight: 600; flex: 1; }"
+        ".sub-type { color: %3; font-size: 9px; }"
+
+        // Empty state
+        ".empty {"
+        "  text-align: center; padding: 40px 20px; color: %3;"
+        "}"
+        ".empty-icon { font-size: 28px; margin-bottom: 10px; }"
+        ".empty-title { font-size: 13px; font-weight: 600; color: %2; margin-bottom: 6px; }"
+        ".empty-sub { font-size: 11px; line-height: 1.5; }"
+        "</style>"
+    )
+    .arg(bg, textPrimary, textMuted, panelBg, borderCol, accent);
 
     if (m_stats.isEmpty()) {
-        html += "<div class='header'>SYSTEM OVERVIEW</div>";
-        html += "<div class='subheader'>No components on canvas</div>";
-        html += "<br><div class='stat'>Drag components to the canvas or load a design file.</div>";
+        html += QString(
+            "<div class='empty'>"
+            "  <div class='empty-icon'>&#9881;</div>"
+            "  <div class='empty-title'>No Components</div>"
+            "  <div class='empty-sub'>Drag components onto the canvas<br>or load a design file to begin.</div>"
+            "</div>"
+        );
     } else {
         // ── Aggregate stats ───────────────────────────────────────
         QMap<QString, int> typeCounts;
         int totalSubComponents = 0;
         int totalMessages = 0;
-        int operational = 0, warning = 0, degraded = 0, critical = 0, unknown = 0;
+        int operational = 0, warning = 0, degraded = 0, critical = 0;
         double totalHealth = 0.0;
         int healthCount = 0;
 
-        for (auto it = m_componentTypes.begin(); it != m_componentTypes.end(); ++it) {
+        for (auto it = m_componentTypes.begin(); it != m_componentTypes.end(); ++it)
             typeCounts[it.value()]++;
-        }
-        for (auto it = m_subComponents.begin(); it != m_subComponents.end(); ++it) {
+        for (auto it = m_subComponents.begin(); it != m_subComponents.end(); ++it)
             totalSubComponents += it.value().size();
-        }
         for (auto it = m_stats.begin(); it != m_stats.end(); ++it) {
             totalMessages += it->messageCount;
             QString status = getHealthStatus(it->currentColor);
-            if (status == "OPERATIONAL") { operational++; }
-            else if (status == "WARNING") { warning++; }
-            else if (status == "DEGRADED") { degraded++; }
-            else if (status == "CRITICAL") { critical++; }
-            else { unknown++; }
+            if (status == "OPERATIONAL") operational++;
+            else if (status == "WARNING")  warning++;
+            else if (status == "DEGRADED") degraded++;
+            else if (status == "CRITICAL") critical++;
             int score = colorToHealthScore(it->currentColor);
             if (score >= 0) { totalHealth += score; healthCount++; }
         }
@@ -301,67 +373,58 @@ void Analytics::updateDisplay()
         int totalComp = m_stats.size();
         double avgHealth = healthCount > 0 ? totalHealth / healthCount : 0.0;
 
-        // ── Header ────────────────────────────────────────────────
-        html += "<div class='header'>SYSTEM OVERVIEW</div>";
+        QString healthColor = avgHealth >= 80 ? accentGreen
+                            : avgHealth >= 55 ? accentYellow
+                            : avgHealth >= 30 ? "#f97316"
+                            : accentRed;
 
-        // System health summary card
-        QString avgHealthColor = avgHealth >= 80 ? "#22c55e"
-                               : avgHealth >= 55 ? "#eab308"
-                               : avgHealth >= 30 ? "#f97316"
-                               : "#ef4444";
-
+        // ── Fleet Health card ────────────────────────────────────
+        html += QString("<div class='sec-label'>Overview</div>");
         html += QString(
-            "<div class='component' style='margin-bottom:6px;'>"
-            "  <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;'>"
-            "    <span style='font-size:11px; font-weight:bold; color:%1;'>FLEET HEALTH</span>"
-            "    <span style='font-size:17px; font-weight:bold; color:%2;'>%3%</span>"
+            "<div class='card'>"
+            "  <div class='health-ring'>"
+            "    <div>"
+            "      <div style='font-size:9px;font-weight:700;letter-spacing:0.8px;color:%2;margin-bottom:2px;'>FLEET HEALTH</div>"
+            "      <div class='health-num' style='color:%3;'>%4<span style='font-size:13px;'>%%</span></div>"
+            "    </div>"
+            "    <div style='text-align:right;'>"
+            "      <div style='font-size:9px;color:%2;'>%5 components</div>"
+            "      <div style='font-size:9px;color:%2;margin-top:2px;'>%6 msgs total</div>"
+            "    </div>"
             "  </div>"
-            "  <div style='background:%4; height:8px; border-radius:4px; margin-bottom:6px;'>"
-            "    <div style='background:%2; width:%3%%; height:8px; border-radius:4px;'></div>"
+            "  <div class='health-track'>"
+            "    <div class='health-fill' style='background:%3;width:%4%%;'></div>"
             "  </div>"
-            "  <div style='font-size:10px; color:%5;'>"
-            "    <span style='color:#22c55e;'>&#9679; %6 OK</span> &nbsp;"
-            "    <span style='color:#eab308;'>&#9679; %7 WARN</span> &nbsp;"
-            "    <span style='color:#f97316;'>&#9679; %8 DEG</span> &nbsp;"
-            "    <span style='color:#ef4444;'>&#9679; %9 CRIT</span>"
+            "  <div class='dot-row'>"
+            "    <span class='dot-badge' style='background:rgba(16,185,129,0.15);color:%7;'>%8 OK</span>"
+            "    <span class='dot-badge' style='background:rgba(245,158,11,0.15);color:%9;'>%10 WARN</span>"
+            "    <span class='dot-badge' style='background:rgba(249,115,22,0.15);color:#f97316;'>%11 DEG</span>"
+            "    <span class='dot-badge' style='background:rgba(239,68,68,0.15);color:%12;'>%13 CRIT</span>"
             "  </div>"
-            "</div>")
-            .arg(tm.accentPrimary().name())
-            .arg(avgHealthColor)
-            .arg(qRound(avgHealth))
-            .arg(tm.borderColor().name())
-            .arg(tm.mutedText().name())
-            .arg(operational).arg(warning).arg(degraded).arg(critical);
+            "</div>"
+        )
+        .arg(bg, textMuted, healthColor)
+        .arg(qRound(avgHealth))
+        .arg(totalComp).arg(totalMessages)
+        .arg(accentGreen).arg(operational)
+        .arg(accentYellow).arg(warning)
+        .arg(degraded)
+        .arg(accentRed).arg(critical);
 
-        // Summary counters row
+        // ── Quick stats ──────────────────────────────────────────
         html += QString(
-            "<div class='stat' style='margin-bottom:4px;'>"
-            "  Components: <span class='count'>%1</span> &nbsp;"
-            "  Types: <span class='count'>%2</span> &nbsp;"
-            "  Subcomponents: <span class='count'>%3</span> &nbsp;"
-            "  Messages: <span class='count'>%4</span>"
-            "</div>")
-            .arg(totalComp).arg(typeCounts.size())
-            .arg(totalSubComponents).arg(totalMessages);
+            "<div class='card'>"
+            "  <div class='stat-grid'>"
+            "    <div class='stat-row'><div class='stat-k'>Types</div><div class='stat-v'>%1</div></div>"
+            "    <div class='stat-row'><div class='stat-k'>Subcomponents</div><div class='stat-v'>%2</div></div>"
+            "    <div class='stat-row'><div class='stat-k'>Total Messages</div><div class='stat-v'>%3</div></div>"
+            "  </div>"
+            "</div>"
+        )
+        .arg(typeCounts.size()).arg(totalSubComponents).arg(totalMessages);
 
-        // ── Type breakdown ────────────────────────────────────────
-        html += "<div class='header'>BY TYPE</div>";
-        for (auto it = typeCounts.begin(); it != typeCounts.end(); ++it) {
-            int pct = totalComp > 0 ? qRound(100.0 * it.value() / totalComp) : 0;
-            html += QString(
-                "<div class='stat' style='display:flex; justify-content:space-between;'>"
-                "  <span>%1</span>"
-                "  <span>"
-                "    <span class='count'>%2</span>"
-                "    <span style='color:%3; font-size:10px;'> (%4%%)</span>"
-                "  </span>"
-                "</div>")
-                .arg(it.key()).arg(it.value()).arg(tm.mutedText().name()).arg(pct);
-        }
-        html += "<br>";
-
-        // ── Component list ────────────────────────────────────────
-        html += "<div class='header'>COMPONENT STATUS</div>";
+        // ── Component Status ─────────────────────────────────────
+        html += QString("<div class='sec-label'>Components</div>");
 
         for (auto it = m_componentTypes.begin(); it != m_componentTypes.end(); ++it) {
             const QString& id = it.key();
@@ -370,93 +433,68 @@ void Analytics::updateDisplay()
             const QList<SubComponentInfo>& subs = m_subComponents.value(id);
             const ComponentStats& stats = m_stats.value(id);
 
-            // Determine health color/status
             QColor pillBg = getHealthStatusColor(stats.currentColor);
-            QString pillBgHex = pillBg.name();
-            QString pillFg = "#ffffff";
             QString statusLabel = stats.messageCount > 0
                 ? getHealthStatusLabel(stats.currentColor)
                 : "NO DATA";
             int healthPct = stats.messageCount > 0
-                ? qMax(0, colorToHealthScore(stats.currentColor))
-                : 0;
-            QString healthBarColor = pillBgHex;
-            if (statusLabel == "NO DATA") healthBarColor = tm.borderColor().name();
+                ? qMax(0, colorToHealthScore(stats.currentColor)) : 0;
+            QString barColor = stats.messageCount > 0 ? pillBg.name() : borderCol;
+
+            // Badge colors
+            QString badgeBg, badgeFg;
+            if      (statusLabel == "OPERATIONAL") { badgeBg = "rgba(16,185,129,0.15)";  badgeFg = accentGreen; }
+            else if (statusLabel == "WARNING")      { badgeBg = "rgba(245,158,11,0.15)";  badgeFg = accentYellow; }
+            else if (statusLabel == "DEGRADED")     { badgeBg = "rgba(249,115,22,0.15)";  badgeFg = "#f97316"; }
+            else if (statusLabel == "CRITICAL")     { badgeBg = "rgba(239,68,68,0.15)";   badgeFg = accentRed; }
+            else                                    { badgeBg = "rgba(100,116,139,0.15)"; badgeFg = textMuted; }
 
             QString trendIcon = getTrendIndicator(stats.colorHistory);
             QString msgRate = formatMessageRate(stats);
-
-            html += "<div class='component'>";
-
-            // Header row: toggle arrow + id + status pill + trend
             QString expandIcon = isExpanded ? "&#9660;" : "&#9658;";
+
+            html += "<div class='comp-card'>";
             html += QString(
-                "<div style='display:flex; align-items:center; justify-content:space-between; margin-bottom:3px;'>"
-                "  <a href='%1' class='component-toggle'>"
-                "    <span class='expand-icon'>%2</span> <strong>%3</strong>"
-                "  </a>"
-                "  <span>"
-                "    <span class='pill' style='background:%4; color:%5;'>%6</span>"
-                "    %7"
-                "  </span>"
-                "</div>")
-                .arg(id).arg(expandIcon).arg(id)
-                .arg(pillBgHex).arg(pillFg).arg(statusLabel)
-                .arg(trendIcon);
+                "<div class='comp-header'>"
+                "  <a href='%1' class='comp-toggle'>%2 %3</a>"
+                "  %4"
+                "  <span class='status-badge' style='background:%5;color:%6;margin-left:6px;'>%7</span>"
+                "</div>"
+            )
+            .arg(id, expandIcon, id, trendIcon, badgeBg, badgeFg, statusLabel);
 
-            // Health bar
             html += QString(
-                "<div style='background:%1; height:5px; border-radius:3px; margin-bottom:5px;'>"
-                "  <div style='background:%2; width:%3%%; height:5px; border-radius:3px;'></div>"
-                "</div>")
-                .arg(tm.borderColor().name())
-                .arg(healthBarColor)
-                .arg(healthPct);
+                "<div class='comp-bar-track'>"
+                "  <div class='comp-bar-fill' style='background:%1;width:%2%%;'></div>"
+                "</div>"
+            ).arg(barColor).arg(healthPct);
 
-            // Stats row
             html += QString(
-                "<div style='display:flex; justify-content:space-between; font-size:10px; color:%1; margin-bottom:3px;'>"
-                "  <span>Type: <span style='color:%2;'>%3</span></span>"
-                "  <span>Msgs: <span style='color:%2;'>%4</span></span>"
-                "  <span>Rate: <span style='color:%2;'>%5</span></span>"
-                "  <span>&#916;Color: <span style='color:%2;'>%6</span></span>"
-                "</div>")
-                .arg(tm.mutedText().name())
-                .arg(tm.primaryText().name())
-                .arg(type).arg(stats.messageCount)
-                .arg(msgRate).arg(stats.colorChanges);
+                "<div class='comp-meta'>"
+                "  <span>Type <b>%1</b></span>"
+                "  <span>Msgs <b>%2</b></span>"
+                "  <span>Rate <b>%3</b></span>"
+            ).arg(type).arg(stats.messageCount).arg(msgRate);
 
-            // Subcomponent count
-            if (!subs.isEmpty()) {
-                html += QString("<div class='stat' style='font-size:10px;'>Subcomponents: <span class='count'>%1</span></div>")
-                    .arg(subs.size());
-            } else {
-                html += QString("<div class='stat' style='color:%1; font-size:10px;'>No subcomponents</div>")
-                    .arg(tm.mutedText().name());
-            }
+            if (!subs.isEmpty())
+                html += QString("  <span>Subs <b>%1</b></span>").arg(subs.size());
+            html += "</div>";
 
-            // Expanded subcomponents
             if (isExpanded && !subs.isEmpty()) {
-                html += "<div style='margin-top:6px;'>";
-                // Group by type for a cleaner view
-                QMap<QString, int> subTypeCounts;
+                html += "<div class='sub-list'>";
                 for (const auto& sub : subs) {
-                    subTypeCounts[sub.type]++;
-                }
-                // Show each subcomponent
-                for (const auto& sub : subs) {
-                    QString subTypeColor = tm.accentPrimary().name();
-                    if (sub.type == "Label")       subTypeColor = tm.accentSecondary().name();
-                    else if (sub.type == "LineEdit") subTypeColor = tm.accentSuccess().name();
-                    else if (sub.type == "Button")   subTypeColor = tm.accentWarning().name();
+                    QString dotColor = accent;
+                    if (sub.type == "Label")        dotColor = accentCyan;
+                    else if (sub.type == "LineEdit") dotColor = accentGreen;
+                    else if (sub.type == "Button")   dotColor = accentYellow;
 
                     html += QString(
-                        "<div class='subcomponent-item'>"
-                        "  &#8226; <span style='color:%1;'>%2</span> "
-                        "  <span style='color:%3; font-size:10px;'>(%4)</span>"
-                        "</div>")
-                        .arg(subTypeColor).arg(sub.name)
-                        .arg(tm.mutedText().name()).arg(sub.type);
+                        "<div class='sub-item'>"
+                        "  <div class='sub-dot' style='background:%1;'></div>"
+                        "  <span class='sub-name'>%2</span>"
+                        "  <span class='sub-type'>%3</span>"
+                        "</div>"
+                    ).arg(dotColor, sub.name, sub.type);
                 }
                 html += "</div>";
             }
@@ -465,38 +503,29 @@ void Analytics::updateDisplay()
         }
 
         // ── Activity summary ──────────────────────────────────────
-        html += "<div class='header' style='margin-top:8px;'>ACTIVITY SUMMARY</div>";
+        int totalChanges = 0;
+        for (auto it = m_stats.begin(); it != m_stats.end(); ++it)
+            totalChanges += it->colorChanges;
+
+        html += QString("<div class='sec-label'>Activity</div>");
         html += QString(
-            "<div class='component' style='font-size:10px;'>"
-            "  <div class='kv-row' style='display:flex; justify-content:space-between;'>"
-            "    <span style='color:%1;'>Total Messages</span>"
-            "    <span class='count'>%2</span>"
+            "<div class='card'>"
+            "  <div class='stat-grid'>"
+            "    <div class='stat-row'><div class='stat-k'>Health Changes</div><div class='stat-v'>%1</div></div>"
+            "    <div class='stat-row'><div class='stat-k'>Avg Fleet Health</div>"
+            "      <div class='stat-v' style='color:%2;'>%3%%</div>"
+            "    </div>"
+            "    <div class='stat-row'><div class='stat-k'>Systems OK / Total</div>"
+            "      <div class='stat-v'>%4 / %5</div>"
+            "    </div>"
             "  </div>"
-            "  <div class='kv-row' style='display:flex; justify-content:space-between;'>"
-            "    <span style='color:%1;'>Health Changes</span>"
-            "    <span class='count'>%3</span>"
-            "  </div>"
-            "  <div class='kv-row' style='display:flex; justify-content:space-between;'>"
-            "    <span style='color:%1;'>Avg Fleet Health</span>"
-            "    <span style='color:%4; font-weight:bold;'>%5%%</span>"
-            "  </div>"
-            "  <div class='kv-row' style='display:flex; justify-content:space-between;'>"
-            "    <span style='color:%1;'>Systems OK / Total</span>"
-            "    <span class='count'>%6 / %7</span>"
-            "  </div>"
-            "</div>")
-            .arg(tm.mutedText().name())
-            .arg(totalMessages)
-            .arg([&]() {
-                int changes = 0;
-                for (auto it = m_stats.begin(); it != m_stats.end(); ++it)
-                    changes += it->colorChanges;
-                return changes;
-            }())
-            .arg(avgHealthColor)
-            .arg(qRound(avgHealth))
-            .arg(operational)
-            .arg(totalComp);
+            "</div>"
+        )
+        .arg(totalChanges)
+        .arg(healthColor)
+        .arg(qRound(avgHealth))
+        .arg(operational)
+        .arg(totalComp);
     }
 
     m_textBrowser->setHtml(html);

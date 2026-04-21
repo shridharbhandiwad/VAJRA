@@ -97,126 +97,132 @@ void AnalyticsDashboard::setupUI()
     m_centralWidget = new QWidget();
     m_centralWidget->setObjectName("dashboardCentralWidget");
     m_mainLayout = new QVBoxLayout(m_centralWidget);
-    m_mainLayout->setSpacing(14);
-    m_mainLayout->setContentsMargins(20, 16, 20, 20);
+    m_mainLayout->setSpacing(0);
+    m_mainLayout->setContentsMargins(0, 0, 0, 0);
 
-    // ── Header ───────────────────────────────────────────────────
+    // ── Top Header Bar ─────────────────────────────────────────────
     QWidget* headerWidget = new QWidget();
     headerWidget->setObjectName("dashboardHeader");
-    QVBoxLayout* headerMainLayout = new QVBoxLayout(headerWidget);
-    headerMainLayout->setSpacing(8);
-    headerMainLayout->setContentsMargins(0, 0, 0, 0);
+    headerWidget->setFixedHeight(72);
+    QHBoxLayout* headerLayout = new QHBoxLayout(headerWidget);
+    headerLayout->setContentsMargins(24, 0, 20, 0);
+    headerLayout->setSpacing(0);
 
-    QHBoxLayout* titleRow = new QHBoxLayout();
-    titleRow->setSpacing(12);
+    // Left: icon accent + title stack
+    QWidget* titleBlock = new QWidget();
+    titleBlock->setObjectName("dashboardTitleBlock");
+    QHBoxLayout* titleBlockLayout = new QHBoxLayout(titleBlock);
+    titleBlockLayout->setContentsMargins(0, 0, 0, 0);
+    titleBlockLayout->setSpacing(14);
 
-    QLabel* titleLabel = new QLabel("ADVANCED DATA ANALYTICS");
+    QFrame* accentBar = new QFrame();
+    accentBar->setObjectName("dashboardAccentBar");
+    accentBar->setFixedSize(4, 40);
+
+    QWidget* titleTextWidget = new QWidget();
+    QVBoxLayout* titleTextLayout = new QVBoxLayout(titleTextWidget);
+    titleTextLayout->setContentsMargins(0, 0, 0, 0);
+    titleTextLayout->setSpacing(2);
+
+    QLabel* titleLabel = new QLabel("Analytics Dashboard");
     titleLabel->setObjectName("dashboardTitle");
-    QFont titleFont;
-    titleFont.setPointSize(18);
-    titleFont.setBold(true);
-    titleFont.setWeight(QFont::ExtraBold);
-    titleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 1.0);
+    QFont titleFont("Inter, Segoe UI, Roboto, sans-serif", 15, QFont::Bold);
+    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, -0.3);
     titleLabel->setFont(titleFont);
 
-    titleRow->addWidget(titleLabel);
-    titleRow->addStretch();
-
-    QLabel* subtitleLabel = new QLabel("Real-time system monitoring, health analytics and performance insights");
+    QLabel* subtitleLabel = new QLabel("Real-time component health & performance insights");
     subtitleLabel->setObjectName("dashboardSubtitle");
-    QFont subtitleFont;
-    subtitleFont.setPointSize(9);
-    subtitleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    QFont subtitleFont("Inter, Segoe UI, Roboto, sans-serif", 9);
     subtitleLabel->setFont(subtitleFont);
 
-    // Controls row
-    QHBoxLayout* controlsRow = new QHBoxLayout();
-    controlsRow->setSpacing(12);
+    titleTextLayout->addWidget(titleLabel);
+    titleTextLayout->addWidget(subtitleLabel);
+    titleBlockLayout->addWidget(accentBar);
+    titleBlockLayout->addWidget(titleTextWidget);
 
-    QFont labelFont;
-    labelFont.setPointSize(9);
-    labelFont.setBold(true);
-    labelFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    labelFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.8);
+    headerLayout->addWidget(titleBlock);
+    headerLayout->addStretch(1);
 
-    QFont comboFont;
-    comboFont.setPointSize(9);
-    comboFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    // Right: controls cluster
+    QWidget* controlsCluster = new QWidget();
+    controlsCluster->setObjectName("dashboardControlsCluster");
+    QHBoxLayout* controlsLayout = new QHBoxLayout(controlsCluster);
+    controlsLayout->setContentsMargins(0, 0, 0, 0);
+    controlsLayout->setSpacing(8);
 
-    QFont btnFont;
-    btnFont.setPointSize(9);
-    btnFont.setBold(true);
-    btnFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    btnFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.8);
-
-    QLabel* filterLabel = new QLabel("FILTER:");
-    filterLabel->setObjectName("filterLabel");
-    filterLabel->setFont(labelFont);
+    QFont comboFont("Inter, Segoe UI, Roboto, sans-serif", 9);
+    QFont btnFont("Inter, Segoe UI, Roboto, sans-serif", 9, QFont::Bold);
+    btnFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.5);
 
     m_componentFilterCombo = new QComboBox();
     m_componentFilterCombo->setObjectName("dashboardCombo");
-    m_componentFilterCombo->addItem("ALL COMPONENTS");
-    m_componentFilterCombo->setFixedWidth(180);
+    m_componentFilterCombo->addItem("All Components");
+    m_componentFilterCombo->setFixedWidth(165);
+    m_componentFilterCombo->setFixedHeight(34);
     m_componentFilterCombo->setFont(comboFont);
     connect(m_componentFilterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &AnalyticsDashboard::onComponentFilterChanged);
-
-    QLabel* timeLabel = new QLabel("TIMEFRAME:");
-    timeLabel->setObjectName("filterLabel");
-    timeLabel->setFont(labelFont);
 
     m_timeRangeCombo = new QComboBox();
     m_timeRangeCombo->setObjectName("dashboardCombo");
     m_timeRangeCombo->addItems({"Last Hour", "Last 6 Hours", "Last 24 Hours", "Last Week"});
     m_timeRangeCombo->setCurrentIndex(2);
-    m_timeRangeCombo->setFixedWidth(140);
+    m_timeRangeCombo->setFixedWidth(128);
+    m_timeRangeCombo->setFixedHeight(34);
     m_timeRangeCombo->setFont(comboFont);
 
-    controlsRow->addWidget(filterLabel);
-    controlsRow->addWidget(m_componentFilterCombo);
-    controlsRow->addWidget(timeLabel);
-    controlsRow->addWidget(m_timeRangeCombo);
-    controlsRow->addStretch();
+    // Separator
+    QFrame* ctrlSep = new QFrame();
+    ctrlSep->setObjectName("dashboardCtrlSep");
+    ctrlSep->setFrameShape(QFrame::VLine);
+    ctrlSep->setFixedHeight(24);
 
-    m_refreshBtn = new QPushButton("REFRESH");
+    m_refreshBtn = new QPushButton("↺  Refresh");
     m_refreshBtn->setObjectName("dashboardRefreshBtn");
-    m_refreshBtn->setMinimumWidth(90);
-    m_refreshBtn->setFixedHeight(32);
+    m_refreshBtn->setFixedHeight(34);
+    m_refreshBtn->setMinimumWidth(88);
     m_refreshBtn->setFont(btnFont);
     connect(m_refreshBtn, &QPushButton::clicked, this, &AnalyticsDashboard::refreshDashboard);
 
-    m_exportBtn = new QPushButton("EXPORT PDF");
+    m_exportBtn = new QPushButton("⬇  Export PDF");
     m_exportBtn->setObjectName("dashboardExportBtn");
-    m_exportBtn->setMinimumWidth(100);
-    m_exportBtn->setFixedHeight(32);
+    m_exportBtn->setFixedHeight(34);
+    m_exportBtn->setMinimumWidth(110);
     m_exportBtn->setFont(btnFont);
     connect(m_exportBtn, &QPushButton::clicked, this, &AnalyticsDashboard::onExportToPDF);
 
-    controlsRow->addWidget(m_refreshBtn);
-    controlsRow->addWidget(m_exportBtn);
+    controlsLayout->addWidget(m_componentFilterCombo);
+    controlsLayout->addWidget(m_timeRangeCombo);
+    controlsLayout->addWidget(ctrlSep, 0, Qt::AlignVCenter);
+    controlsLayout->addWidget(m_refreshBtn);
+    controlsLayout->addWidget(m_exportBtn);
 
-    headerMainLayout->addLayout(titleRow);
-    headerMainLayout->addWidget(subtitleLabel);
-    headerMainLayout->addLayout(controlsRow);
+    headerLayout->addWidget(controlsCluster);
 
     m_mainLayout->addWidget(headerWidget);
 
-    // ── KPI Section (6 cards) ─────────────────────────────────────
-    m_mainLayout->addWidget(createKPISection());
+    // ── Thin accent line under header ─────────────────────────────
+    QFrame* headerUnderline = new QFrame();
+    headerUnderline->setObjectName("dashboardHeaderUnderline");
+    headerUnderline->setFrameShape(QFrame::HLine);
+    headerUnderline->setFixedHeight(1);
+    m_mainLayout->addWidget(headerUnderline);
 
-    // Divider
-    QFrame* divider = new QFrame();
-    divider->setObjectName("dashboardDivider");
-    divider->setFrameShape(QFrame::HLine);
-    divider->setFixedHeight(2);
-    m_mainLayout->addWidget(divider);
+    // ── Content area (padded) ──────────────────────────────────────
+    QWidget* contentArea = new QWidget();
+    contentArea->setObjectName("dashboardContentArea");
+    QVBoxLayout* contentLayout = new QVBoxLayout(contentArea);
+    contentLayout->setSpacing(18);
+    contentLayout->setContentsMargins(24, 20, 24, 24);
 
-    // ── 2×2 Charts Grid ──────────────────────────────────────────
+    // ── KPI Row ────────────────────────────────────────────────────
+    contentLayout->addWidget(createKPISection());
+
+    // ── 2×2 Charts Grid ───────────────────────────────────────────
     QGridLayout* chartsGrid = new QGridLayout();
     chartsGrid->setObjectName("chartsGrid");
-    chartsGrid->setSpacing(12);
-    chartsGrid->setContentsMargins(0, 4, 0, 0);
+    chartsGrid->setSpacing(14);
+    chartsGrid->setContentsMargins(0, 0, 0, 0);
 
     m_chartGrids[0].containerWidget = createChartGrid(0, ChartType::HealthTrend);
     m_chartGrids[1].containerWidget = createChartGrid(1, ChartType::ComponentDistribution);
@@ -233,16 +239,12 @@ void AnalyticsDashboard::setupUI()
     chartsGrid->setRowStretch(0, 1);
     chartsGrid->setRowStretch(1, 1);
 
-    m_mainLayout->addLayout(chartsGrid);
+    contentLayout->addLayout(chartsGrid);
 
     // ── Summary Table ─────────────────────────────────────────────
-    QFrame* divider2 = new QFrame();
-    divider2->setObjectName("dashboardDivider");
-    divider2->setFrameShape(QFrame::HLine);
-    divider2->setFixedHeight(2);
-    m_mainLayout->addWidget(divider2);
+    contentLayout->addWidget(createSummaryTable());
 
-    m_mainLayout->addWidget(createSummaryTable());
+    m_mainLayout->addWidget(contentArea, 1);
 
     m_scrollArea->setWidget(m_centralWidget);
     setCentralWidget(m_scrollArea);
@@ -257,22 +259,23 @@ QWidget* AnalyticsDashboard::createKPISection()
     QWidget* kpiWidget = new QWidget();
     kpiWidget->setObjectName("kpiSection");
     QHBoxLayout* kpiLayout = new QHBoxLayout(kpiWidget);
-    kpiLayout->setSpacing(12);
+    kpiLayout->setSpacing(10);
     kpiLayout->setContentsMargins(0, 0, 0, 0);
 
-    QColor c1 = QColor(41, 128, 185);   // Blue
-    QColor c2 = QColor(39, 174, 96);    // Green
-    QColor c3 = QColor(243, 156, 18);   // Orange
-    QColor c4 = QColor(231, 76, 60);    // Red
-    QColor c5 = QColor(142, 68, 173);   // Purple
-    QColor c6 = QColor(26, 188, 156);   // Teal
+    // Color scheme: each card has a distinct accent color
+    QColor c1("#3B82F6");   // Blue      — total components
+    QColor c2("#10B981");   // Emerald   — active
+    QColor c3("#F59E0B");   // Amber     — avg health
+    QColor c4("#EF4444");   // Red       — alerts
+    QColor c5("#8B5CF6");   // Violet    — msg rate
+    QColor c6("#06B6D4");   // Cyan      — critical
 
-    kpiLayout->addWidget(createKPICard("COMPONENTS",  "0",  "Total Monitored",  c1));
-    kpiLayout->addWidget(createKPICard("ACTIVE",      "0",  "Systems Online",   c2));
-    kpiLayout->addWidget(createKPICard("AVG HEALTH",  "0%", "Fleet Average",    c3, ""));
-    kpiLayout->addWidget(createKPICard("ALERTS",      "0",  "Total Warnings",   c4, ""));
-    kpiLayout->addWidget(createKPICard("MSG RATE",    "0/s","Messages / sec",   c5));
-    kpiLayout->addWidget(createKPICard("CRITICAL",    "0",  "Critical Systems", c6));
+    kpiLayout->addWidget(createKPICard("Components",  "0",  "Total Monitored",  c1));
+    kpiLayout->addWidget(createKPICard("Active",      "0",  "Systems Online",   c2));
+    kpiLayout->addWidget(createKPICard("Avg Health",  "0%", "Fleet Average",    c3, ""));
+    kpiLayout->addWidget(createKPICard("Alerts",      "0",  "Total Warnings",   c4, ""));
+    kpiLayout->addWidget(createKPICard("Msg Rate",    "0/s","Messages / sec",   c5));
+    kpiLayout->addWidget(createKPICard("Critical",    "0",  "Critical Systems", c6));
 
     return kpiWidget;
 }
@@ -283,91 +286,94 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
 {
     QWidget* card = new QWidget();
     card->setObjectName("kpiCard");
-    card->setMinimumHeight(100);
+    card->setMinimumHeight(110);
     card->setMaximumHeight(130);
 
-    QString gradientColor = color.lighter(110).name();
+    // Top color accent stripe per card via inline stylesheet
     card->setStyleSheet(QString(
-        "QWidget#kpiCard { "
-        "   border-left: 4px solid %1; "
-        "   border-top: 1px solid %2; "
+        "QWidget#kpiCard {"
+        "   border-top: 3px solid %1;"
         "}"
-    ).arg(color.name(), gradientColor));
+    ).arg(color.name()));
 
     QVBoxLayout* cardLayout = new QVBoxLayout(card);
-    cardLayout->setSpacing(2);
-    cardLayout->setContentsMargins(14, 10, 14, 8);
+    cardLayout->setSpacing(0);
+    cardLayout->setContentsMargins(16, 12, 16, 12);
+
+    // Row 1: title + colored dot indicator
+    QHBoxLayout* topRow = new QHBoxLayout();
+    topRow->setContentsMargins(0, 0, 0, 0);
+    topRow->setSpacing(6);
+
+    QLabel* dotLabel = new QLabel("●");
+    dotLabel->setFixedWidth(10);
+    QFont dotFont("Inter, Segoe UI, Roboto, sans-serif", 7);
+    dotLabel->setFont(dotFont);
+    dotLabel->setStyleSheet(QString("color: %1; background: transparent;").arg(color.name()));
 
     QLabel* titleLabel = new QLabel(title);
     titleLabel->setObjectName("kpiTitle");
-    QFont titleFont;
-    titleFont.setPointSize(8);
-    titleFont.setBold(true);
-    titleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.8);
+    QFont titleFont("Inter, Segoe UI, Roboto, sans-serif", 9, QFont::Bold);
+    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.3);
     titleLabel->setFont(titleFont);
-    titleLabel->setStyleSheet(QString("color: %1;").arg(color.name()));
 
-    QLabel* valueLabel = new QLabel(value);
-    valueLabel->setObjectName("kpiValue");
-    QFont valueFont;
-    valueFont.setPointSize(20);
-    valueFont.setBold(true);
-    valueFont.setWeight(QFont::Black);
-    valueFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    valueFont.setLetterSpacing(QFont::AbsoluteSpacing, -0.5);
-    valueLabel->setFont(valueFont);
-    valueLabel->setAlignment(Qt::AlignCenter);
+    topRow->addWidget(dotLabel);
+    topRow->addWidget(titleLabel);
+    topRow->addStretch();
 
     // Wire up labels
-    if (title.contains("COMPONENTS")) m_totalComponentsLabel = valueLabel;
-    else if (title.contains("ACTIVE")) m_activeComponentsLabel = valueLabel;
-    else if (title.contains("AVG HEALTH")) m_avgHealthLabel = valueLabel;
-    else if (title.contains("ALERTS")) m_totalAlertsLabel = valueLabel;
-    else if (title.contains("MSG RATE")) m_msgRateLabel = valueLabel;
-    else if (title.contains("CRITICAL")) m_criticalCountLabel = valueLabel;
-
-    // Trend label (only for avg health and alerts — passed non-null via overload default="")
-    bool hasTrend = (title.contains("AVG HEALTH") || title.contains("ALERTS"));
+    bool hasTrend = (title == "Avg Health" || title == "Alerts");
     QLabel* trendLabel = nullptr;
     if (hasTrend) {
         trendLabel = new QLabel(trendText);
         trendLabel->setObjectName("kpiTrend");
-        trendLabel->setAlignment(Qt::AlignCenter);
-        QFont trendFont;
-        trendFont.setPointSize(8);
-        trendFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+        QFont trendFont("Inter, Segoe UI, Roboto, sans-serif", 8);
         trendLabel->setFont(trendFont);
+        topRow->addWidget(trendLabel);
     }
+    if (title == "Avg Health") m_avgHealthTrendLabel = trendLabel;
+    else if (title == "Alerts") m_alertsTrendLabel = trendLabel;
 
-    if (title.contains("AVG HEALTH")) m_avgHealthTrendLabel = trendLabel;
-    else if (title.contains("ALERTS")) m_alertsTrendLabel = trendLabel;
+    // Row 2: big value
+    QLabel* valueLabel = new QLabel(value);
+    valueLabel->setObjectName("kpiValue");
+    QFont valueFont("Inter, Segoe UI, Roboto, sans-serif", 22, QFont::Black);
+    valueFont.setLetterSpacing(QFont::AbsoluteSpacing, -0.5);
+    valueLabel->setFont(valueFont);
+    valueLabel->setStyleSheet(QString("color: %1; background: transparent;").arg(color.lighter(130).name()));
 
+    if (title == "Components")  m_totalComponentsLabel = valueLabel;
+    else if (title == "Active") m_activeComponentsLabel = valueLabel;
+    else if (title == "Avg Health") m_avgHealthLabel = valueLabel;
+    else if (title == "Alerts") m_totalAlertsLabel = valueLabel;
+    else if (title == "Msg Rate") m_msgRateLabel = valueLabel;
+    else if (title == "Critical") m_criticalCountLabel = valueLabel;
+
+    // Row 3: subtitle
     QLabel* subtitleLabel = new QLabel(subtitle);
     subtitleLabel->setObjectName("kpiSubtitle");
-    QFont subtitleFont;
-    subtitleFont.setPointSize(8);
-    subtitleFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    QFont subtitleFont("Inter, Segoe UI, Roboto, sans-serif", 8);
     subtitleLabel->setFont(subtitleFont);
-    subtitleLabel->setAlignment(Qt::AlignCenter);
 
-    QFrame* progressBar = new QFrame();
-    progressBar->setObjectName("kpiProgressBar");
-    progressBar->setFixedHeight(3);
-    progressBar->setStyleSheet(QString(
-        "QFrame#kpiProgressBar { "
-        "   background: qlineargradient(x1:0, y1:0, x2:1, y2:0, "
-        "       stop:0 %1, stop:0.7 %2, stop:1 transparent); "
-        "   border-radius: 2px; "
+    // Bottom fill bar
+    QFrame* fillBar = new QFrame();
+    fillBar->setObjectName("kpiProgressBar");
+    fillBar->setFixedHeight(2);
+    fillBar->setStyleSheet(QString(
+        "QFrame#kpiProgressBar {"
+        "  background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
+        "    stop:0 %1, stop:0.65 %2, stop:1 transparent);"
+        "  border-radius: 1px;"
         "}"
-    ).arg(color.name(), color.lighter(130).name()));
+    ).arg(color.name(), color.lighter(140).name()));
 
-    cardLayout->addWidget(titleLabel);
-    cardLayout->addWidget(valueLabel, 1);
-    if (trendLabel)
-        cardLayout->addWidget(trendLabel);
+    cardLayout->addLayout(topRow);
+    cardLayout->addSpacing(4);
+    cardLayout->addWidget(valueLabel);
+    cardLayout->addStretch();
     cardLayout->addWidget(subtitleLabel);
-    cardLayout->addWidget(progressBar);
+    cardLayout->addSpacing(6);
+    cardLayout->addWidget(fillBar);
 
     return card;
 }
@@ -381,23 +387,41 @@ QWidget* AnalyticsDashboard::createSummaryTable()
     QWidget* container = new QWidget();
     container->setObjectName("summaryTableContainer");
     QVBoxLayout* layout = new QVBoxLayout(container);
-    layout->setSpacing(6);
+    layout->setSpacing(10);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    QLabel* heading = new QLabel("COMPONENT SUMMARY TABLE");
-    heading->setObjectName("dashboardSubtitle");
-    QFont hFont;
-    hFont.setPointSize(10);
-    hFont.setBold(true);
-    hFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    hFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.8);
+    // Section header row
+    QWidget* headerRow = new QWidget();
+    QHBoxLayout* headerRowLayout = new QHBoxLayout(headerRow);
+    headerRowLayout->setContentsMargins(0, 0, 0, 0);
+    headerRowLayout->setSpacing(8);
+
+    QFrame* sectionDot = new QFrame();
+    sectionDot->setObjectName("tableSectionDot");
+    sectionDot->setFixedSize(8, 8);
+    sectionDot->setStyleSheet("QFrame { background: #3B82F6; border-radius: 4px; }");
+
+    QLabel* heading = new QLabel("Component Summary");
+    heading->setObjectName("sectionHeading");
+    QFont hFont("Inter, Segoe UI, Roboto, sans-serif", 11, QFont::Bold);
+    hFont.setLetterSpacing(QFont::AbsoluteSpacing, -0.1);
     heading->setFont(hFont);
-    layout->addWidget(heading);
+
+    QLabel* rowCountLabel = new QLabel();
+    rowCountLabel->setObjectName("tableRowCount");
+    QFont rcFont("Inter, Segoe UI, Roboto, sans-serif", 9);
+    rowCountLabel->setFont(rcFont);
+
+    headerRowLayout->addWidget(sectionDot, 0, Qt::AlignVCenter);
+    headerRowLayout->addWidget(heading, 0, Qt::AlignVCenter);
+    headerRowLayout->addWidget(rowCountLabel, 0, Qt::AlignVCenter);
+    headerRowLayout->addStretch();
+    layout->addWidget(headerRow);
 
     m_summaryTable = new QTableWidget(0, 7);
     m_summaryTable->setObjectName("summaryTable");
     m_summaryTable->setHorizontalHeaderLabels({
-        "Component", "Type", "Status", "Health %", "Messages", "Alerts", "Last Update"
+        "ID", "Type", "Status", "Health", "Messages", "Alerts", "Last Seen"
     });
     m_summaryTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_summaryTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
@@ -405,14 +429,16 @@ QWidget* AnalyticsDashboard::createSummaryTable()
     m_summaryTable->verticalHeader()->setVisible(false);
     m_summaryTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_summaryTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    m_summaryTable->setAlternatingRowColors(true);
-    m_summaryTable->setMaximumHeight(220);
-    m_summaryTable->setMinimumHeight(120);
+    m_summaryTable->setAlternatingRowColors(false);
+    m_summaryTable->setShowGrid(false);
+    m_summaryTable->setMaximumHeight(230);
+    m_summaryTable->setMinimumHeight(130);
 
-    QFont tableFont;
-    tableFont.setPointSize(9);
-    tableFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    QFont tableFont("Inter, Segoe UI, Roboto, sans-serif", 9);
     m_summaryTable->setFont(tableFont);
+    m_summaryTable->horizontalHeader()->setFont(
+        QFont("Inter, Segoe UI, Roboto, sans-serif", 8, QFont::Bold));
+    m_summaryTable->verticalHeader()->setDefaultSectionSize(34);
 
     layout->addWidget(m_summaryTable);
     return container;
@@ -425,7 +451,7 @@ void AnalyticsDashboard::updateSummaryTable()
     m_summaryTable->setRowCount(0);
 
     QString componentFilter = m_componentFilterCombo->currentText();
-    if (componentFilter == "ALL COMPONENTS")
+    if (componentFilter == "All Components")
         componentFilter = "";
 
     for (const auto& data : m_componentData) {
@@ -497,22 +523,47 @@ void AnalyticsDashboard::updateSummaryTable()
 
 QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialType)
 {
+    // Accent color per slot position
+    static const QColor slotColors[4] = {
+        QColor("#3B82F6"),   // slot 0 — blue
+        QColor("#8B5CF6"),   // slot 1 — violet
+        QColor("#10B981"),   // slot 2 — emerald
+        QColor("#F59E0B"),   // slot 3 — amber
+    };
+    QColor slotAccent = slotColors[gridIndex % 4];
+
     QWidget* container = new QWidget();
     container->setObjectName("chartContainer");
     QVBoxLayout* layout = new QVBoxLayout(container);
-    layout->setSpacing(8);
-    layout->setContentsMargins(12, 12, 12, 12);
+    layout->setSpacing(0);
+    layout->setContentsMargins(0, 0, 0, 0);
 
+    // Top accent stripe
+    QFrame* topStripe = new QFrame();
+    topStripe->setFixedHeight(3);
+    topStripe->setStyleSheet(QString(
+        "QFrame { background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
+        "  stop:0 %1, stop:0.7 %2, stop:1 transparent);"
+        "  border-radius: 0px; border: none; }"
+    ).arg(slotAccent.name(), slotAccent.lighter(140).name()));
+
+    // Inner content with padding
+    QWidget* innerWidget = new QWidget();
+    innerWidget->setObjectName("chartInner");
+    QVBoxLayout* innerLayout = new QVBoxLayout(innerWidget);
+    innerLayout->setSpacing(8);
+    innerLayout->setContentsMargins(12, 10, 12, 12);
+
+    // Header row: chart-type combo
     QHBoxLayout* headerLayout = new QHBoxLayout();
     headerLayout->setSpacing(8);
+    headerLayout->setContentsMargins(0, 0, 0, 0);
 
     QComboBox* chartTypeCombo = new QComboBox();
     chartTypeCombo->setObjectName("chartTypeCombo");
-    QFont comboFont;
-    comboFont.setPointSize(9);
-    comboFont.setBold(true);
-    comboFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+    QFont comboFont("Inter, Segoe UI, Roboto, sans-serif", 9, QFont::Bold);
     chartTypeCombo->setFont(comboFont);
+    chartTypeCombo->setFixedHeight(30);
 
     chartTypeCombo->addItem("Health Trend",           static_cast<int>(ChartType::HealthTrend));
     chartTypeCombo->addItem("Component Distribution", static_cast<int>(ChartType::ComponentDistribution));
@@ -522,7 +573,6 @@ QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialTyp
     chartTypeCombo->addItem("Component Comparison",   static_cast<int>(ChartType::ComponentComparison));
     chartTypeCombo->addItem("Health Heatmap",         static_cast<int>(ChartType::HealthHeatmap));
     chartTypeCombo->addItem("Uptime Timeline",        static_cast<int>(ChartType::UptimeTimeline));
-
     chartTypeCombo->setCurrentIndex(static_cast<int>(initialType));
 
     connect(chartTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -530,24 +580,21 @@ QWidget* AnalyticsDashboard::createChartGrid(int gridIndex, ChartType initialTyp
 
     headerLayout->addWidget(chartTypeCombo, 1);
 
-    QFrame* separator = new QFrame();
-    separator->setObjectName("chartSeparator");
-    separator->setFrameShape(QFrame::HLine);
-    separator->setFixedHeight(1);
-
     QChart* chart = new QChart();
     applyChartTheme(chart);
     QChartView* chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
     chartView->setRenderHint(QPainter::TextAntialiasing);
     chartView->setRenderHint(QPainter::SmoothPixmapTransform);
-    chartView->setMinimumHeight(250);
+    chartView->setMinimumHeight(255);
     chartView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     enableChartTooltips(chartView);
 
-    layout->addLayout(headerLayout);
-    layout->addWidget(separator);
-    layout->addWidget(chartView, 1);
+    innerLayout->addLayout(headerLayout);
+    innerLayout->addWidget(chartView, 1);
+
+    layout->addWidget(topStripe);
+    layout->addWidget(innerWidget, 1);
 
     m_chartGrids[gridIndex].chartView = chartView;
     m_chartGrids[gridIndex].chartTypeCombo = chartTypeCombo;
@@ -586,7 +633,7 @@ void AnalyticsDashboard::updateChartGrid(int gridIndex, ChartType chartType)
     if (!chartView) return;
 
     QString componentFilter = m_componentFilterCombo->currentText();
-    if (componentFilter == "ALL COMPONENTS")
+    if (componentFilter == "All Components")
         componentFilter = "";
 
     updateChart(chartView, chartType, componentFilter);
@@ -703,7 +750,7 @@ void AnalyticsDashboard::updateKPIs()
     if (m_componentData.isEmpty()) return;
 
     QString componentFilter = m_componentFilterCombo->currentText();
-    if (componentFilter == "ALL COMPONENTS")
+    if (componentFilter == "All Components")
         componentFilter = "";
 
     int totalComponents = 0;
@@ -924,7 +971,7 @@ void AnalyticsDashboard::clear()
     m_componentData.clear();
     m_componentTypeCount.clear();
     m_componentFilterCombo->clear();
-    m_componentFilterCombo->addItem("ALL COMPONENTS");
+    m_componentFilterCombo->addItem("All Components");
     updateAllCharts();
 }
 
@@ -948,7 +995,7 @@ void AnalyticsDashboard::updateAllCharts()
     for (int i = 0; i < 4; i++) {
         if (m_chartGrids[i].chartView) {
             QString componentFilter = m_componentFilterCombo->currentText();
-            if (componentFilter == "ALL COMPONENTS")
+            if (componentFilter == "All Components")
                 componentFilter = "";
             updateChart(m_chartGrids[i].chartView, m_chartGrids[i].currentChartType, componentFilter);
         }
@@ -1500,31 +1547,34 @@ void AnalyticsDashboard::updateUptimeTimelineChart(QChartView* chartView, const 
 
 void AnalyticsDashboard::applyChartTheme(QChart* chart)
 {
-    chart->setBackgroundBrush(QBrush(m_chartBgColor));
+    // Fully transparent background — chart sits on the card's background
+    chart->setBackgroundBrush(Qt::NoBrush);
+    chart->setBackgroundVisible(false);
+    chart->setPlotAreaBackgroundVisible(false);
     chart->setTitleBrush(QBrush(m_textColor));
-    chart->setBackgroundRoundness(8);
-    chart->setAnimationOptions(QChart::AllAnimations);
-    chart->setAnimationDuration(600);
-    chart->setAnimationEasingCurve(QEasingCurve::OutCubic);
+    chart->setBackgroundRoundness(0);
+    chart->setAnimationOptions(QChart::SeriesAnimations);
+    chart->setAnimationDuration(500);
+    chart->setAnimationEasingCurve(QEasingCurve::OutQuart);
 
-    QFont titleFont("Inter, Segoe UI, Roboto, sans-serif", 10, QFont::Bold);
-    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.4);
+    QFont titleFont("Inter, Segoe UI, Roboto, sans-serif", 9, QFont::Bold);
+    titleFont.setLetterSpacing(QFont::AbsoluteSpacing, 0.2);
     chart->setTitleFont(titleFont);
 
     if (chart->legend()) {
         chart->legend()->setLabelColor(m_textColor);
         chart->legend()->setAlignment(Qt::AlignBottom);
-        chart->legend()->setMarkerShape(QLegend::MarkerShapeRectangle);
+        chart->legend()->setMarkerShape(QLegend::MarkerShapeCircle);
         chart->legend()->setShowToolTips(true);
 
-        QFont legendFont("Inter, Segoe UI, Roboto, sans-serif", 7);
+        QFont legendFont("Inter, Segoe UI, Roboto, sans-serif", 8);
         chart->legend()->setFont(legendFont);
-        chart->legend()->setBrush(QBrush(m_chartBgColor.lighter(102)));
-        chart->legend()->setPen(QPen(m_gridColor.lighter(110), 1));
-        chart->legend()->setBorderColor(m_gridColor.lighter(110));
+        chart->legend()->setBrush(Qt::NoBrush);
+        chart->legend()->setPen(Qt::NoPen);
+        chart->legend()->setBorderColor(Qt::transparent);
     }
 
-    chart->setMargins(QMargins(8, 10, 8, 8));
+    chart->setMargins(QMargins(6, 4, 6, 4));
     chart->setDropShadowEnabled(false);
 }
 
