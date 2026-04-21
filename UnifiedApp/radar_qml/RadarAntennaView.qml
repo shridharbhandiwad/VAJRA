@@ -1102,11 +1102,11 @@ Item {
                     }
                 }
                 Rectangle{width:parent.width;height:1;color:Qt.rgba(1,1,1,0.12)}
-                Text { text:"Health:  " + root.healthPct(hoverTooltip.ttQHlth); font{family:"Segoe UI";pixelSize:12;bold:true}; color:hoverTooltip.ttStCol }
-                Text { text:"Status:  " + root.statusLabel(hoverTooltip.ttQStatus); font{family:"Segoe UI";pixelSize:11}; color:th.ttText }
-                Text { property var s:hoverTooltip.ttQStats; text:"H:"+s[0]+"  W:"+s[1]+"  C:"+s[2]+"  U:"+s[3]; font{family:"Segoe UI";pixelSize:11}; color:th.ttText }
-                Text { text:"Elements: "+(root.model?root.model.elementsPerQuadrant:0)+"  |  Clusters: "+(root.model?root.model.clustersPerQuadrant:0); font{family:"Segoe UI";pixelSize:10;italic:true}; color:Qt.rgba(1,1,1,0.4) }
-                Text { text:"Click -> clusters  |  Double-click / expand button -> expand"; font{family:"Segoe UI";pixelSize:10;italic:true}; color:th.accent }
+                Text { text:"Health:  " + root.healthPct(hoverTooltip.ttQHlth); font.family:"Segoe UI"; font.pixelSize:12; font.bold:true; color:hoverTooltip.ttStCol }
+                Text { text:"Status:  " + root.statusLabel(hoverTooltip.ttQStatus); font.family:"Segoe UI"; font.pixelSize:11; color:th.ttText }
+                Text { property var s:hoverTooltip.ttQStats; text:"H:"+s[0]+"  W:"+s[1]+"  C:"+s[2]+"  U:"+s[3]; font.family:"Segoe UI"; font.pixelSize:11; color:th.ttText }
+                Text { text:"Elements: "+(root.model?root.model.elementsPerQuadrant:0)+"  |  Clusters: "+(root.model?root.model.clustersPerQuadrant:0); font.family:"Segoe UI"; font.pixelSize:10; font.italic:true; color:Qt.rgba(1,1,1,0.4) }
+                Text { text:"Click -> clusters  |  Double-click / expand button -> expand"; font.family:"Segoe UI"; font.pixelSize:10; font.italic:true; color:th.accent }
             }
 
             // LOD2 – Cluster
@@ -1115,15 +1115,15 @@ Item {
                 Row {
                     spacing:8
                     Rectangle { width:9;height:9;radius:4.5;color:hoverTooltip.ttStCol;anchors.verticalCenter:parent.verticalCenter }
-                    Text { text:"Cluster "+(hoverTooltip.ttC+1); font{family:"Segoe UI";pixelSize:14;bold:true}; color:th.ttText; anchors.verticalCenter:parent.verticalCenter }
+                    Text { text:"Cluster "+(hoverTooltip.ttC+1); font.family:"Segoe UI"; font.pixelSize:14; font.bold:true; color:th.ttText; anchors.verticalCenter:parent.verticalCenter }
                 }
                 Rectangle{width:parent.width;height:1;color:Qt.rgba(1,1,1,0.12)}
-                Text { text:"Quadrant: Q"+(hoverTooltip.ttQ+1)+(root.hovQuad>=0?"  ("+["NW","NE","SW","SE"][root.hovQuad]+")":""); font{family:"Segoe UI";pixelSize:11}; color:th.ttText }
-                Text { text:"Elements: E"+hoverTooltip.ttCBase+" - E"+(hoverTooltip.ttCBase+(root.model?root.model.elementsPerCluster-1:15)); font{family:"Segoe UI";pixelSize:11}; color:th.ttText }
-                Text { text:"Health:   "+root.healthPct(hoverTooltip.ttCHlth); font{family:"Segoe UI";pixelSize:12;bold:true}; color:hoverTooltip.ttStCol }
-                Text { text:"Status:   "+root.statusLabel(hoverTooltip.ttCStatus); font{family:"Segoe UI";pixelSize:11}; color:th.ttText }
-                Text { property var s:hoverTooltip.ttCStats; text:"H:"+s[0]+"  W:"+s[1]+"  C:"+s[2]+"  U:"+s[3]; font{family:"Segoe UI";pixelSize:11}; color:th.ttText }
-                Text { text:"Click -> see individual elements"; font{family:"Segoe UI";pixelSize:10;italic:true}; color:th.accent }
+                Text { text:"Quadrant: Q"+(hoverTooltip.ttQ+1)+(root.hovQuad>=0?"  ("+["NW","NE","SW","SE"][root.hovQuad]+")":""); font.family:"Segoe UI"; font.pixelSize:11; color:th.ttText }
+                Text { text:"Elements: E"+hoverTooltip.ttCBase+" - E"+(hoverTooltip.ttCBase+(root.model?root.model.elementsPerCluster-1:15)); font.family:"Segoe UI"; font.pixelSize:11; color:th.ttText }
+                Text { text:"Health:   "+root.healthPct(hoverTooltip.ttCHlth); font.family:"Segoe UI"; font.pixelSize:12; font.bold:true; color:hoverTooltip.ttStCol }
+                Text { text:"Status:   "+root.statusLabel(hoverTooltip.ttCStatus); font.family:"Segoe UI"; font.pixelSize:11; color:th.ttText }
+                Text { property var s:hoverTooltip.ttCStats; text:"H:"+s[0]+"  W:"+s[1]+"  C:"+s[2]+"  U:"+s[3]; font.family:"Segoe UI"; font.pixelSize:11; color:th.ttText }
+                Text { text:"Click -> see individual elements"; font.family:"Segoe UI"; font.pixelSize:10; font.italic:true; color:th.accent }
             }
 
             // LOD3 / Full – Element
@@ -1132,10 +1132,10 @@ Item {
                 Row {
                     spacing:8
                     Rectangle { width:9;height:9;radius:4.5;color:hoverTooltip.ttStCol;anchors.verticalCenter:parent.verticalCenter }
-                    Text { text:"Element  "+hoverTooltip.ttGid; font{family:"Segoe UI";pixelSize:14;bold:true}; color:th.ttText; anchors.verticalCenter:parent.verticalCenter }
+                    Text { text:"Element  "+hoverTooltip.ttGid; font.family:"Segoe UI"; font.pixelSize:14; font.bold:true; color:th.ttText; anchors.verticalCenter:parent.verticalCenter }
                 }
                 Item { height:6 }
-                Text { text:"Q"+(hoverTooltip.ttEQ+1)+"  ·  Cluster "+(hoverTooltip.ttEClus+1)+"  ·  Local #"+hoverTooltip.ttEIdx; font{family:"Segoe UI";pixelSize:10}; color:Qt.rgba(1,1,1,0.42) }
+                Text { text:"Q"+(hoverTooltip.ttEQ+1)+"  ·  Cluster "+(hoverTooltip.ttEClus+1)+"  ·  Local #"+hoverTooltip.ttEIdx; font.family:"Segoe UI"; font.pixelSize:10; color:Qt.rgba(1,1,1,0.42) }
                 Item { height:8 }
                 Rectangle { width:parent.width;height:1;color:Qt.rgba(1,1,1,0.12) }
                 Item { height:8 }
@@ -1143,22 +1143,22 @@ Item {
                 property var det: root.model ? root.model.elementDetail(hoverTooltip.ttEQ, hoverTooltip.ttELoc) : {}
 
                 Row { width:parent.width;height:22;spacing:0
-                    Text { text:"Power"; font{family:"Segoe UI";pixelSize:11}; color:Qt.rgba(1,1,1,0.42); width:76 }
-                    Text { text:root.fmtPwr(parent.parent.det.power||-999); font{family:"Segoe UI";pixelSize:11;bold:true}; color:root.healthColor(parent.parent.det.powerStatus||0) }
+                    Text { text:"Power"; font.family:"Segoe UI"; font.pixelSize:11; color:Qt.rgba(1,1,1,0.42); width:76 }
+                    Text { text:root.fmtPwr(parent.parent.det.power||-999); font.family:"Segoe UI"; font.pixelSize:11; font.bold:true; color:root.healthColor(parent.parent.det.powerStatus||0) }
                 }
-                Text { text:"   threshold >= 43 dBm"; font{family:"Segoe UI";pixelSize:9;italic:true}; color:Qt.rgba(1,1,1,0.28) }
+                Text { text:"   threshold >= 43 dBm"; font.family:"Segoe UI"; font.pixelSize:9; font.italic:true; color:Qt.rgba(1,1,1,0.28) }
                 Item { height:4 }
                 Row { width:parent.width;height:22;spacing:0
-                    Text { text:"Temp"; font{family:"Segoe UI";pixelSize:11}; color:Qt.rgba(1,1,1,0.42); width:76 }
-                    Text { text:root.fmtTmp(parent.parent.det.temperature||-999); font{family:"Segoe UI";pixelSize:11;bold:true}; color:root.healthColor(parent.parent.det.tempStatus||0) }
+                    Text { text:"Temp"; font.family:"Segoe UI"; font.pixelSize:11; color:Qt.rgba(1,1,1,0.42); width:76 }
+                    Text { text:root.fmtTmp(parent.parent.det.temperature||-999); font.family:"Segoe UI"; font.pixelSize:11; font.bold:true; color:root.healthColor(parent.parent.det.tempStatus||0) }
                 }
-                Text { text:"   threshold <= 50 deg C"; font{family:"Segoe UI";pixelSize:9;italic:true}; color:Qt.rgba(1,1,1,0.28) }
+                Text { text:"   threshold <= 50 deg C"; font.family:"Segoe UI"; font.pixelSize:9; font.italic:true; color:Qt.rgba(1,1,1,0.28) }
                 Item { height:4 }
                 Row { width:parent.width;height:22;spacing:0
-                    Text { text:"Current"; font{family:"Segoe UI";pixelSize:11}; color:Qt.rgba(1,1,1,0.42); width:76 }
-                    Text { text:root.fmtCur(parent.parent.det.current||-999); font{family:"Segoe UI";pixelSize:11;bold:true}; color:root.healthColor(parent.parent.det.currStatus||0) }
+                    Text { text:"Current"; font.family:"Segoe UI"; font.pixelSize:11; color:Qt.rgba(1,1,1,0.42); width:76 }
+                    Text { text:root.fmtCur(parent.parent.det.current||-999); font.family:"Segoe UI"; font.pixelSize:11; font.bold:true; color:root.healthColor(parent.parent.det.currStatus||0) }
                 }
-                Text { text:"   threshold <= 2.0 A"; font{family:"Segoe UI";pixelSize:9;italic:true}; color:Qt.rgba(1,1,1,0.28) }
+                Text { text:"   threshold <= 2.0 A"; font.family:"Segoe UI"; font.pixelSize:9; font.italic:true; color:Qt.rgba(1,1,1,0.28) }
                 Item { height:10 }
                 Rectangle {
                     height:26;radius:13;width:ttPill.implicitWidth+28
@@ -1166,7 +1166,7 @@ Item {
                     border{color:hoverTooltip.ttStCol;width:1}
                     Row { anchors.centerIn:parent;spacing:7
                         Rectangle { width:8;height:8;radius:4;color:hoverTooltip.ttStCol;anchors.verticalCenter:parent.verticalCenter }
-                        Text { id:ttPill;text:root.statusLabel(root.hovValue);font{family:"Segoe UI";pixelSize:11;bold:true};color:hoverTooltip.ttStCol;anchors.verticalCenter:parent.verticalCenter }
+                        Text { id:ttPill;text:root.statusLabel(root.hovValue);font.family:"Segoe UI";font.pixelSize:11;font.bold:true;color:hoverTooltip.ttStCol;anchors.verticalCenter:parent.verticalCenter }
                     }
                 }
             }
