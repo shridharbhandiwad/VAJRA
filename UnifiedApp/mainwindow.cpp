@@ -1058,6 +1058,14 @@ void MainWindow::toggleRadarAntennaPanel()
     } else {
         m_radarAntennaDock->show();
         m_radarAntennaDock->raise();
+
+        // Auto-start the built-in simulator when the panel is first opened so
+        // the antenna canvases immediately show health data instead of a
+        // blank (no-data) view. The simulator is harmless to start multiple
+        // times — the QML toolbar button lets the user stop it manually.
+        if (m_radarAntennaWidget) {
+            m_radarAntennaWidget->startSimulator();
+        }
     }
 }
 
