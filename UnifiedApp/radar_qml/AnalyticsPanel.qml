@@ -9,25 +9,26 @@ Item {
     property var   cmdSender: null
     property bool  dark:      true
 
-    // ── Theme ────────────────────────────────────────────────────
-    readonly property color bgCol:      dark ? "#0d1625"  : "#ffffff"
-    readonly property color borderCol:  dark ? "#1e3050"  : "#d0dce8"
-    readonly property color accentCol:  dark ? "#1ab4f0"  : "#0070c0"
-    readonly property color textCol:    dark ? "#d8eaf8"  : "#1a2840"
-    readonly property color dimCol:     dark ? "#4a6888"  : "#7090b0"
-    readonly property color healthyCol: dark ? "#00e87a"  : "#00a854"
-    readonly property color warningCol: dark ? "#ffb700"  : "#e07800"
-    readonly property color critCol:    dark ? "#ff3a3a"  : "#d41010"
-    readonly property color unknownCol: dark ? "#2a3e58"  : "#b0c8e0"
-    readonly property color surfaceCol: dark ? "#111c2e"  : "#f7fafd"
-    readonly property color rowAlt:     dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)"
-    readonly property color cardCol:    dark ? "#0f1e35"  : "#f0f6ff"
+    // ── Design tokens ─────────────────────────────────────────────
+    readonly property color bgBase:      dark ? "#0c1017" : "#f1f5f9"
+    readonly property color bgCard:      dark ? "#131a26" : "#ffffff"
+    readonly property color bgCardAlt:   dark ? "#0f1620" : "#f8fafc"
+    readonly property color borderCol:   dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"
+    readonly property color accentBlue:  dark ? "#3B82F6" : "#2563EB"
+    readonly property color accentCyan:  dark ? "#06B6D4" : "#0891B2"
+    readonly property color textPrimary: dark ? "#e2e8f0" : "#1e293b"
+    readonly property color textMuted:   dark ? "#64748b" : "#94a3b8"
+    readonly property color healthyCol:  dark ? "#10B981" : "#059669"
+    readonly property color warningCol:  dark ? "#F59E0B" : "#D97706"
+    readonly property color critCol:     dark ? "#EF4444" : "#DC2626"
+    readonly property color unknownCol:  dark ? "#334155" : "#cbd5e1"
+    readonly property color rowOdd:      dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.025)"
 
-    // ── Repaint triggers ─────────────────────────────────────────
+    // ── Repaint triggers ──────────────────────────────────────────
     Connections {
         target: ap.model
-        function onStatsChanged()  { chartsCanvas.requestPaint() }
-        function onHistoryChanged(){ chartsCanvas.requestPaint() }
+        function onStatsChanged()   { chartsCanvas.requestPaint() }
+        function onHistoryChanged() { chartsCanvas.requestPaint() }
     }
     Connections {
         target: ap.cmdSender
@@ -36,306 +37,438 @@ Item {
         }
     }
 
-    // ── Layout ───────────────────────────────────────────────────
+    // Root column
     Column {
         anchors.fill: parent
         spacing: 0
 
-        // ── Charts canvas ─────────────────────────────────────────
+        // ── Charts section (64% height) ───────────────────────────
         Canvas {
             id: chartsCanvas
-            width: parent.width
+            width:  parent.width
             height: parent.height * 0.64
 
             onPaint: {
                 if (!ap.model || width < 20 || height < 20) return
                 var ctx = getContext("2d")
                 ctx.clearRect(0, 0, width, height)
-                ctx.fillStyle = ap.bgCol
+
+                // Background
+                ctx.fillStyle = ap.bgBase
                 ctx.fillRect(0, 0, width, height)
 
-                var pad = 14
-                var cw  = width - pad * 2
-                var y   = pad
+                var pad = 12
 
-                // ══ Title bar ═════════════════════════════════════
-                ctx.fillStyle = ap.accentCol
-                ctx.font = "bold 12px 'Segoe UI'"
+                // ──────────────────────────────────────────────────
+                // SECTION 1: Header strip
+                // ──────────────────────────────────────────────────
+                var headerH = 36
+                // header card bg
+                ctx.fillStyle = ap.bgCard
+                roundRect(ctx, 0, 0, width, headerH, 0)
+                ctx.fill()
+
+                // Blue left accent bar
+                ctx.fillStyle = ap.accentBlue
+                ctx.fillRect(0, 0, 3, headerH)
+
+                // Title
+                ctx.fillStyle = ap.textPrimary
+                ctx.font = "bold 11px 'Segoe UI'"
                 ctx.textAlign = "left"
-                ctx.fillText("ANALYTICS  ·  " + ap.model.antennaName, pad, y + 12)
+                ctx.textBaseline = "middle"
+                ctx.fillText(ap.model.antennaName || "Analytics", 14, headerH / 2)
 
-                // Last update (right-aligned)
-                ctx.fillStyle = ap.dimCol
+                // Right: last update
+                ctx.fillStyle = ap.textMuted
                 ctx.font = "9px 'Segoe UI'"
                 ctx.textAlign = "right"
-                ctx.fillText(ap.model.lastUpdateTime, width - pad, y + 12)
+                ctx.fillText(ap.model.lastUpdateTime, width - pad, headerH / 2)
                 ctx.textAlign = "left"
-                y += 24
+                ctx.textBaseline = "alphabetic"
 
-                ctx.strokeStyle = ap.borderCol; ctx.lineWidth = 1
-                ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(width - pad, y); ctx.stroke()
-                y += 10
+                var y = headerH + 8
 
-                // ══ Top row: Donut + summary stats ════════════════
+                // ──────────────────────────────────────────────────
+                // SECTION 2: Metric tiles row
+                // ──────────────────────────────────────────────────
                 var total = ap.model.totalElements
                 var h  = ap.model.healthyCount
                 var w2 = ap.model.warningCount
                 var c  = ap.model.criticalCount
                 var u  = ap.model.noDataCount
+                var gPct = total > 0 ? Math.round(h * 100 / total) : 0
 
-                var donutR  = Math.max(4, Math.min(cw * 0.28, 52))
-                var donutCx = pad + donutR + 4
-                var donutCy = y + donutR + 8
-                var donutIn = donutR * 0.55
+                var pkt = ap.udpRecv ? ap.udpRecv.packetsReceived : 0
 
-                // Donut segments
-                if (total > 0 && donutR > 4) {
-                    var segs = [[h/total, ap.healthyCol], [w2/total, ap.warningCol],
-                                [c/total, ap.critCol],   [u/total, ap.unknownCol]]
+                var tiles = [
+                    { label: "HEALTH",   value: gPct + "%",     color: gPct >= 75 ? ap.healthyCol : gPct >= 50 ? ap.warningCol : ap.critCol },
+                    { label: "ELEMENTS", value: "" + total,     color: ap.accentBlue },
+                    { label: "PACKETS",  value: "" + pkt,       color: ap.accentCyan },
+                    { label: "CRITICAL", value: "" + c,         color: c > 0 ? ap.critCol : ap.textMuted }
+                ]
+
+                var tileW = (width - pad * 2 - 6 * 3) / 4
+                var tileH = 46
+                for (var ti = 0; ti < 4; ti++) {
+                    var tx = pad + ti * (tileW + 6)
+                    // card bg
+                    ctx.fillStyle = ap.bgCard
+                    roundRect(ctx, tx, y, tileW, tileH, 6)
+                    ctx.fill()
+                    // top accent line
+                    ctx.fillStyle = tiles[ti].color
+                    roundRect(ctx, tx, y, tileW, 3, [3, 3, 0, 0])
+                    ctx.fill()
+                    // value
+                    ctx.fillStyle = tiles[ti].color
+                    ctx.font = "bold 15px 'Segoe UI'"
+                    ctx.textAlign = "center"
+                    ctx.fillText(tiles[ti].value, tx + tileW / 2, y + 26)
+                    // label
+                    ctx.fillStyle = ap.textMuted
+                    ctx.font = "8px 'Segoe UI'"
+                    ctx.fillText(tiles[ti].label, tx + tileW / 2, y + 39)
+                }
+                ctx.textAlign = "left"
+
+                y += tileH + 10
+
+                // ──────────────────────────────────────────────────
+                // SECTION 3: Donut + legend card
+                // ──────────────────────────────────────────────────
+                var donutCardH = 82
+                ctx.fillStyle = ap.bgCard
+                roundRect(ctx, pad, y, width - pad * 2, donutCardH, 8)
+                ctx.fill()
+
+                // Section label
+                ctx.fillStyle = ap.textMuted
+                ctx.font = "bold 8px 'Segoe UI'"
+                ctx.textAlign = "left"
+                ctx.fillText("STATUS DISTRIBUTION", pad + 10, y + 14)
+
+                var donutR  = Math.min(28, (donutCardH - 20) / 2)
+                var donutCx = pad + 10 + donutR + 4
+                var donutCy = y + donutCardH / 2 + 4
+                var donutIn = donutR * 0.56
+
+                if (total > 0) {
+                    var segs = [
+                        [h / total,  ap.healthyCol],
+                        [w2 / total, ap.warningCol],
+                        [c / total,  ap.critCol],
+                        [u / total,  ap.unknownCol]
+                    ]
                     var ang = -Math.PI / 2
                     for (var si = 0; si < 4; si++) {
                         var sw = segs[si][0] * Math.PI * 2
-                        if (sw < 0.001) continue
-                        ctx.beginPath(); ctx.moveTo(donutCx, donutCy)
+                        if (sw < 0.002) continue
+                        ctx.beginPath()
+                        ctx.moveTo(donutCx, donutCy)
                         ctx.arc(donutCx, donutCy, donutR, ang, ang + sw)
-                        ctx.closePath(); ctx.fillStyle = segs[si][1]; ctx.fill()
+                        ctx.closePath()
+                        ctx.fillStyle = segs[si][1]
+                        ctx.fill()
                         ang += sw
                     }
+                    // hole
                     ctx.beginPath()
                     ctx.arc(donutCx, donutCy, donutIn, 0, Math.PI * 2)
-                    ctx.fillStyle = ap.bgCol; ctx.fill()
+                    ctx.fillStyle = ap.bgCard
+                    ctx.fill()
+                } else {
+                    ctx.beginPath()
+                    ctx.arc(donutCx, donutCy, donutR, 0, Math.PI * 2)
+                    ctx.fillStyle = ap.unknownCol
+                    ctx.fill()
+                    ctx.beginPath()
+                    ctx.arc(donutCx, donutCy, donutIn, 0, Math.PI * 2)
+                    ctx.fillStyle = ap.bgCard
+                    ctx.fill()
                 }
 
-                var gPct = total > 0 ? Math.round(h * 100 / total) : 0
+                // center pct text
                 ctx.fillStyle = gPct >= 75 ? ap.healthyCol : gPct >= 50 ? ap.warningCol : ap.critCol
-                ctx.font = "bold 15px 'Segoe UI'"
+                ctx.font = "bold 11px 'Segoe UI'"
                 ctx.textAlign = "center"
                 ctx.fillText(gPct + "%", donutCx, donutCy + 4)
-                ctx.fillStyle = ap.dimCol; ctx.font = "7px 'Segoe UI'"
-                ctx.fillText("HEALTH", donutCx, donutCy + 14)
+                ctx.textAlign = "left"
 
-                // Legend beside donut
-                var lx2 = donutCx + donutR + 14
-                var ly2 = donutCy - donutR + 4
-                var lbls2 = [["Healthy", h, ap.healthyCol], ["Warning", w2, ap.warningCol],
-                             ["Critical", c, ap.critCol],  ["No Data", u, ap.unknownCol]]
+                // Legend
+                var lx = donutCx + donutR + 14
+                var ly = donutCy - 24
+                var lbls = [
+                    ["Healthy",  h,  ap.healthyCol],
+                    ["Warning",  w2, ap.warningCol],
+                    ["Critical", c,  ap.critCol],
+                    ["No Data",  u,  ap.unknownCol]
+                ]
                 for (var li = 0; li < 4; li++) {
-                    ctx.fillStyle = lbls2[li][2]; ctx.fillRect(lx2, ly2 + li * 16, 8, 8)
-                    ctx.fillStyle = ap.textCol; ctx.font = "10px 'Segoe UI'"; ctx.textAlign = "left"
-                    ctx.fillText(lbls2[li][0] + "  " + lbls2[li][1], lx2 + 12, ly2 + li * 16 + 8)
+                    // dot
+                    ctx.fillStyle = lbls[li][2]
+                    ctx.beginPath()
+                    ctx.arc(lx + 3, ly + li * 15 + 4, 3, 0, Math.PI * 2)
+                    ctx.fill()
+                    // text
+                    ctx.fillStyle = ap.textMuted
+                    ctx.font = "9px 'Segoe UI'"
+                    ctx.fillText(lbls[li][0], lx + 10, ly + li * 15 + 8)
+                    // count
+                    ctx.fillStyle = ap.textPrimary
+                    ctx.font = "bold 9px 'Segoe UI'"
+                    ctx.textAlign = "right"
+                    ctx.fillText(lbls[li][1], width - pad - 10, ly + li * 15 + 8)
+                    ctx.textAlign = "left"
                 }
 
-                // Packet / element summary (right column)
-                var rx = lx2 + 90
-                if (rx + 60 < width - pad) {
-                    var pkt = ap.udpRecv ? ap.udpRecv.packetsReceived : 0
-                    var summaryItems = [
-                        ["TOTAL", total, ap.textCol],
-                        ["PKTS",  pkt,   ap.accentCol]
-                    ]
-                    for (var si2 = 0; si2 < 2; si2++) {
-                        ctx.fillStyle = ap.dimCol; ctx.font = "8px 'Segoe UI'"
-                        ctx.textAlign = "left"
-                        ctx.fillText(summaryItems[si2][0], rx, ly2 + si2 * 26 + 8)
-                        ctx.fillStyle = summaryItems[si2][2]; ctx.font = "bold 13px 'Segoe UI'"
-                        ctx.fillText(summaryItems[si2][1], rx, ly2 + si2 * 26 + 22)
-                    }
-                }
+                y += donutCardH + 8
 
-                y = donutCy + donutR + 14
+                // ──────────────────────────────────────────────────
+                // SECTION 4: Per-quadrant health bars card
+                // ──────────────────────────────────────────────────
+                var qCardH = 14 + ap.model.quadrantCount * 22 + 10
+                ctx.fillStyle = ap.bgCard
+                roundRect(ctx, pad, y, width - pad * 2, qCardH, 8)
+                ctx.fill()
 
-                ctx.strokeStyle = ap.borderCol; ctx.lineWidth = 1
-                ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(width - pad, y); ctx.stroke()
-                y += 8
+                ctx.fillStyle = ap.textMuted
+                ctx.font = "bold 8px 'Segoe UI'"
+                ctx.fillText("PER QUADRANT", pad + 10, y + 14)
 
-                // ══ Per-quadrant health bars ═══════════════════════
-                ctx.fillStyle = ap.accentCol; ctx.font = "bold 9px 'Segoe UI'"
-                ctx.textAlign = "left"; ctx.fillText("PER QUADRANT", pad, y + 9); y += 18
+                var barX   = pad + 36
+                var barMaxW = width - pad * 2 - 36 - 38
+                var qy     = y + 22
+                var qLbls  = ["Q1", "Q2", "Q3", "Q4"]
 
-                var barMaxW = cw - 60
-                var qLbls   = ["Q1", "Q2", "Q3", "Q4"]
                 for (var qi = 0; qi < 4 && qi < ap.model.quadrantCount; qi++) {
-                    var qv   = ap.model.quadrantHealth(qi)
+                    var qv  = ap.model.quadrantHealth(qi)
+                    var qs  = ap.model.quadrantStats(qi)
                     var qpct = qv < 0 ? 0 : qv
-                    var qs   = ap.model ? ap.model.quadrantStats(qi) : [0, 0, 0, 0]
                     var qcol = qv < 0 ? ap.unknownCol
                              : qs[2] > 0 ? ap.critCol
                              : qs[1] > 0 ? ap.warningCol
                              : qs[0] > 0 ? ap.healthyCol : ap.unknownCol
 
                     // Label
-                    ctx.fillStyle = ap.dimCol; ctx.font = "9px 'Segoe UI'"
-                    ctx.textAlign = "left"; ctx.fillText(qLbls[qi], pad, y + 10)
+                    ctx.fillStyle = ap.textMuted
+                    ctx.font = "bold 9px 'Segoe UI'"
+                    ctx.textAlign = "left"
+                    ctx.fillText(qLbls[qi], pad + 10, qy + 10)
 
-                    // Bar background
-                    ctx.fillStyle = ap.dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"
-                    ctx.fillRect(pad + 28, y, barMaxW, 11)
+                    // Track
+                    ctx.fillStyle = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"
+                    roundRect(ctx, barX, qy + 2, barMaxW, 8, 4)
+                    ctx.fill()
 
-                    // Bar fill
-                    if (qv >= 0) {
+                    // Fill
+                    if (qv >= 0 && barMaxW * (qpct / 100) > 0) {
                         ctx.fillStyle = qcol
-                        ctx.fillRect(pad + 28, y, barMaxW * (qpct / 100), 11)
+                        roundRect(ctx, barX, qy + 2, barMaxW * (qpct / 100), 8, 4)
+                        ctx.fill()
                     }
 
-                    // % label
-                    ctx.fillStyle = ap.textCol; ctx.font = "bold 9px 'Segoe UI'"
+                    // Pct label
+                    ctx.fillStyle = ap.textPrimary
+                    ctx.font = "bold 9px 'Segoe UI'"
                     ctx.textAlign = "right"
-                    ctx.fillText(qv < 0 ? "N/A" : qpct + "%", width - pad, y + 10)
+                    ctx.fillText(qv < 0 ? "N/A" : qpct + "%", width - pad - 10, qy + 10)
+                    ctx.textAlign = "left"
 
-                    // Mini counts
-                    if (qv >= 0) {
-                        var countStr = qs[0] + "✓ " + qs[1] + "! " + qs[2] + "✗"
-                        ctx.fillStyle = ap.dimCol; ctx.font = "8px 'Segoe UI'"
-                        ctx.textAlign = "left"
-                        ctx.fillText(countStr, pad + 28, y + 21)
-                    }
-
-                    y += (qv >= 0 ? 28 : 18)
+                    qy += 22
                 }
 
-                ctx.strokeStyle = ap.borderCol; ctx.lineWidth = 1
-                ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(width - pad, y); ctx.stroke()
-                y += 8
+                y += qCardH + 8
 
-                // ══ Sparkline ═════════════════════════════════════
-                ctx.fillStyle = ap.accentCol; ctx.font = "bold 9px 'Segoe UI'"
-                ctx.textAlign = "left"; ctx.fillText("HEALTH TREND  (2 min)", pad, y + 9); y += 17
+                // ──────────────────────────────────────────────────
+                // SECTION 5: Health trend sparkline card
+                // ──────────────────────────────────────────────────
+                var spCardH = 72
+                ctx.fillStyle = ap.bgCard
+                roundRect(ctx, pad, y, width - pad * 2, spCardH, 8)
+                ctx.fill()
 
-                var hist  = ap.model.healthHistory
-                var spH   = 40; var spW = cw; var spX = pad
-                ctx.fillStyle = ap.dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"
-                ctx.fillRect(spX, y, spW, spH)
+                // accent left bar
+                ctx.fillStyle = ap.healthyCol
+                ctx.fillRect(pad, y, 3, spCardH)
 
-                // Reference lines (25 / 50 / 75 %)
-                ctx.strokeStyle = ap.dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"
+                ctx.fillStyle = ap.textMuted
+                ctx.font = "bold 8px 'Segoe UI'"
+                ctx.textAlign = "left"
+                ctx.fillText("HEALTH TREND  ·  2 min", pad + 10, y + 13)
+
+                var spX = pad + 10
+                var spW = width - pad * 2 - 20
+                var spY = y + 20
+                var spH = spCardH - 28
+
+                // grid lines at 25/50/75%
+                ctx.strokeStyle = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"
                 ctx.lineWidth = 0.5
                 for (var ri = 1; ri <= 3; ri++) {
-                    var ry3 = y + spH - (ri / 4) * spH
+                    var ry3 = spY + spH - (ri / 4) * spH
                     ctx.beginPath(); ctx.moveTo(spX, ry3); ctx.lineTo(spX + spW, ry3); ctx.stroke()
                 }
 
+                var hist = ap.model.healthHistory
                 if (hist && hist.length > 1) {
-                    // Area fill
+                    // area
                     ctx.beginPath()
                     var first2 = true
                     for (var hi = 0; hi < hist.length; hi++) {
                         var hv = hist[hi]; if (hv < 0) { first2 = true; continue }
                         var hx = spX + (hi / (hist.length - 1)) * spW
-                        var hy2 = y + spH - (hv / 100) * spH
+                        var hy2 = spY + spH - (hv / 100) * spH
                         if (first2) { ctx.moveTo(hx, hy2); first2 = false } else ctx.lineTo(hx, hy2)
                     }
-                    var gr2 = ctx.createLinearGradient(0, y, 0, y + spH)
-                    gr2.addColorStop(0, ap.dark ? "rgba(0,232,122,0.28)" : "rgba(0,168,84,0.18)")
+                    var gr2 = ctx.createLinearGradient(0, spY, 0, spY + spH)
+                    gr2.addColorStop(0, dark ? "rgba(16,185,129,0.22)" : "rgba(16,185,129,0.12)")
                     gr2.addColorStop(1, "rgba(0,0,0,0)")
-                    ctx.lineTo(spX + spW, y + spH); ctx.lineTo(spX, y + spH); ctx.closePath()
+                    ctx.lineTo(spX + spW, spY + spH); ctx.lineTo(spX, spY + spH); ctx.closePath()
                     ctx.fillStyle = gr2; ctx.fill()
-                    // Line
+
+                    // line
                     ctx.beginPath(); first2 = true
                     for (var hi2 = 0; hi2 < hist.length; hi2++) {
                         var hv2 = hist[hi2]; if (hv2 < 0) { first2 = true; continue }
                         var hx2 = spX + (hi2 / (hist.length - 1)) * spW
-                        var hy3 = y + spH - (hv2 / 100) * spH
+                        var hy3 = spY + spH - (hv2 / 100) * spH
                         if (first2) { ctx.moveTo(hx2, hy3); first2 = false } else ctx.lineTo(hx2, hy3)
                     }
                     ctx.strokeStyle = ap.healthyCol; ctx.lineWidth = 1.5; ctx.stroke()
 
-                    // Current value dot
-                    if (hist.length > 0) {
-                        var lastH = hist[hist.length - 1]
-                        var lastX = spX + spW
-                        var lastY = y + spH - (lastH / 100) * spH
-                        ctx.beginPath()
-                        ctx.arc(lastX, lastY, 3.5, 0, Math.PI * 2)
-                        ctx.fillStyle = ap.healthyCol; ctx.fill()
-                    }
+                    // endpoint dot
+                    var lastH = hist[hist.length - 1]
+                    var lastX = spX + spW
+                    var lastY = spY + spH - (lastH / 100) * spH
+                    ctx.beginPath()
+                    ctx.arc(lastX, lastY, 3, 0, Math.PI * 2)
+                    ctx.fillStyle = ap.healthyCol; ctx.fill()
                 }
 
                 // Y axis labels
-                ctx.fillStyle = ap.dimCol; ctx.font = "8px 'Segoe UI'"
+                ctx.fillStyle = ap.textMuted; ctx.font = "8px 'Segoe UI'"
                 ctx.textAlign = "right"
-                ctx.fillText("100%", spX - 2, y + 8)
-                ctx.fillText("50%",  spX - 2, y + spH / 2 + 4)
-                ctx.fillText("0%",   spX - 2, y + spH)
-                y += spH + 8
+                ctx.fillText("100", spX - 3, spY + 7)
+                ctx.fillText("50",  spX - 3, spY + spH / 2 + 4)
+                ctx.fillText("0",   spX - 3, spY + spH + 1)
+                ctx.textAlign = "left"
 
-                // ══ Worst performers ═══════════════════════════════
+                y += spCardH + 8
+
+                // ──────────────────────────────────────────────────
+                // SECTION 6: Worst performers
+                // ──────────────────────────────────────────────────
                 var worst = ap.model ? ap.model.worstElements(4) : []
                 if (worst && worst.length > 0) {
-                    ctx.strokeStyle = ap.borderCol; ctx.lineWidth = 1
-                    ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(width - pad, y); ctx.stroke()
-                    y += 8
+                    var worstCardH = 16 + Math.min(4, worst.length) * 22 + 8
+                    ctx.fillStyle = ap.bgCard
+                    roundRect(ctx, pad, y, width - pad * 2, worstCardH, 8)
+                    ctx.fill()
 
-                    ctx.fillStyle = ap.critCol; ctx.font = "bold 9px 'Segoe UI'"
-                    ctx.textAlign = "left"; ctx.fillText("WORST ELEMENTS", pad, y + 9); y += 18
+                    // accent left bar (red)
+                    ctx.fillStyle = ap.critCol
+                    ctx.fillRect(pad, y, 3, worstCardH)
 
-                    var maxEntries = Math.min(4, worst.length)
-                    for (var wi = 0; wi < maxEntries; wi++) {
+                    ctx.fillStyle = ap.textMuted
+                    ctx.font = "bold 8px 'Segoe UI'"
+                    ctx.fillText("WORST ELEMENTS", pad + 10, y + 14)
+
+                    var wy = y + 22
+                    var maxE = Math.min(4, worst.length)
+                    for (var wi = 0; wi < maxE; wi++) {
                         var elem = worst[wi]
                         if (!elem) continue
-                        var elemStr = "Q" + ((elem["quad"] || 0) + 1) + " E" + ((elem["elem"] || 0) + 1)
+                        var elemStr = "Q" + ((elem["quad"] || 0) + 1) + "·E" + ((elem["elem"] || 0) + 1)
                         var elemStatus = elem["status"] || 0
-
                         var wCol = elemStatus === 3 ? ap.critCol
-                               : elemStatus === 2 ? ap.warningCol : ap.unknownCol
+                                 : elemStatus === 2 ? ap.warningCol : ap.unknownCol
+
+                        // Status dot
                         ctx.fillStyle = wCol
-                        ctx.fillRect(pad, y, 6, 10)
+                        ctx.beginPath()
+                        ctx.arc(pad + 14, wy + 7, 4, 0, Math.PI * 2)
+                        ctx.fill()
 
-                        ctx.fillStyle = ap.textCol; ctx.font = "9px 'Segoe UI'"
+                        ctx.fillStyle = ap.textPrimary; ctx.font = "bold 9px 'Segoe UI'"
+                        ctx.fillText(elemStr, pad + 24, wy + 10)
+
+                        var pwr = elem["power"]       !== undefined ? elem["power"].toFixed(1) + "dBm" : "—"
+                        var tmp = elem["temperature"]  !== undefined ? elem["temperature"].toFixed(0) + "°C" : "—"
+                        ctx.fillStyle = ap.textMuted; ctx.font = "8px 'Segoe UI'"
+                        ctx.textAlign = "right"
+                        ctx.fillText(pwr + "  " + tmp, width - pad - 10, wy + 10)
                         ctx.textAlign = "left"
-                        ctx.fillText(elemStr, pad + 10, y + 9)
 
-                        // Power / Temp / Current
-                        var pwr  = elem["power"]       !== undefined ? elem["power"].toFixed(1) + " dBm" : "—"
-                        var tmp  = elem["temperature"] !== undefined ? elem["temperature"].toFixed(1) + " °C" : "—"
-                        var cur  = elem["current"]     !== undefined ? elem["current"].toFixed(2) + " A" : "—"
-                        ctx.fillStyle = ap.dimCol; ctx.font = "8px 'Segoe UI'"
-                        ctx.fillText(pwr + "  " + tmp + "  " + cur, pad + 56, y + 9)
-
-                        y += 15
+                        wy += 22
                     }
                 }
             }
+
+            // ── Utility: rounded rect helper (4-corner or per-corner) ──
+            function roundRect(ctx, x, y, w, h, r) {
+                var tl = 0, tr = 0, br = 0, bl = 0
+                if (typeof r === "number") { tl = tr = br = bl = r }
+                else if (Array.isArray(r) && r.length === 4) { tl = r[0]; tr = r[1]; br = r[2]; bl = r[3] }
+                ctx.beginPath()
+                ctx.moveTo(x + tl, y)
+                ctx.lineTo(x + w - tr, y)
+                ctx.quadraticCurveTo(x + w, y, x + w, y + tr)
+                ctx.lineTo(x + w, y + h - br)
+                ctx.quadraticCurveTo(x + w, y + h, x + w - br, y + h)
+                ctx.lineTo(x + bl, y + h)
+                ctx.quadraticCurveTo(x, y + h, x, y + h - bl)
+                ctx.lineTo(x, y + tl)
+                ctx.quadraticCurveTo(x, y, x + tl, y)
+                ctx.closePath()
+            }
         }
 
-        // ── Divider ───────────────────────────────────────────────
+        // ── Thin separator ────────────────────────────────────────
         Rectangle {
-            width: parent.width; height: 1; color: ap.borderCol
+            width: parent.width
+            height: 1
+            color: ap.borderCol
         }
 
         // ── Command log header ────────────────────────────────────
         Rectangle {
             id: cmdLogHeader
-            width: parent.width; height: 30
-            color: ap.dark ? "#091320" : "#e8f0f8"
+            width: parent.width
+            height: 32
+            color: ap.bgCard
+
+            // left accent
+            Rectangle {
+                width: 3; height: parent.height
+                color: ap.accentCyan
+            }
 
             RowLayout {
-                anchors { fill: parent; leftMargin: 12; rightMargin: 10 }
+                anchors { fill: parent; leftMargin: 14; rightMargin: 10 }
 
                 Text {
                     text: "COMMAND LOG"
                     font { family: "Segoe UI"; pixelSize: 10; bold: true; letterSpacing: 1 }
-                    color: ap.accentCol
+                    color: ap.accentCyan
                 }
 
-                // Command stats
                 Text {
-                    visible: ap.cmdSender && (ap.cmdSender.commandLog.length > 0)
+                    visible: ap.cmdSender && ap.cmdSender.commandLog.length > 0
                     text: {
                         if (!ap.cmdSender) return ""
                         var log = ap.cmdSender.commandLog
-                        var ok = 0, err = 0, pending = 0
+                        var ok = 0, err = 0
                         for (var i = 0; i < log.length; i++) {
                             var s = log[i]["status"]
-                            if (s === 1) ok++
-                            else if (s === 3) err++
-                            else pending++
+                            if (s === 1) ok++; else if (s === 3) err++
                         }
-                        var total = log.length
-                        var okPct = total > 0 ? Math.round(ok * 100 / total) : 0
-                        return "ACK " + okPct + "%  (" + ok + "✓ " + err + "✗)"
+                        var total2 = log.length
+                        var okPct = total2 > 0 ? Math.round(ok * 100 / total2) : 0
+                        return "ACK " + okPct + "% · " + ok + " ok · " + err + " err"
                     }
                     font { family: "Segoe UI"; pixelSize: 9 }
-                    color: ap.dimCol
+                    color: ap.textMuted
                     Layout.leftMargin: 10
                 }
 
@@ -350,21 +483,21 @@ Item {
                         id: pendTxt
                         anchors.centerIn: parent
                         text: (ap.cmdSender ? ap.cmdSender.pendingCount : 0) + " pending"
-                        font { family: "Segoe UI"; pixelSize: 9; bold: true }
+                        font { family: "Segoe UI"; pixelSize: 8; bold: true }
                         color: "#000"
                     }
                 }
 
                 // Clear button
                 Rectangle {
-                    width: clrTxt.implicitWidth + 10; height: 16; radius: 4
+                    width: clrTxt.implicitWidth + 12; height: 18; radius: 4
                     color: "transparent"
                     border { color: ap.borderCol; width: 1 }
                     Text {
                         id: clrTxt; anchors.centerIn: parent
                         text: "Clear"
                         font { family: "Segoe UI"; pixelSize: 9 }
-                        color: ap.dimCol
+                        color: ap.textMuted
                     }
                     MouseArea {
                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -378,16 +511,33 @@ Item {
         Rectangle {
             width: parent.width
             height: ap.height - chartsCanvas.height - 1 - cmdLogHeader.height
-            color: ap.bgCol
+            color: ap.bgBase
             clip: true
 
-            Text {
+            // Empty state
+            Column {
                 anchors.centerIn: parent
                 visible: cmdLogList.count === 0
-                text: "No commands sent yet.\nClick an element to open\nthe control panel."
-                font { family: "Segoe UI"; pixelSize: 11 }
-                color: ap.dimCol
-                horizontalAlignment: Text.AlignHCenter
+                spacing: 6
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "—"
+                    font { family: "Segoe UI"; pixelSize: 18 }
+                    color: ap.textMuted
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "No commands sent yet"
+                    font { family: "Segoe UI"; pixelSize: 11 }
+                    color: ap.textMuted
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "Click an element to open the control panel"
+                    font { family: "Segoe UI"; pixelSize: 10 }
+                    color: ap.textMuted
+                    opacity: 0.6
+                }
             }
 
             ListView {
@@ -395,15 +545,14 @@ Item {
                 anchors.fill: parent
                 model: ap.cmdSender ? ap.cmdSender.commandLog : []
                 clip: true
+                spacing: 0
 
-                ScrollBar.vertical: ScrollBar {
-                    policy: ScrollBar.AsNeeded
-                }
+                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
                 delegate: Rectangle {
                     width: cmdLogList.width
-                    height: 50
-                    color: index % 2 === 0 ? ap.rowAlt : "transparent"
+                    height: 48
+                    color: index % 2 === 0 ? ap.rowOdd : "transparent"
 
                     // Left status stripe
                     Rectangle {
@@ -413,65 +562,55 @@ Item {
                             if (s === 1) return ap.healthyCol
                             if (s === 2) return ap.warningCol
                             if (s === 3) return ap.critCol
-                            return ap.accentCol
+                            return ap.accentBlue
                         }
                     }
 
                     Column {
                         anchors {
                             left: parent.left; right: parent.right
-                            leftMargin: 10; topMargin: 6
+                            leftMargin: 12; topMargin: 7
                         }
-                        spacing: 3
+                        spacing: 4
 
-                        // Row 1: command name + element ID + quadrant
                         Row {
-                            spacing: 6
+                            spacing: 8
                             Text {
                                 text: modelData["cmdName"] || ""
                                 font { family: "Segoe UI"; pixelSize: 11; bold: true }
                                 color: {
                                     var cmd = modelData["cmd"]
                                     if (cmd === 1) return ap.critCol
-                                    if (cmd === 2) return ap.accentCol
+                                    if (cmd === 2) return ap.accentBlue
                                     return ap.healthyCol
                                 }
                             }
                             Text {
                                 text: "E" + (modelData["elem"] || 0)
                                 font { family: "Segoe UI"; pixelSize: 11 }
-                                color: ap.textCol
+                                color: ap.textPrimary
                             }
                             Text {
                                 text: "Q" + ((modelData["quad"] || 0) + 1)
                                 font { family: "Segoe UI"; pixelSize: 10 }
-                                color: ap.dimCol
+                                color: ap.textMuted
                             }
                         }
 
-                        // Row 2: status pill + timestamp
                         Row {
                             spacing: 6
+                            // Status pill
                             Rectangle {
-                                width: statusPill.implicitWidth + 10
-                                height: 14; radius: 7
+                                width: sPill.implicitWidth + 10; height: 14; radius: 7
                                 color: {
                                     var s = modelData["status"]
-                                    if (s === 1) return Qt.rgba(0, 0.91, 0.48, 0.18)
-                                    if (s === 2) return Qt.rgba(1, 0.72, 0, 0.18)
-                                    if (s === 3) return Qt.rgba(1, 0.23, 0.23, 0.18)
-                                    return Qt.rgba(0.1, 0.71, 0.94, 0.18)
+                                    if (s === 1) return Qt.rgba(0.063, 0.725, 0.506, 0.15)
+                                    if (s === 2) return Qt.rgba(0.961, 0.620, 0.043, 0.15)
+                                    if (s === 3) return Qt.rgba(0.937, 0.267, 0.267, 0.15)
+                                    return Qt.rgba(0.231, 0.510, 0.965, 0.15)
                                 }
-                                border.color: {
-                                    var s = modelData["status"]
-                                    if (s === 1) return ap.healthyCol
-                                    if (s === 2) return ap.warningCol
-                                    if (s === 3) return ap.critCol
-                                    return ap.accentCol
-                                }
-                                border.width: 1
                                 Text {
-                                    id: statusPill
+                                    id: sPill
                                     anchors.centerIn: parent
                                     text: modelData["statName"] || ""
                                     font { family: "Segoe UI"; pixelSize: 8; bold: true }
@@ -480,14 +619,14 @@ Item {
                                         if (s === 1) return ap.healthyCol
                                         if (s === 2) return ap.warningCol
                                         if (s === 3) return ap.critCol
-                                        return ap.accentCol
+                                        return ap.accentBlue
                                     }
                                 }
                             }
                             Text {
                                 text: modelData["time"] || ""
                                 font { family: "Courier New"; pixelSize: 9 }
-                                color: ap.dimCol
+                                color: ap.textMuted
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                         }
