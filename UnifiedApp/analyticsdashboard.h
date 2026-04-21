@@ -33,6 +33,8 @@ class QLabel;
 class QComboBox;
 class QPushButton;
 class QScrollArea;
+class QTableWidget;
+class QProgressBar;
 
 // Chart type enumeration for dropdown selection
 enum class ChartType {
@@ -41,24 +43,27 @@ enum class ChartType {
     SubsystemPerformance,
     MessageFrequency,
     AlertHistory,
-    ComponentComparison
+    ComponentComparison,
+    HealthHeatmap,
+    UptimeTimeline
 };
 
 /**
- * AnalyticsDashboard - Military-grade comprehensive data analytics dashboard
- * 
+ * AnalyticsDashboard - Comprehensive data analytics dashboard
+ *
  * Features:
  *   - Real-time component health monitoring with time-series charts
- *   - Component distribution pie charts
+ *   - Component distribution pie/donut charts
  *   - Subsystem performance bar charts
  *   - Health trend area charts
  *   - Message frequency scatter plots
- *   - Telemetry data line charts
  *   - Alert history and statistics
- *   - Performance metrics and KPIs
- *   - Component comparison views
+ *   - Health heatmap (status distribution over time buckets)
+ *   - Uptime / connection-state timeline chart
+ *   - Performance metrics and 6 KPI cards with trend deltas
  *   - Component-wise filtering
  *   - 2x2 configurable grid layout with chart type selection
+ *   - Summary data table panel
  *   - PDF export capability
  *   - Enhanced tooltips and data visualization
  *   - Dark/Light theme support
@@ -66,11 +71,11 @@ enum class ChartType {
 class AnalyticsDashboard : public QMainWindow
 {
     Q_OBJECT
-    
+
 public:
     explicit AnalyticsDashboard(QWidget* parent = nullptr);
     ~AnalyticsDashboard();
-    
+
     // Data recording methods
     void recordComponentHealth(const QString& componentId, const QString& color, qreal health, qint64 timestamp);
     void recordSubsystemHealth(const QString& componentId, const QString& subsystem, qreal health);
@@ -78,73 +83,83 @@ public:
     void addComponent(const QString& componentId, const QString& type);
     void removeComponent(const QString& componentId);
     void clear();
-    
+
     // Dashboard refresh
     void refreshDashboard();
-    
+
 public slots:
     void onThemeChanged();
-    
+
 private slots:
     void onChartTypeChanged(int gridIndex);
     void onComponentFilterChanged(int index);
     void onExportToPDF();
-    
+
 private:
     void setupUI();
     void createCharts();
     void generateSampleData();
-    
+
     // Chart grid management
     void updateChartGrid(int gridIndex, ChartType chartType);
     QWidget* createChartGrid(int gridIndex, ChartType initialType);
-    
+
+    // Summary table
+    QWidget* createSummaryTable();
+    void updateSummaryTable();
+
     // Chart update methods
-    void updateAllCharts();          // Update all visible charts
-    void updateKPIs();               // Update KPI cards
+    void updateAllCharts();
+    void updateKPIs();
     void updateChart(QChartView* chartView, ChartType chartType, const QString& componentFilter);
-    
-    // Chart creation helpers - now with optional filtering
+
+    // Chart creation helpers
     void updateHealthTrendChart(QChartView* chartView, const QString& componentFilter = "");
     void updateComponentDistributionChart(QChartView* chartView, const QString& componentFilter = "");
     void updateSubsystemPerformanceChart(QChartView* chartView, const QString& componentFilter = "");
     void updateMessageFrequencyChart(QChartView* chartView, const QString& componentFilter = "");
     void updateAlertHistoryChart(QChartView* chartView, const QString& componentFilter = "");
     void updateComponentComparisonChart(QChartView* chartView, const QString& componentFilter = "");
-    
-    // KPI Cards
-    QWidget* createKPICard(const QString& title, const QString& value, const QString& subtitle, const QColor& color);
+    void updateHealthHeatmapChart(QChartView* chartView, const QString& componentFilter = "");
+    void updateUptimeTimelineChart(QChartView* chartView, const QString& componentFilter = "");
+
+    // KPI Cards (6 cards now)
+    QWidget* createKPICard(const QString& title, const QString& value,
+                           const QString& subtitle, const QColor& color,
+                           const QString& trendText = "");
     QWidget* createKPISection();
-    
+
     // Utility methods
     QColor getHealthColor(qreal health);
     QString getHealthStatus(qreal health);
     void applyChartTheme(QChart* chart);
     void enableChartTooltips(QChartView* chartView);
     QVector<QColor> getChartPalette() const;
-    
+
     // Data structures
     struct ComponentHealthData {
         QString componentId;
         QString type;
-        QVector<QPair<qint64, qreal>> healthHistory;  // timestamp, health
+        QVector<QPair<qint64, qreal>> healthHistory;    // timestamp, health%
         QMap<QString, QVector<qreal>> subsystemHealth;  // subsystem -> health values
         QVector<qint64> messageTimestamps;
         qreal currentHealth;
+        qreal previousHealth;   // for delta calculation
         QString currentStatus;
         int totalMessages;
         int alertCount;
+        qint64 firstSeenTime;
         qint64 lastUpdateTime;
     };
-    
+
     QMap<QString, ComponentHealthData> m_componentData;
     QMap<QString, int> m_componentTypeCount;
-    
+
     // UI Components
     QScrollArea* m_scrollArea;
     QWidget* m_centralWidget;
     QVBoxLayout* m_mainLayout;
-    
+
     // 2x2 Grid structure
     struct ChartGrid {
         QChartView* chartView;
@@ -152,24 +167,37 @@ private:
         ChartType currentChartType;
         QWidget* containerWidget;
     };
-    
+
     ChartGrid m_chartGrids[4];  // 2x2 grid = 4 charts
-    
-    // KPI Labels
+
+    // 6 KPI Labels
     QLabel* m_totalComponentsLabel;
     QLabel* m_activeComponentsLabel;
     QLabel* m_avgHealthLabel;
     QLabel* m_totalAlertsLabel;
-    
+    QLabel* m_msgRateLabel;
+    QLabel* m_criticalCountLabel;
+
+    // KPI trend labels
+    QLabel* m_avgHealthTrendLabel;
+    QLabel* m_alertsTrendLabel;
+
+    // Summary table
+    QTableWidget* m_summaryTable;
+
     // Controls
     QComboBox* m_timeRangeCombo;
     QComboBox* m_componentFilterCombo;
     QPushButton* m_refreshBtn;
     QPushButton* m_exportBtn;
-    
+
     // Timer for live updates
     QTimer* m_updateTimer;
-    
+
+    // Snapshot health averages for trend deltas
+    qreal m_prevAvgHealth;
+    int   m_prevAlertCount;
+
     // Theme colors
     QColor m_bgColor;
     QColor m_textColor;
