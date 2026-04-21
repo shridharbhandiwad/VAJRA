@@ -60,6 +60,7 @@ AnalyticsDashboard::AnalyticsDashboard(QWidget* parent)
             this, &AnalyticsDashboard::onThemeChanged);
 
     setupUI();
+    generateSampleData();
     updateKPIs();
     updateAllCharts();
 
@@ -91,11 +92,13 @@ void AnalyticsDashboard::setupUI()
     m_scrollArea->setObjectName("dashboardScrollArea");
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setFrameShape(QFrame::NoFrame);
+    m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     m_centralWidget = new QWidget();
+    m_centralWidget->setObjectName("dashboardCentralWidget");
     m_mainLayout = new QVBoxLayout(m_centralWidget);
-    m_mainLayout->setSpacing(12);
-    m_mainLayout->setContentsMargins(16, 12, 16, 16);
+    m_mainLayout->setSpacing(14);
+    m_mainLayout->setContentsMargins(20, 16, 20, 20);
 
     // ── Header ───────────────────────────────────────────────────
     QWidget* headerWidget = new QWidget();
@@ -254,7 +257,7 @@ QWidget* AnalyticsDashboard::createKPISection()
     QWidget* kpiWidget = new QWidget();
     kpiWidget->setObjectName("kpiSection");
     QHBoxLayout* kpiLayout = new QHBoxLayout(kpiWidget);
-    kpiLayout->setSpacing(10);
+    kpiLayout->setSpacing(12);
     kpiLayout->setContentsMargins(0, 0, 0, 0);
 
     QColor c1 = QColor(41, 128, 185);   // Blue
@@ -280,8 +283,8 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
 {
     QWidget* card = new QWidget();
     card->setObjectName("kpiCard");
-    card->setMinimumHeight(90);
-    card->setMaximumHeight(115);
+    card->setMinimumHeight(100);
+    card->setMaximumHeight(130);
 
     QString gradientColor = color.lighter(110).name();
     card->setStyleSheet(QString(
@@ -292,8 +295,8 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     ).arg(color.name(), gradientColor));
 
     QVBoxLayout* cardLayout = new QVBoxLayout(card);
-    cardLayout->setSpacing(3);
-    cardLayout->setContentsMargins(12, 8, 12, 8);
+    cardLayout->setSpacing(2);
+    cardLayout->setContentsMargins(14, 10, 14, 8);
 
     QLabel* titleLabel = new QLabel(title);
     titleLabel->setObjectName("kpiTitle");
@@ -308,11 +311,11 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     QLabel* valueLabel = new QLabel(value);
     valueLabel->setObjectName("kpiValue");
     QFont valueFont;
-    valueFont.setPointSize(24);
+    valueFont.setPointSize(20);
     valueFont.setBold(true);
     valueFont.setWeight(QFont::Black);
     valueFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    valueFont.setLetterSpacing(QFont::AbsoluteSpacing, -1.0);
+    valueFont.setLetterSpacing(QFont::AbsoluteSpacing, -0.5);
     valueLabel->setFont(valueFont);
     valueLabel->setAlignment(Qt::AlignCenter);
 
@@ -324,15 +327,18 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
     else if (title.contains("MSG RATE")) m_msgRateLabel = valueLabel;
     else if (title.contains("CRITICAL")) m_criticalCountLabel = valueLabel;
 
-    // Trend label (only for avg health and alerts)
-    QLabel* trendLabel = new QLabel(trendText.isEmpty() ? "" : trendText);
-    trendLabel->setObjectName("kpiTrend");
-    trendLabel->setAlignment(Qt::AlignCenter);
-    QFont trendFont;
-    trendFont.setPointSize(8);
-    trendFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
-    trendLabel->setFont(trendFont);
-    trendLabel->setVisible(!trendText.isNull());
+    // Trend label (only for avg health and alerts — passed non-null via overload default="")
+    bool hasTrend = (title.contains("AVG HEALTH") || title.contains("ALERTS"));
+    QLabel* trendLabel = nullptr;
+    if (hasTrend) {
+        trendLabel = new QLabel(trendText);
+        trendLabel->setObjectName("kpiTrend");
+        trendLabel->setAlignment(Qt::AlignCenter);
+        QFont trendFont;
+        trendFont.setPointSize(8);
+        trendFont.setFamily("Inter, Segoe UI, Roboto, sans-serif");
+        trendLabel->setFont(trendFont);
+    }
 
     if (title.contains("AVG HEALTH")) m_avgHealthTrendLabel = trendLabel;
     else if (title.contains("ALERTS")) m_alertsTrendLabel = trendLabel;
@@ -358,7 +364,7 @@ QWidget* AnalyticsDashboard::createKPICard(const QString& title, const QString& 
 
     cardLayout->addWidget(titleLabel);
     cardLayout->addWidget(valueLabel, 1);
-    if (!trendText.isNull())
+    if (trendLabel)
         cardLayout->addWidget(trendLabel);
     cardLayout->addWidget(subtitleLabel);
     cardLayout->addWidget(progressBar);

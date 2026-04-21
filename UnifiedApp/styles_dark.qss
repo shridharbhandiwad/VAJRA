@@ -1278,6 +1278,11 @@ QMainWindow#AnalyticsDashboard {
         stop:0 #0f1419, stop:0.25 #151a21, stop:0.5 #1a1f28, stop:0.75 #1e242f, stop:1 #232935);
 }
 
+/* Dashboard Central Widget */
+QWidget#dashboardCentralWidget {
+    background: transparent;
+}
+
 /* Dashboard Header */
 QWidget#dashboardHeader {
     background: transparent;
@@ -1431,8 +1436,8 @@ QWidget#kpiCard {
         stop:0.5 rgba(36, 40, 48, 0.88),
         stop:1 rgba(30, 34, 42, 0.90));
     border: 1px solid rgba(77, 208, 225, 0.22);
-    border-radius: 16px;
-    padding: 0px;
+    border-radius: 12px;
+    padding: 2px 0px;
 }
 
 QWidget#kpiCard:hover {
@@ -1441,6 +1446,7 @@ QWidget#kpiCard:hover {
         stop:0.5 rgba(42, 46, 56, 0.93),
         stop:1 rgba(36, 40, 50, 0.95));
     border: 1px solid rgba(77, 208, 225, 0.45);
+    border-radius: 12px;
 }
 
 /* KPI Progress Bar */
@@ -1459,10 +1465,10 @@ QLabel#kpiTitle {
 
 QLabel#kpiValue {
     color: #FFFFFF;
-    font-size: 36px;
+    font-size: 28px;
     font-weight: 900;
     background: transparent;
-    letter-spacing: -1.5px;
+    letter-spacing: -0.5px;
 }
 
 QLabel#kpiSubtitle {
@@ -1480,7 +1486,7 @@ QWidget#chartContainer {
         stop:0.5 rgba(32, 36, 44, 0.90),
         stop:1 rgba(26, 30, 38, 0.92));
     border: 1px solid rgba(77, 208, 225, 0.18);
-    border-radius: 16px;
+    border-radius: 12px;
     padding: 0px;
 }
 
@@ -1490,6 +1496,7 @@ QWidget#chartContainer:hover {
         stop:0.5 rgba(36, 40, 50, 0.93),
         stop:1 rgba(30, 34, 44, 0.95));
     border: 1px solid rgba(77, 208, 225, 0.32);
+    border-radius: 12px;
 }
 
 /* Chart Separator */
