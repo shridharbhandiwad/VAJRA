@@ -28,8 +28,8 @@ Or use the **"+ Add Component Type"** button in the Designer to add new types vi
 ## UnifiedApp
 
 A single, unified application combining both Designer and Runtime capabilities with role-based access control:
-- Login as **Designer** (`Designer`/`designer`) for full design capabilities
-- Login as **User** (`User`/`user`) for runtime monitoring
+- Login as **Commander** (`Commander`/`designer`) for full design capabilities
+- Login as **Operator** (`Operator`/`user`) for runtime monitoring
 - **Modular component registry** - add new component types via JSON or UI
 - **Multi-protocol support** - TCP and UDP for health data
 - **Dark/Light theme switching**
@@ -41,12 +41,12 @@ Python scripts that simulate subsystems sending health status updates.
 
 ## System Overview
 
-### Designer Mode
+### Commander Mode
 
-The Designer provides a visual interface for creating system layouts with:
+The Commander provides a visual interface for creating system layouts with:
 - **Component Panel** - Draggable list of all registered component types
 - **"+ Add Component Type"** - Button to define new component types at runtime
-- **Designer View** - Canvas for placing and arranging subsystems
+- **Commander View** - Canvas for placing and arranging subsystems
 - **Sub-component support** - Drag-drop labels, line edits, and buttons inside components
 - **Connection drawing** - Uni-directional and bi-directional connections between components
 - **Analytics Panel** - Statistics about subsystems on the canvas
@@ -55,7 +55,7 @@ The Designer provides a visual interface for creating system layouts with:
 ### Runtime Mode
 
 The Runtime Monitor:
-- Loads layouts created by the Designer
+- Loads layouts created by the Commander
 - Receives health status messages via TCP (port 12345) and UDP (port 12346)
 - Updates subsystem visual indicators based on health status
 - Tracks analytics: health updates, status changes, health level changes
@@ -141,7 +141,7 @@ make
 ./UnifiedApp
 ```
 
-Login with `Designer`/`designer` for design mode or `User`/`user` for runtime mode.
+Login with `Commander`/`designer` for design mode or `Operator`/`user` for runtime mode.
 
 ### Build Using Script
 
@@ -168,7 +168,7 @@ brew install qt@5
 ### Adding a New Component Type (No Code Changes!)
 
 **Option 1: Via the UI**
-1. Run UnifiedApp, login as Designer
+1. Run UnifiedApp, login as Commander
 2. Click **"+ Add Component Type"** in the toolbar
 3. Fill in: name, label, image, subsystems, protocol, port
 4. Click "Add Component" - it's immediately available!
@@ -203,7 +203,7 @@ brew install qt@5
 ./UnifiedApp/UnifiedApp
 ```
 
-1. Login with `Designer`/`designer`
+1. Login with `Commander`/`designer`
 2. Drag components from the left panel to the canvas
 3. Use "+" to add custom component types if needed
 4. Draw connections between components
@@ -211,7 +211,7 @@ brew install qt@5
 
 **Step 2: Run Runtime Monitoring**
 
-1. Login with `User`/`user` (or keep app open)
+1. Login with `Operator`/`user` (or keep app open)
 2. Load your saved design
 3. The server starts on port 12345 (TCP) and 12346 (UDP)
 
@@ -359,7 +359,7 @@ The component registry is the heart of the modular architecture:
 - WebSocket and MQTT protocol options in registry
 - Extensible protocol handler architecture
 
-### Designer Features
+### Commander Features
 - Drag-and-drop component placement
 - Sub-component drag-drop (Label, LineEdit, Button) with resize inside components
 - Connection drawing (uni-directional and bi-directional) between components
@@ -369,7 +369,7 @@ The component registry is the heart of the modular architecture:
 - Component analytics
 
 ### Runtime Features
-- Load layouts from Designer
+- Load layouts from Commander
 - Multi-protocol health server (TCP + UDP)
 - Real-time component health updates
 - Multi-client support

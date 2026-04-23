@@ -79,7 +79,7 @@ void SubComponent::paint(QPainter* painter, const QStyleOptionGraphicsItem* opti
         if (scene()) {
             canvas = qobject_cast<Canvas*>(scene()->parent());
         }
-        if (canvas && canvas->getUserRole() == UserRole::Designer) {
+        if (canvas && canvas->getUserRole() == UserRole::Commander) {
             paintResizeHandles(painter);
         }
     }
@@ -255,7 +255,7 @@ void SubComponent::mousePressEvent(QGraphicsSceneMouseEvent* event)
         if (scene()) {
             canvas = qobject_cast<Canvas*>(scene()->parent());
         }
-        if (canvas && canvas->getUserRole() == UserRole::Designer) {
+        if (canvas && canvas->getUserRole() == UserRole::Commander) {
             ResizeHandle handle = handleAt(event->pos());
             if (handle != HandleNone) {
                 m_activeHandle = handle;
@@ -394,7 +394,7 @@ void SubComponent::hoverMoveEvent(QGraphicsSceneHoverEvent* event)
         if (scene()) {
             canvas = qobject_cast<Canvas*>(scene()->parent());
         }
-        if (canvas && canvas->getUserRole() == UserRole::Designer) {
+        if (canvas && canvas->getUserRole() == UserRole::Commander) {
             ResizeHandle handle = handleAt(event->pos());
             switch (handle) {
             case HandleTopLeft:

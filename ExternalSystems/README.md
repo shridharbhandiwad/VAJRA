@@ -316,7 +316,7 @@ For clarity, you can use descriptive names:
 ### Step 1: Start the UnifiedApp
 ```bash
 ./UnifiedApp/UnifiedApp
-# Login with User/user for runtime mode, then load a design file
+# Login with Operator/user for runtime mode, then load a design file
 ```
 
 ### Step 2: Match Subsystem IDs

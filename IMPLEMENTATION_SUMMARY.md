@@ -186,8 +186,8 @@ make
    ```
 
 2. **Login**
-   - Designer: `Designer` / `designer`
-   - User: `User` / `user`
+   - Commander: `Commander` / `designer`
+   - Operator: `Operator` / `user`
 
 3. **Open Dashboard**
    - Click **"📊 VIEW DASHBOARD"** button in toolbar

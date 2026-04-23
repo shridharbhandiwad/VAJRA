@@ -15,7 +15,7 @@ cd /workspace
 ./build_all.sh
 ```
 
-This builds the UnifiedApp which combines both Designer and Runtime capabilities.
+This builds the UnifiedApp which combines both Commander and Runtime capabilities.
 
 ## Step 2: Design Your Radar System (1 minute)
 
@@ -23,7 +23,7 @@ This builds the UnifiedApp which combines both Designer and Runtime capabilities
 ./UnifiedApp/UnifiedApp
 ```
 
-1. Login with `Designer`/`designer`
+1. Login with `Commander`/`designer`
 2. **Drag subsystems** from the left panel to the canvas:
    - Antenna
    - Power System
@@ -40,7 +40,7 @@ This builds the UnifiedApp which combines both Designer and Runtime capabilities
 
 ## Step 3: Start Runtime Monitoring (30 seconds)
 
-1. Login with `User`/`user` (or restart the app)
+1. Login with `Operator`/`user` (or restart the app)
 2. Click "Load Design"
 3. Select `radar_system.design`
 4. The server starts automatically on port 12345 (TCP) and 12346 (UDP)
@@ -115,7 +115,7 @@ python3 external_system.py component_2  # For second subsystem
 ## System Architecture at a Glance
 
 ```
-UnifiedApp (Designer Mode)         UnifiedApp (Runtime Mode)        External Monitors
+UnifiedApp (Commander Mode)         UnifiedApp (Runtime Mode)        External Monitors
     |                                    |                               |
     | 1. Create layout                   |                               |
     | ─────────────────>                 |                               |
