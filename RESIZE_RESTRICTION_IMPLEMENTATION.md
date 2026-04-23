@@ -41,7 +41,7 @@ Canvas* canvas = nullptr;
 if (scene()) {
     canvas = qobject_cast<Canvas*>(scene()->parent());
 }
-if (canvas && canvas->getUserRole() == UserRole::Designer) {
+if (canvas && canvas->getUserRole() == UserRole::Commander) {
     // Allow resize functionality
 }
 ```

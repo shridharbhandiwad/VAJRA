@@ -60,7 +60,7 @@ MainWindow::MainWindow(const QString& username, UserRole role, QWidget* parent)
     setupUI();
     
     // Set window title based on role
-    QString roleStr = (m_role == UserRole::Designer) ? "Designer" : "Monitor";
+    QString roleStr = (m_role == UserRole::Commander) ? "Commander" : "Monitor";
     setWindowTitle(QString("Radar System - %1").arg(roleStr));
     
     // Connect to theme changes for live updates
@@ -90,22 +90,22 @@ MainWindow::~MainWindow()
 
 void MainWindow::applyRoleRestrictions()
 {
-    if (m_role == UserRole::Designer) {
-        // Designer: Full design capabilities on System Overview canvas only.
+    if (m_role == UserRole::Commander) {
+        // Commander: Full design capabilities on System Overview canvas only.
         // No per-component enlarged view tabs (design-focused workflow).
-        // Dashboard view is only for User mode.
+        // Dashboard view is only for Operator mode.
         
         // Hide voice controls (not needed for design view)
         if (m_voiceToggleBtnAction) m_voiceToggleBtnAction->setVisible(false);
         if (m_testVoiceBtnAction) m_testVoiceBtnAction->setVisible(false);
         if (m_voiceSep) m_voiceSep->setVisible(false);
         
-        // Hide dashboard button (only for User mode)
+        // Hide dashboard button (only for Operator mode)
         if (m_dashboardBtn) m_dashboardBtn->setVisible(false);
         
-    } else if (m_role == UserRole::User) {
-        // User: Monitor-only. Can load designs to view, but no design tools.
-        // Only visible toolbar items: User label, LOAD DESIGN, STATUS, Theme toggle, VIEW DASHBOARD.
+    } else if (m_role == UserRole::Operator) {
+        // Operator: Monitor-only. Can load designs to view, but no design tools.
+        // Only visible toolbar items: Operator label, LOAD DESIGN, STATUS, Theme toggle, VIEW DASHBOARD.
         
         // Hide the left panel (components list)
         if (m_leftPanel) {
@@ -151,7 +151,7 @@ void MainWindow::setupUI()
     toolbar->setMovable(false);
     
     // User info label with role
-    QString roleLabel = (m_role == UserRole::Designer) ? "DESIGNER" : "USER";
+    QString roleLabel = (m_role == UserRole::Commander) ? "COMMANDER" : "OPERATOR";
     m_userLabel = new QLabel(QString("  %1  |  %2  ").arg(m_username.toUpper(), roleLabel), this);
     m_userLabel->setObjectName("userLabel");
     toolbar->addWidget(m_userLabel);
@@ -207,8 +207,8 @@ void MainWindow::setupUI()
     m_connectionTypeComboAction = toolbar->addWidget(m_connectionTypeCombo);
     m_connectSep = toolbar->addSeparator();
     
-    // Runtime status & voice controls (only for User/Monitor mode)
-    if (m_role == UserRole::User) {
+    // Runtime status & voice controls (only for Operator/Monitor mode)
+    if (m_role == UserRole::Operator) {
         m_statusLabel = new QLabel("STATUS: INITIALIZING", this);
         m_statusLabel->setObjectName("statusLabel");
         toolbar->addWidget(m_statusLabel);
@@ -409,8 +409,8 @@ void MainWindow::setupUI()
     connect(m_canvas, &Canvas::modeChanged, this, &MainWindow::onModeChanged);
     
     // ========== INITIALIZE RUNTIME SERVICES ==========
-    // Voice alert manager (only for User/Monitor mode)
-    if (m_role == UserRole::User) {
+    // Voice alert manager (only for Operator/Monitor mode)
+    if (m_role == UserRole::Operator) {
         m_voiceAlertManager = new VoiceAlertManager(this);
         
         // Message server for health data from external systems
@@ -447,8 +447,8 @@ void MainWindow::setupUI()
 
 void MainWindow::createComponentTabs()
 {
-    // Per-component enlarged view tabs are only for the User (monitor) role
-    if (m_role != UserRole::User) {
+    // Per-component enlarged view tabs are only for the Operator (monitor) role
+    if (m_role != UserRole::Operator) {
         return;
     }
     
@@ -464,8 +464,8 @@ void MainWindow::createComponentTabs()
 
 void MainWindow::addComponentTab(Component* comp)
 {
-    // Per-component enlarged view tabs are only for the User (monitor) role
-    if (m_role != UserRole::User) {
+    // Per-component enlarged view tabs are only for the Operator (monitor) role
+    if (m_role != UserRole::Operator) {
         return;
     }
     

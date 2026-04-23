@@ -343,7 +343,7 @@ void Component::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
         if (scene()) {
             canvas = qobject_cast<Canvas*>(scene()->parent());
         }
-        if (canvas && canvas->getUserRole() == UserRole::Designer) {
+        if (canvas && canvas->getUserRole() == UserRole::Commander) {
             paintResizeHandles(painter);
         }
     }
@@ -747,7 +747,7 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent* event)
             if (scene()) {
                 canvas = qobject_cast<Canvas*>(scene()->parent());
             }
-            if (canvas && canvas->getUserRole() == UserRole::Designer) {
+            if (canvas && canvas->getUserRole() == UserRole::Commander) {
                 ResizeHandle handle = handleAt(event->pos());
                 if (handle != HandleNone) {
                     m_activeHandle = handle;
@@ -870,7 +870,7 @@ void Component::hoverMoveEvent(QGraphicsSceneHoverEvent* event)
         if (scene()) {
             canvas = qobject_cast<Canvas*>(scene()->parent());
         }
-        if (canvas && canvas->getUserRole() == UserRole::Designer) {
+        if (canvas && canvas->getUserRole() == UserRole::Commander) {
             ResizeHandle handle = handleAt(event->pos());
             switch (handle) {
             case HandleTopLeft:
@@ -972,7 +972,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
     QAction* deleteAction = nullptr;
     
     // Only show "Edit Component", "Duplicate", and "Delete" options for Designer role
-    if (canvas && canvas->getUserRole() == UserRole::Designer) {
+    if (canvas && canvas->getUserRole() == UserRole::Commander) {
         editAction = menu.addAction("✏️ Edit Component...");
         menu.addSeparator();
         

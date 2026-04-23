@@ -30,7 +30,7 @@ LoginDialog::LoginDialog(QWidget* parent)
     , m_welcomeLabel(nullptr)
     , m_rememberMeCheck(nullptr)
     , m_fadeAnimation(nullptr)
-    , m_userRole(UserRole::User)
+    , m_userRole(UserRole::Operator)
     , m_passwordVisible(false)
     , m_loginAttempts(0)
 {
@@ -320,18 +320,18 @@ void LoginDialog::onLoginClicked()
     // Simulate authentication delay for UX
     QTimer::singleShot(500, this, [this, username, password]() {
         // Validate credentials - role-based access
-        if ((username == "Designer" && password == "designer") ||
-            (username == "User" && password == "user")) {
+        if ((username == "Commander" && password == "designer") ||
+            (username == "Operator" && password == "user")) {
             m_username = username;
             
             // Assign role based on username
-            if (username == "Designer") {
-                m_userRole = UserRole::Designer;
+            if (username == "Commander") {
+                m_userRole = UserRole::Commander;
             } else {
-                m_userRole = UserRole::User;
+                m_userRole = UserRole::Operator;
             }
             
-            QString roleStr = (m_userRole == UserRole::Designer) ? "DESIGNER" : "USER";
+            QString roleStr = (m_userRole == UserRole::Commander) ? "COMMANDER" : "OPERATOR";
             m_successLabel->setText(QString("AUTHENTICATION SUCCESS - %1 ACCESS GRANTED").arg(roleStr));
             m_successLabel->setMinimumHeight(50);
             m_successLabel->setMaximumHeight(100);

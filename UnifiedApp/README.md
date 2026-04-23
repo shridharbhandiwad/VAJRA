@@ -6,7 +6,7 @@ The recommended unified application combining Designer and Runtime capabilities 
 
 New component types can be added **without modifying any C++ code**:
 
-1. **Via the UI**: Click "+" Add Component Type" button in Designer mode
+1. **Via the UI**: Click "+" Add Component Type" button in Commander mode
 2. **Via JSON**: Edit `components.json` configuration file
 3. **Image support**: Place images in `assets/subsystems/<dir>/`
 
@@ -51,14 +51,14 @@ make
 
 | Username | Password | Role |
 |----------|----------|------|
-| Designer | designer | Full design capabilities + add component types |
-| User | user | Runtime health monitoring |
+| Commander | designer | Full design capabilities + add component types |
+| Operator | user | Runtime health monitoring |
 
 ## Adding New Component Types
 
 ### Method 1: UI Dialog
 
-1. Login as Designer
+1. Login as Commander
 2. Click **"+ ADD COMPONENT TYPE"** in toolbar (or "+" New Type" in side panel)
 3. Fill in the form:
    - **Component Name**: e.g., "GPS Receiver"

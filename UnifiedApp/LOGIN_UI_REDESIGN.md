@@ -210,8 +210,8 @@ The `styles.qss` file includes:
 ## 🚀 Usage
 
 ### Default Credentials
-- **Designer Mode**: Username: `Designer`, Password: `designer`
-- **Runtime Mode**: Username: `User`, Password: `user`
+- **Commander Mode**: Username: `Commander`, Password: `designer`
+- **Runtime Mode**: Username: `Operator`, Password: `user`
 
 ### Testing the UI
 1. Build the application: `qmake && make`
@@ -280,8 +280,8 @@ Potential improvements for future iterations:
 │                                     │
 │  ┌─────────────────────────────┐   │
 │  │ 🔐 Default Credentials      │   │  ← Info panel
-│  │ Designer/designer           │   │
-│  │ User/user                   │   │
+│  │ Commander/designer          │   │
+│  │ Operator/user               │   │
 │  └─────────────────────────────┘   │
 │                                     │
 │  © 2026 Radar System · Secure      │  ← Footer

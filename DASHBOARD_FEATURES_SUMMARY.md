@@ -58,7 +58,7 @@ A super-rich, visually stunning analytics dashboard has been created for the Uni
 
 **Position:** Between "Theme Toggle" and "Log Off" buttons
 
-**Availability:** All user roles (Designer & User)
+**Availability:** All user roles (Commander & Operator)
 
 ---
 
@@ -313,7 +313,7 @@ make
 ```
 
 ### Open Dashboard
-1. Login (Designer/designer or User/user)
+1. Login (Commander/designer or Operator/user)
 2. Click **"📊 VIEW DASHBOARD"** in toolbar
 3. Explore charts and KPIs!
 

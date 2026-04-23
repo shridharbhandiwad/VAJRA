@@ -125,7 +125,7 @@ private:
     // Logout button
     QPushButton* m_logoutBtn;
     
-    // Design toolbar buttons (Save/Clear/AddType hidden for User role; Load visible for all)
+    // Design toolbar buttons (Save/Clear/AddType hidden for Operator role; Load visible for all)
     QPushButton* m_saveBtn;
     QPushButton* m_loadBtn;
     QPushButton* m_clearBtn;
@@ -144,14 +144,14 @@ private:
     QAction* m_connectionTypeComboAction;
     QAction* m_voiceToggleBtnAction;
     QAction* m_testVoiceBtnAction;
-    // Toolbar separators (hidden for User role to keep toolbar clean)
+    // Toolbar separators (hidden for Operator role to keep toolbar clean)
     QAction* m_designSep1;   // after Load
     QAction* m_designSep2;   // after AddType
     QAction* m_connectSep;   // after connection controls
     QAction* m_statusSep;    // after status label
     QAction* m_voiceSep;     // after voice controls
     
-    // Left panel (hidden for User role)
+    // Left panel (hidden for Operator role)
     QWidget* m_leftPanel;
     
     // Tab widget for enlarged component views
